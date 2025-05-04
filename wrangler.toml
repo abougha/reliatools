@@ -1,8 +1,0 @@
-name = "reliatools"
-pages_build_output_dir = ".vercel/output/static"
-
-# ✨ ADD THIS LINE – pick today’s date (YYYY‑MM‑DD)
-compatibility_date = "2025-04-02"
-
-# Node‑style APIs (fs, path, Buffer, etc.) for @cloudflare/next‑on‑pages
-compatibility_flags = ["nodejs_compat_populate_process_env"]
