@@ -3,12 +3,12 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev",
-		"build": "npx @cloudflare/next-on-pages && next build",
-		"prepare": "npx @cloudflare/next-on-pages",
-		"deploy": "wrangler pages deploy .vercel/output/static --project-name=reliatools",
-		"test": "vitest"
-	},
+  "dev": "next dev",
+  "build": "next build",
+  "deploy": "wrangler pages deploy .vercel/output/static --project-name=reliatools",
+  "prepare": "npx @cloudflare/next-on-pages",
+  "test": "vitest"
+},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
 		"@tailwindcss/postcss": "^4.1.5",
