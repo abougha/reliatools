@@ -3,14 +3,21 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"vercel-build": "npx @cloudflare/next-on-pages && next build"
+		"dev": "next dev",
+		"build": "next build",
+		"prepare": "npx @cloudflare/next-on-pages",
+		"vercel-build": "npm run prepare && npm run build",
+		"deploy": "wrangler pages deploy .vercel/output/static --project-name=reliatools",
+		"test": "vitest"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"@types/node": "22.15.3",
+		"@types/react": "19.1.2",
+		"autoprefixer": "^10.4.21",
+		"postcss": "^8.5.3",
+		"tailwindcss": "^4.1.5",
+		"typescript": "5.8.3",
 		"vitest": "~3.0.7",
 		"wrangler": "^4.14.1"
 	},
