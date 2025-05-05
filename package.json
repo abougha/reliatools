@@ -6,8 +6,7 @@
   "dev": "next dev",
   "build": "next build",
   "deploy": "wrangler pages deploy .vercel/output/static --project-name=reliatools",
-  "prepare": "npx @cloudflare/next-on-pages",
-  "test": "vitest"
+   "test": "vitest"
 },
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
