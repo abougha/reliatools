@@ -3,53 +3,53 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100 text-gray-900">
-      {/* Navigation Bar */}
-      <header className="flex items-center justify-between px-6 py-4 shadow-sm bg-white">
-        <h1 className="text-xl font-bold tracking-tight text-blue-600">Reliatools</h1>
-        <nav className="space-x-6 text-sm font-medium">
-          <Link href="/" className="hover:text-blue-600">Home</Link>
-          <Link href="/about" className="hover:text-blue-600">About</Link>
-          <Link href="/tools" className="hover:text-blue-600">Tools</Link>
-        </nav>
-      </header>
-
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white via-gray-50 to-gray-100">
       {/* Hero Section */}
-      <section className="text-center py-24 px-6">
-        <h2 className="text-4xl font-extrabold text-gray-800 leading-tight">
-          Accelerate Reliability Engineering<br />
-          with Powerful Tools and Insights
-        </h2>
-        <p className="mt-6 max-w-2xl mx-auto text-gray-600 text-lg">
-          Reliatools offers calculators, test plans, and frameworks built for engineers,
-          by engineers. Focused on speed, accuracy, and industry standards.
+      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 sm:py-32">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight max-w-3xl">
+          Engineering-Grade Tools for <span className="text-blue-600">Reliability</span> & <span className="text-blue-600">Validation</span>
+        </h1>
+        <p className="mt-6 text-lg text-gray-600 max-w-xl">
+          Reliatools empowers engineers with calculators, planning frameworks, and technical insights for product durability, efficiency, and testing excellence.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Link href="/tools" className="px-5 py-3 rounded-md bg-blue-600 text-white font-semibold shadow hover:bg-blue-700">
+        <div className="mt-8 flex flex-col sm:flex-row gap-4">
+          <Link
+            href="/tools"
+            className="inline-block px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-md shadow-md transition"
+          >
             Explore Tools
           </Link>
-          <Link href="/about" className="px-5 py-3 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100">
+          <Link
+            href="/about"
+            className="inline-block px-6 py-3 text-blue-600 border border-blue-600 hover:bg-blue-50 font-medium rounded-md transition"
+          >
             Learn More
           </Link>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="bg-white py-16 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-8">Why Reliatools?</h3>
-          <div className="grid md:grid-cols-3 gap-8 text-left">
+      <section className="bg-white py-16 px-6 sm:px-12 border-t">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-12">Why Reliatools?</h2>
+          <div className="grid gap-10 sm:grid-cols-3 text-left">
             <div>
-              <h4 className="font-bold text-blue-600 mb-2">🎯 Precision</h4>
-              <p className="text-sm text-gray-600">Test plans and calculators based on proven reliability models like Arrhenius and Weibull.</p>
+              <h3 className="text-blue-600 font-bold text-lg mb-2">🎯 Precision</h3>
+              <p className="text-sm text-gray-600">
+                Industry-aligned tools using proven models like Arrhenius and Weibull to guide technical decisions.
+              </p>
             </div>
             <div>
-              <h4 className="font-bold text-blue-600 mb-2">🧠 Expert-Driven</h4>
-              <p className="text-sm text-gray-600">Crafted by experienced reliability engineers for real-world applications.</p>
+              <h3 className="text-blue-600 font-bold text-lg mb-2">🧠 Expert-Driven</h3>
+              <p className="text-sm text-gray-600">
+                Built by engineers with decades of reliability testing experience, embedded with real-world insights.
+              </p>
             </div>
             <div>
-              <h4 className="font-bold text-blue-600 mb-2">⚡ Efficient</h4>
-              <p className="text-sm text-gray-600">Accelerate validation and analysis with automation-ready tools.</p>
+              <h3 className="text-blue-600 font-bold text-lg mb-2">⚡ Efficiency</h3>
+              <p className="text-sm text-gray-600">
+                Designed to accelerate validation, reduce test redundancy, and increase confidence in design decisions.
+              </p>
             </div>
           </div>
         </div>
