@@ -1,5 +1,5 @@
 // app/layout.tsx
-import "../globals.css";
+import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
