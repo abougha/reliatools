@@ -2,7 +2,7 @@
 	"name": "reliatools",
 	"version": "0.0.0",
 	"private": true,
-	"scripts": {
+		"scripts": {
 		"dev": "next dev",
 		"build": "next build",
 		"deploy": "wrangler pages deploy .vercel/output/static --project-name=reliatools",
