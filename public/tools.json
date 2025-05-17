@@ -1,0 +1,16 @@
+[
+  {
+    "id": "arrhenius",
+    "title": "Arrhenius Calculator",
+    "route": "/tools/Arrhenius",
+    "description": "Calculate acceleration factor (AF) using the Arrhenius equation.",
+    "formulaLatex": "AF = e^{\\left(\\frac{E_a}{k} \\left(\\frac{1}{T_{\\text{use}}} - \\frac{1}{T_{\\text{stress}}} \\right)\\right)}"
+  },
+  {
+    "id": "coffin-manson",
+    "title": "Coffin-Manson Calculator",
+    "route": "/tools/CoffinManson",
+    "description": "Estimate fatigue life under cyclic thermal loading.",
+    "formulaLatex": "N_f = A \\cdot \\Delta\\varepsilon^{-c}"
+  }
+]
