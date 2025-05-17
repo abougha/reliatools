@@ -13,13 +13,19 @@
     "react": "latest",
     "react-dom": "latest"
   },
-  "devDependencies": {
+   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.19",
     "@types/node": "22.15.18",
-    "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
+    "@types/react": "19.1.4",
     "autoprefixer": "^10.4.15",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "vitest": "~3.0.7",
+    "wrangler": "^4.14.1"
+  }, 
+   "engines": {
+    "node": ">=20.0.0"
   }
 }
