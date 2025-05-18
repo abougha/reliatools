@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -15,9 +15,22 @@ export default function Navbar() {
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-gray-900">
-          Reliatools
+        <Link href="/" className="flex items-center space-x-3">
+          <div className="relative w-10 h-10">
+            <Image
+              src="/logo.png"
+              alt="Reliability Tools Logo"
+              layout="fill"
+              objectFit="contain"
+              priority
+            />
+          </div>
+          {/* Uncomment below if logo still doesn't show and you're debugging
+          <img src="/logo.png" alt="Logo" width="40" height="40" />
+          */}
+          <span className="sr-only">Reliability Tools</span>
         </Link>
+
         <nav className="space-x-6 text-sm font-medium">
           {navItems.map((item) => (
             <Link

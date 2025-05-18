@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Reliatools",
   description: "Engineering tools for reliability professionals",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
