@@ -20,6 +20,8 @@ export default function Navbar() {
             <Image
               src="/logo.png"
               alt="Reliability Tools Logo"
+              width={60}
+              height={60}
               layout="fill"
               objectFit="contain"
               priority
