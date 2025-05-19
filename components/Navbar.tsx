@@ -16,15 +16,13 @@ export default function Navbar() {
     <header className="w-full bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-3">
-          <div className="relative w-10 h-10">
+          <div className="relative w-20 h-20">
             <Image
-              src="/logo.png"
-              alt="Reliability Tools Logo"
-              width={60}
-              height={60}
-              layout="fill"
-              objectFit="contain"
-              priority
+            src="/logo.png"
+            alt="Reliability Tools Logo"
+            fill
+            className="object-contain"
+            priority
             />
           </div>
           {/* Uncomment below if logo still doesn't show and you're debugging
