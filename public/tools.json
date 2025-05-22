@@ -12,5 +12,12 @@
     "route": "/tools/CoffinManson",
     "description": "Estimate fatigue life under cyclic thermal loading.",
     "formulaLatex": "N_f = A \\cdot \\Delta\\varepsilon^{-c}"
-  }
+  },
+  {
+  "id": "Samplesize",
+  "title": "Sample Size Calculator",
+  "route": "/tools/Samplesize",
+  "description": "Determine required sample size or reliability/confidence using the binomial distribution.",
+  "formulaLatex": "1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i} \\geq CL"
+}
 ]

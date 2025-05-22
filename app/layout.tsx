@@ -41,6 +41,9 @@ export default function RootLayout({
 
         {/* Page content */}
         {children}
+        <footer className="mt-10 text-center text-sm text-gray-500 py-6 border-t border-gray-200">
+    © 2025 Reliatools. All rights reserved. The tools and content on this site are provided “as is” without warranties of any kind. Reliatools assumes no liability for the accuracy or use of results. Use at your own risk.
+  </footer>
       </body>
     </html>
   );

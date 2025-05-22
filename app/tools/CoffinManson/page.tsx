@@ -15,8 +15,9 @@ export default function ThermalShockCalculator() {
   const [TmaxUse, setTmaxUse] = useState("85");
   const [TminUse, setTminUse] = useState("0");
   const [exponent, setExponent] = useState("2");
-  const [cycles, setCycles] = useState("1000");
-  const [solveFor, setSolveFor] = useState("af");
+  const [useCycles, setUseCycles] = useState("1000");
+  const [accelCycles, setAccelCycles] = useState("100");
+  const [solveFor, setSolveFor] = useState("accelCycles");
 
   const solved = useMemo(() => {
     const tMaxS = parseFloat(TmaxStress);
@@ -24,71 +25,48 @@ export default function ThermalShockCalculator() {
     const tMaxU = parseFloat(TmaxUse);
     const tMinU = parseFloat(TminUse);
     const M = parseFloat(exponent);
-    const N = parseFloat(cycles);
+    const Nuse = parseFloat(useCycles);
+    const Nacc = parseFloat(accelCycles);
     const deltaTStress = tMaxS - tMinS;
     const deltaTUse = tMaxU - tMinU;
     const AF = Math.pow(deltaTStress / deltaTUse, M);
 
     switch (solveFor) {
-      case "af":
-        return AF;
-      case "cycles":
-        return N / AF;
       case "TmaxStress":
-        return (tMinS + deltaTUse * Math.pow(AF, 1 / M)).toFixed(2);
+        return (tMinS + deltaTUse * Math.pow(Nuse / Nacc, 1 / M)).toFixed(2);
       case "TminStress":
-        return (tMaxS - deltaTUse * Math.pow(AF, 1 / M)).toFixed(2);
+        return (tMaxS - deltaTUse * Math.pow(Nuse / Nacc, 1 / M)).toFixed(2);
       case "TmaxUse":
         return (tMinU + deltaTUse).toFixed(2);
       case "TminUse":
         return (tMaxU - deltaTUse).toFixed(2);
       case "exponent":
-        return (Math.log(AF) / Math.log(deltaTStress / deltaTUse)).toFixed(2);
+        return (Math.log(Nuse / Nacc) / Math.log(deltaTStress / deltaTUse)).toFixed(2);
+      case "useCycles":
+        return (Nacc * AF).toFixed(0);
+      case "accelCycles":
+        return (Nuse / AF).toFixed(0);
       default:
         return null;
     }
-  }, [TmaxStress, TminStress, TmaxUse, TminUse, exponent, cycles, solveFor]);
+  }, [TmaxStress, TminStress, TmaxUse, TminUse, exponent, useCycles, accelCycles, solveFor]);
 
-  const deltaTStress = parseFloat(TmaxStress) - parseFloat(TminStress);
   const deltaTUse = parseFloat(TmaxUse) - parseFloat(TminUse);
-  const M = parseFloat(exponent);
-
-  const plotData = useMemo(() => {
-    const data = [];
-    for (let dT = deltaTUse; dT <= deltaTStress + 40; dT += 5) {
-      const af = Math.pow(dT / deltaTUse, M);
-      const life = parseFloat(cycles) / af;
-      data.push({ deltaT: dT, AF: parseFloat(af.toFixed(2)), life: parseFloat(life.toFixed(2)) });
-    }
-    return data;
-  }, [deltaTStress, deltaTUse, M, cycles]);
-
-  const downloadCSV = () => {
-    const csv = Papa.unparse(plotData);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "thermal_shock_af_plot.csv");
-  };
+  const deltaTStress = parseFloat(TmaxStress) - parseFloat(TminStress);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-4">Thermal Shock Acceleration Calculator</h1>
 
       <div className="bg-gray-50 p-4 rounded mb-6 border">
-        <BlockMath math={"AF = \\left(\\frac{\\Delta T_{stress}}{\\Delta T_{use}}\\right)^M"} />
+        <BlockMath math={"AF = \\left(\\frac{\\Delta T_{stress}}{\\Delta T_{use}}\\right)^M = \\frac{N_{use}}{N_{acc}}"} />
         <ul className="text-sm text-gray-700 mt-2 space-y-1">
-  <li><strong>ΔT<sub>stress</sub></strong>: Tmax - Tmin of thermal stress test (°C)</li>
-  <li><strong>ΔT<sub>use</sub></strong>: Tmax - Tmin of use environment (°C)</li>
-  <li><strong>M</strong>: Acceleration exponent (typically 2–6)</li>
-  <li><strong>AF</strong>: Acceleration Factor (ratio of test to use cycles)</li>
-</ul>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <div className="text-sm bg-gray-100 rounded p-2">
-            ΔT<sub>stress</sub> = {deltaTStress}°C
-          </div>
-          <div className="text-sm bg-gray-100 rounded p-2">
-            ΔT<sub>use</sub> = {deltaTUse}°C
-          </div>
-        </div>
+          <li><strong>ΔT<sub>stress</sub></strong>: Tmax - Tmin of thermal stress test (°C)</li>
+          <li><strong>ΔT<sub>use</sub></strong>: Tmax - Tmin of use environment (°C)</li>
+          <li><strong>M</strong>: Acceleration exponent (typically 2–6)</li>
+          <li><strong>N<sub>use</sub></strong>: Cycles in normal use</li>
+          <li><strong>N<sub>acc</sub></strong>: Cycles under accelerated conditions</li>
+        </ul>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -98,8 +76,8 @@ export default function ThermalShockCalculator() {
           { id: "TmaxUse", label: "Tmax Use (°C)", value: TmaxUse, setter: setTmaxUse },
           { id: "TminUse", label: "Tmin Use (°C)", value: TminUse, setter: setTminUse },
           { id: "exponent", label: "Exponent (M)", value: exponent, setter: setExponent },
-          { id: "cycles", label: "Use Life Cycles", value: cycles, setter: setCycles },
-          { id: "af", label: "Acceleration Factor (AF)", value: String(Math.pow(deltaTStress / deltaTUse, M)), setter: () => {} },
+          { id: "useCycles", label: "Use Life Cycles (Nuse)", value: useCycles, setter: setUseCycles },
+          { id: "accelCycles", label: "Accelerated Cycles (Nacc)", value: accelCycles, setter: setAccelCycles },
         ].map(({ id, label, value, setter }) => (
           <label key={id} className={`block text-sm ${solveFor === id ? "bg-yellow-50 border-l-4 border-yellow-400 p-2 rounded" : ""}`}>
             <input
@@ -113,68 +91,99 @@ export default function ThermalShockCalculator() {
             {label}
             <input
               type="number"
-              value={solveFor === id ? (solved !== null ? String(solved) : "") : value}
+              value={solveFor === id && solved !== null ? solved : value}
               onChange={(e) => setter(e.target.value)}
-              disabled={solveFor === id || setter === (() => {})}
+              disabled={solveFor === id}
               className="w-full p-2 border rounded mt-1"
             />
           </label>
         ))}
       </div>
 
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={downloadCSV}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-        >
-          Download CSV
-        </button>
-      </div>
-
       <div className="mt-6 p-4 border-l-4 border-blue-500 bg-blue-50 text-blue-800 rounded">
-        <p className="font-semibold text-lg">Solved {solveFor}: {solved !== null ? String(solved) : "N/A"}</p>
-        <p className="text-sm mt-1">
-          This corresponds to approximately {(parseFloat(cycles) / Math.pow(deltaTStress / deltaTUse, M)).toFixed(0)} thermal shock cycles at {deltaTStress}°C stress range, simulating {cycles} use cycles.
-        </p>
-      </div>
-       <div className="mt-8 h-80 bg-white p-4 border rounded shadow">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={plotData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="deltaT" label={{ value: "Stress ΔT (°C)", position: "insideBottom", offset: -5 }} />
-            <YAxis label={{ value: "AF", angle: -90, position: "insideLeft" }} />
-            <Tooltip />
-            <Line type="monotone" dataKey="AF" stroke="#2563EB" strokeWidth={2} dot={false} />
-            <ReferenceDot
-              x={deltaTStress}
-              y={Math.pow(deltaTStress / deltaTUse, M)}
-              r={5}
-              fill="black"
-              stroke="none"
-              label={{ value: `(${deltaTStress}°C, ${Math.pow(deltaTStress / deltaTUse, M).toFixed(2)})`, position: "top" }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <p className="font-semibold text-lg">Solved {solveFor}: {solved !== null ? solved : "N/A"}</p>
       </div>
 
       <div className="mt-12 h-80 bg-white p-4 border rounded shadow">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={plotData}>
+          <LineChart data={(() => {
+            const tMaxS = parseFloat(TmaxStress);
+            const tMinS = parseFloat(TminStress);
+            const tMaxU = parseFloat(TmaxUse);
+            const tMinU = parseFloat(TminUse);
+            const M = parseFloat(exponent);
+            const Nuse = parseFloat(useCycles);
+            const deltaTUse = tMaxU - tMinU;
+            const points = [];
+            for (let dT = deltaTUse; dT <= (tMaxS - tMinS) + 40; dT += 5) {
+              const AF = Math.pow(dT / deltaTUse, M);
+              const Nacc = Nuse / AF;
+              points.push({ deltaT: dT, cycles: Math.round(Nacc) });
+            }
+            return points;
+          })()}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="deltaT" label={{ value: "Stress ΔT (°C)", position: "insideBottom", offset: -5 }} />
-            <YAxis label={{ value: "Predicted Cycles", angle: -90, position: "insideLeft" }} />
+            <XAxis dataKey="deltaT" label={{ value: "ΔT (°C)", position: "insideBottom", offset: -5 }} />
+            <YAxis scale="log" domain={['auto', 'auto']} label={{ value: "Accelerated Cycles (log)", angle: -90, position: "insideLeft" }} />
             <Tooltip />
-            <Line type="monotone" dataKey="life" stroke="#10B981" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="cycles" stroke="#2563EB" strokeWidth={2} dot={false} />
             <ReferenceDot
-              x={deltaTStress}
-              y={parseFloat(cycles) / Math.pow(deltaTStress / deltaTUse, M)}
+              x={deltaTUse}
+              y={parseFloat(useCycles)}
               r={5}
-              fill="black"
+              fill="green"
               stroke="none"
-              label={{ value: `(${deltaTStress}°C, ${(parseFloat(cycles) / Math.pow(deltaTStress / deltaTUse, M)).toFixed(0)} cycles)`, position: "top" }}
+              label={{ value: `ΔT_use`, position: "top" }}
             />
+            <ReferenceDot
+  ifOverflow="extendDomain"
+  x={deltaTStress}
+  y={(() => {
+    const tMaxU = parseFloat(TmaxUse);
+    const tMinU = parseFloat(TminUse);
+    const M = parseFloat(exponent);
+    const Nuse = parseFloat(useCycles);
+    const deltaTUse = tMaxU - tMinU;
+    const AF = Math.pow(deltaTStress / deltaTUse, M);
+    return Nuse / AF;
+  })()}
+  r={5}
+  fill="black"
+  stroke="none"
+  label={{
+    value: `ΔT_stress (${deltaTStress.toFixed(1)}°C, ${(parseFloat(useCycles) / Math.pow(deltaTStress / deltaTUse, parseFloat(exponent))).toFixed(0)} cycles)`,
+    position: "top"
+  }}
+/>
+
           </LineChart>
         </ResponsiveContainer>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              const tMaxS = parseFloat(TmaxStress);
+              const tMinS = parseFloat(TminStress);
+              const tMaxU = parseFloat(TmaxUse);
+              const tMinU = parseFloat(TminUse);
+              const M = parseFloat(exponent);
+              const Nuse = parseFloat(useCycles);
+              const deltaTUse = tMaxU - tMinU;
+              const points = [];
+              for (let dT = deltaTUse; dT <= (tMaxS - tMinS) + 40; dT += 5) {
+                const AF = Math.pow(dT / deltaTUse, M);
+                const Nacc = Nuse / AF;
+                points.push({ deltaT: dT, cycles: Math.round(Nacc) });
+              }
+              const csv = Papa.unparse(points);
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              saveAs(blob, "thermal_shock_cycles_plot.csv");
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+          >
+            Download CSV
+          </button>
+        </div>
       </div>
     </div>
   );
