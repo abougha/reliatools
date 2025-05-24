@@ -8,22 +8,7 @@ import {
 } from "recharts";
 import Papa from "papaparse";
 import { saveAs } from "file-saver";
-export const metadata = {
-  title: "Coffin-Manson Calculator | Thermal Fatigue Life Prediction – Reliatools",
-  description: "Estimate fatigue life under thermal cycling using the Coffin-Manson model. Essential tool for reliability engineers. Try it for free at Reliatools.",
-  keywords: ["Coffin-Manson Calculator", "Thermal Fatigue Life", "Reliability Engineering", "Thermal Cycling", "Fatigue Analysis"],
-  openGraph: {
-    title: "Coffin-Manson Calculator | Thermal Fatigue Life Prediction – Reliatools",
-    description: "Estimate thermal fatigue life using the Coffin-Manson model. Free tool for reliability engineers.",
-    url: "https://www.reliatools.com/tools/coffin-manson",
-    siteName: "Reliatools",
-    type: "website",
-    locale: "en_US",
-  },
-  alternates: {
-    canonical: "https://www.reliatools.com/tools/coffin-manson",
-  },
-};
+
 
 export default function ThermalShockCalculator() {
   const [TmaxStress, setTmaxStress] = useState("125");

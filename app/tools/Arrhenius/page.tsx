@@ -25,22 +25,7 @@ const EaTable = () => (
     </tbody>
   </table>
 );
-export const metadata = {
-  title: "Arrhenius Calculator | Predict Acceleration Factor – Reliatools",
-  description: "Use the Arrhenius calculator to estimate thermal acceleration factors and predict product lifespan under accelerated conditions. Free tool for reliability engineers.",
-  keywords: ["Arrhenius Calculator", "Acceleration Factor", "Reliability Engineering", "Thermal Aging", "Predictive Maintenance"],
-  openGraph: {
-    title: "Arrhenius Calculator | Predict Acceleration Factor – Reliatools",
-    description: "Estimate thermal acceleration factors using the Arrhenius model. Free tool for reliability engineers.",
-    url: "https://www.reliatools.com/tools/arrhenius",
-    siteName: "Reliatools",
-    type: "website",
-    locale: "en_US",
-  },
-  alternates: {
-    canonical: "https://www.reliatools.com/tools/arrhenius",
-  },
-};
+
 
 export default function ArrheniusCalculator() {
   const k = 8.617e-5;
