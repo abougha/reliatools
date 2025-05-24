@@ -25,6 +25,22 @@ function cumulativeBinomial(f: number, n: number, R: number): number {
   }
   return 1 - sum;
 }
+export const metadata = {
+  title: "Sample Size Calculator for Reliability Testing – Reliatools",
+  description: "Determine the required sample size for reliability tests based on confidence level, reliability targets, and failure allowance. Free tool for engineers.",
+  keywords: ["Sample Size Calculator", "Reliability Testing", "Reliability Engineering", "Binomial Calculator", "Test Planning"],
+  openGraph: {
+    title: "Sample Size Calculator for Reliability Testing – Reliatools",
+    description: "Free calculator for determining sample sizes in reliability tests using binomial distribution. Plan your tests with confidence.",
+    url: "https://www.reliatools.com/tools/sample-size",
+    siteName: "Reliatools",
+    type: "website",
+    locale: "en_US",
+  },
+  alternates: {
+    canonical: "https://www.reliatools.com/tools/sample-size",
+  },
+};
 
 export default function SampleSizeCalculator() {
   const [failures, setFailures] = useState("0");

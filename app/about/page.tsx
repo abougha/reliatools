@@ -1,5 +1,21 @@
 // app/about/page.tsx
 import Link from "next/link";
+export const metadata = {
+  title: "About Reliatools | Your Partner in Reliability Engineering",
+  description: "Learn about Reliatools—our mission, vision, and commitment to providing engineers with the best free tools for reliability testing and analysis.",
+  keywords: ["About Reliatools", "Reliability Engineering", "Reliability Tools", "Reliability Resources"],
+  openGraph: {
+    title: "About Reliatools | Reliability Engineering Tools",
+    description: "Reliatools is dedicated to empowering engineers with the best free reliability tools for testing, analysis, and learning.",
+    url: "https://www.reliatools.com/about",
+    siteName: "Reliatools",
+    type: "website",
+    locale: "en_US",
+  },
+  alternates: {
+    canonical: "https://www.reliatools.com/about",
+  },
+};
 
 export default function AboutPage() {
   return (

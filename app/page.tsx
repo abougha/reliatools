@@ -1,4 +1,20 @@
 import Link from "next/link";
+export const metadata = {
+  title: "Reliatools | Reliability Engineering Tools for Testing & Analysis",
+  description: "Free online calculators for reliability engineers: Arrhenius, Coffin-Manson, Sample Size, and more. Boost your reliability testing efficiency.",
+  keywords: ["Reliability Engineering", "Arrhenius Calculator", "Coffin-Manson Model", "Sample Size Calculator", "Reliability Tools"],
+  openGraph: {
+    title: "Reliatools | Free Tools for Reliability Engineers",
+    description: "Reliatools provides free online calculators for reliability testing and analysis, including Arrhenius, Coffin-Manson, Sample Size, and more.",
+    url: "https://www.reliatools.com/",
+    siteName: "Reliatools",
+    type: "website",
+    locale: "en_US",
+  },
+  alternates: {
+    canonical: "https://www.reliatools.com/",
+  },
+};
 
 export default function Home() {
   return (

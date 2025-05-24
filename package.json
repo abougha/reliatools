@@ -6,13 +6,15 @@
     "dev": "next dev",
     "build:css": "tailwindcss -i ./styles/globals.css -o ./public/build.css --minify",
     "build": "npm run build:css && next build",
-    "start": "next start"
+    "start": "next start",
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
     "katex": "^0.16.22",
     "lucide-react": "^0.511.0",
     "next": "latest",
+    "next-sitemap": "^4.2.3",
     "papaparse": "^5.5.2",
     "react": "latest",
     "react-dom": "latest",

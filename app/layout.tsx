@@ -16,12 +16,20 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
+// 🎯 Global Metadata: Add Here
 export const metadata: Metadata = {
-  title: "Reliatools",
-  description: "Engineering tools for reliability professionals",
-  icons: {
-    icon: "/favicon.ico",
+  title: {
+    default: "Reliatools | Reliability Engineering Tools for Testing & Analysis",
+    template: "%s | Reliatools",
   },
+  description: "Free online calculators for reliability engineers: Arrhenius, Coffin-Manson, Sample Size, and more. Boost your reliability testing efficiency.",
+  keywords: ["Reliability Engineering", "Arrhenius", "Weibull Analysis", "Sample Size", "Testing Tools"],
+  openGraph: {
+    siteName: "Reliatools",
+    type: "website",
+    locale: "en_US",
+  },
+  metadataBase: new URL("https://www.reliatools.com"),
 };
 
 export default function RootLayout({
@@ -35,6 +43,20 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
+       <head>
+        {/* Google Analytics GA4 Script */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-9TMY964ETQ"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-9TMY964ETQ');
+            `,
+          }}
+        />
+      </head>
       <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white transition-colors duration-300">
         {/* Global Navbar */}
         <Navbar />
