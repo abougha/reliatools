@@ -21,14 +21,19 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100">
      
             {/* Hero Section */}
-      <section className="text-center px-6 py-20 sm:py-28">
+      <section className="text-center px-6 py-20 sm:py-10">
         <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 max-w-4xl mx-auto leading-tight">
-          Accelerate Reliability Engineering with Powerful Tools and Insights
+          Design for Reliability Engineering Tools & Calculators
         </h2>
         <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-          Reliatools offers calculators, test plans, and frameworks built for engineers, by engineers,
-          Focused on speed, accuracy, and industry standards.
+          Reliatools provides a suite of free, easy-to-use calculators for reliability engineers, design teams, and product developers. From estimating acceleration factors using the Arrhenius model to predicting thermal fatigue life with Coffin-Manson, our tools help you make data-driven decisions with confidence.
         </p>
+              <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
+          Whether you're focused on Design for Reliability (DfR), accelerated life testing (ALT), reliability growth, or predictive failure analysis, Reliatools is your trusted resource for accurate, fast, and reliable results.
+        </p>
+        <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
+    <a href="/tools" className="underline text-blue-600">Explore our free tools</a> and start optimizing your reliability test plans today.
+  </p>
         <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
           <Link
             href="/tools"
@@ -48,7 +53,7 @@ export default function Home() {
       {/* Feature Section */}
       <section className="bg-white border-t py-16 px-6 sm:px-12">
         <div className="max-w-6xl mx-auto text-center">
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-12">Why Reliatools?</h3>
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-8">Why Reliatools?</h3>
           <div className="grid sm:grid-cols-3 gap-10 text-left">
             <div>
               <h4 className="text-blue-600 text-lg font-bold mb-2">🔵 Precision</h4>

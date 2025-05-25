@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s | Reliatools",
   },
   description: "Free online calculators for reliability engineers: Arrhenius, Coffin-Manson, Sample Size, and more. Boost your reliability testing efficiency.",
-  keywords: ["Reliability Engineering", "Arrhenius", "Weibull Analysis", "Sample Size", "Testing Tools"],
+  keywords: ["Reliability Engineering", "Arrhenius", "Weibull Analysis", "Sample Size", "Testing Tools", "Reliability Tools", "Reliability Calculator"],
   openGraph: {
     siteName: "Reliatools",
     type: "website",
