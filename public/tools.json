@@ -19,5 +19,13 @@
   "route": "/tools/Samplesize",
   "description": "Determine required sample size or reliability/confidence using the binomial distribution.",
   "formulaLatex": "1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i} \\geq CL"
+},
+{
+  "id": "electromigration",
+  "title": "Electromigration Lifetime Calculator",
+  "route": "/tools/Electromigration",
+  "description": "Estimate the Mean Time to Failure (MTTF) of microelectronics using Black’s equation.",
+  "formulaLatex": "MTTF = A \\cdot j^{-n} \\cdot e^{\\frac{E_a}{kT}}"
 }
+
 ]

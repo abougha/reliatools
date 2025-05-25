@@ -4,6 +4,7 @@ import 'katex/dist/katex.min.css';
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
+import Script from "next/script";
 
 // Import Geist font family
 const geistSans = Geist({
@@ -60,6 +61,14 @@ export default function RootLayout({
       <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white transition-colors duration-300">
         {/* Global Navbar */}
         <Navbar />
+
+{/* Global Google AdSense Script */}
+        <Script
+          id="adsense-script"
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+          strategy="afterInteractive"
+        />
 
         {/* Page content */}
         {children}

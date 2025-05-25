@@ -1,10 +1,9 @@
-/* app/tools/SampleSize/page.tsx */
 "use client";
 
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import 'katex/dist/katex.min.css';
-import { InlineMath } from 'react-katex';
+import { BlockMath } from 'react-katex';
 import { Calculator, CheckCircle } from 'lucide-react';
 
 function binomialCoefficient(n: number, k: number): number {
@@ -26,6 +25,29 @@ function cumulativeBinomial(f: number, n: number, R: number): number {
   return 1 - sum;
 }
 
+function newtonRaphsonSolve(f: number, n: number, targetCL: number): number | null {
+  let R = 0.9; // initial guess
+  let maxIter = 100;
+  let tol = 1e-6;
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    let fx = cumulativeBinomial(f, n, R) - targetCL;
+
+    let delta = 1e-6;
+    let dfx = (cumulativeBinomial(f, n, R + delta) - cumulativeBinomial(f, n, R - delta)) / (2 * delta);
+
+    if (Math.abs(dfx) < 1e-10) return null;
+
+    let Rnext = R - fx / dfx;
+    if (Rnext < 0) Rnext = 0.001;
+    if (Rnext > 1) Rnext = 0.999;
+
+    if (Math.abs(Rnext - R) < tol) return Rnext;
+    R = Rnext;
+  }
+  return null;
+}
+
 export default function SampleSizeCalculator() {
   const [failures, setFailures] = useState("0");
   const [confidence, setConfidence] = useState("95");
@@ -36,55 +58,54 @@ export default function SampleSizeCalculator() {
   const [chartData, setChartData] = useState<any[]>([]);
 
   const handleCalculate = () => {
-    const f = parseInt(failures);
-    const CL = parseFloat(confidence) / 100;
-    const R = parseFloat(reliability) / 100;
-    const nInit = parseInt(sampleSize);
+    let f = parseInt(failures);
+    let n = solveFor === "n" ? undefined : parseInt(sampleSize);
+    let R = solveFor === "R" ? undefined : parseFloat(reliability) / 100;
+    let CL = solveFor === "CL" ? undefined : parseFloat(confidence) / 100;
 
-    let calculatedSampleSize = nInit;
-
-    if (solveFor === "n") {
-      for (let n = 1; n < 1000; n++) {
-        if (cumulativeBinomial(f, n, R) >= CL) {
-          setSampleSize(n.toString());
-          setResult(`Required sample size: ${n}`);
-          calculatedSampleSize = n;
+    if (solveFor === "n" && f !== undefined && R !== undefined && CL !== undefined) {
+      for (let nTest = 1; nTest < 1000; nTest++) {
+        if (cumulativeBinomial(f, nTest, R) >= CL) {
+          setSampleSize(nTest.toString());
+          setResult(`Required sample size: ${nTest}`);
+          n = nTest;
           break;
         }
       }
-    } else if (solveFor === "CL") {
-      const CL_calc = cumulativeBinomial(f, nInit, R);
+    } else if (solveFor === "R" && n !== undefined && CL !== undefined && f !== undefined) {
+      let Rcalc = null;
+      if (f === 0) {
+        Rcalc = Math.pow(1 - CL, 1 / n);
+      } else {
+        Rcalc = newtonRaphsonSolve(f, n, CL);
+      }
+
+      if (Rcalc !== null) {
+        setReliability((Rcalc * 100).toFixed(2));
+        setResult(`Minimum reliability: ${(Rcalc * 100).toFixed(2)}%`);
+        R = Rcalc;
+      } else {
+        setResult("No solution found for reliability.");
+      }
+    } else if (solveFor === "CL" && f !== undefined && n !== undefined && R !== undefined) {
+      const CL_calc = cumulativeBinomial(f, n, R);
       setConfidence((CL_calc * 100).toFixed(2));
       setResult(`Achieved confidence level: ${(CL_calc * 100).toFixed(2)}%`);
-    } else if (solveFor === "R") {
-      let Rtest = 0.01;
-      while (Rtest < 0.999) {
-        if (cumulativeBinomial(f, nInit, Rtest) >= CL) {
-          setReliability((Rtest * 100).toFixed(2));
-          setResult(`Minimum reliability: ${(Rtest * 100).toFixed(2)}%`);
-          break;
-        }
-        Rtest += 0.001;
-      }
-    } else if (solveFor === "f") {
-      for (let fail = 0; fail < nInit; fail++) {
-        if (cumulativeBinomial(fail, nInit, R) >= CL) {
-          setFailures(fail.toString());
-          setResult(`Maximum allowed failures: ${fail}`);
-          break;
-        }
-      }
+      CL = CL_calc;
+    } else {
+      setResult("Please provide valid inputs for calculation.");
     }
 
-    const data = [];
-    const start = Math.max(1, Math.floor(calculatedSampleSize * 0.8));
-    const end = Math.ceil(calculatedSampleSize * 1.2);
-
-    for (let n = start; n <= end; n++) {
-      const cl = cumulativeBinomial(f, n, R);
-      data.push({ n, cl: +(cl * 100).toFixed(2) });
+    if (f !== undefined && n !== undefined && R !== undefined) {
+      const data = [];
+      for (let nTest = Math.max(1, Math.floor(n * 0.8)); nTest <= Math.ceil(n * 1.2); nTest++) {
+        const cl = +(cumulativeBinomial(f, nTest, R) * 100).toFixed(2);
+        data.push({ n: nTest, cl });
+      }
+      setChartData(data);
+    } else {
+      setChartData([]);
     }
-    setChartData(data);
   };
 
   const downloadCSV = () => {
@@ -113,7 +134,7 @@ export default function SampleSizeCalculator() {
       <section className="bg-gray-100 p-4 rounded mb-6 text-sm text-gray-800 border border-gray-200">
         <h2 className="font-semibold text-base mb-2 text-blue-700">Binomial Distribution Formula</h2>
         <div className="text-center text-base mb-2">
-          <InlineMath math={'1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i} \\geq CL'} />
+          <BlockMath math={'CL = 1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i}'} />
         </div>
         <p className="mt-2">
           <strong>Where:</strong><br />
@@ -148,13 +169,15 @@ export default function SampleSizeCalculator() {
         }].map(field => (
           <div key={field.id}>
             <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                type="radio"
-                name="solveFor"
-                value={field.id}
-                checked={solveFor === field.id}
-                onChange={() => setSolveFor(field.id)}
-              />
+              {field.id !== "f" && (
+                <input
+                  type="radio"
+                  name="solveFor"
+                  value={field.id}
+                  checked={solveFor === field.id}
+                  onChange={() => setSolveFor(field.id)}
+                />
+              )}
               {field.label}
             </label>
             <input
