@@ -31,6 +31,9 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   metadataBase: new URL("https://www.reliatools.com"),
+  other: {
+    "google-adsense-account": "ca-pub-9300099645509490", // ✅ Added AdSense meta tag here
+  },
 };
 
 export default function RootLayout({
@@ -44,7 +47,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-       <head>
+      <head>
         {/* Google Analytics GA4 Script */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-9TMY964ETQ"></script>
         <script
@@ -62,7 +65,7 @@ export default function RootLayout({
         {/* Global Navbar */}
         <Navbar />
 
-{/* Google AdSense Script */}
+        {/* Google AdSense Script */}
         <Script
           id="adsense-script"
           async
@@ -73,9 +76,10 @@ export default function RootLayout({
 
         {/* Page content */}
         {children}
+
         <footer className="mt-10 text-center text-sm text-gray-500 py-6 border-t border-gray-200">
-    © 2025 Reliatools. All rights reserved. The tools and content on this site are provided “as is” without warranties of any kind. Reliatools assumes no liability for the accuracy or use of results. Use at your own risk.
-  </footer>
+          © 2025 Reliatools. All rights reserved. The tools and content on this site are provided “as is” without warranties of any kind. Reliatools assumes no liability for the accuracy or use of results. Use at your own risk.
+        </footer>
       </body>
     </html>
   );
