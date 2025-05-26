@@ -26,6 +26,14 @@
   "route": "/tools/Electromigration",
   "description": "Estimate the Mean Time to Failure (MTTF) of microelectronics using Black’s equation.",
   "formulaLatex": "MTTF = A \\cdot j^{-n} \\cdot e^{\\frac{E_a}{kT}}"
+},
+{
+  "id": "burnin",
+  "title": "Burn-In Test Wizard",
+  "route": "/tools/BurnInWizard",
+  "description": "Interactive wizard to recommend optimal Burn-In test conditions and duration for early-life failure detection in semiconductors.",
+  "formulaLatex": "AF = e^{\\frac{E_a}{k} \\left( \\frac{1}{T_{use}} - \\frac{1}{T_{stress}} \\right)}"
 }
+
 
 ]

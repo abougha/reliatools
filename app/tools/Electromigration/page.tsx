@@ -62,6 +62,17 @@ export default function ElectromigrationCalculator() {
 
     return { label: "", value: "" };
   }, [solveFor, Ea, currentDensity, temperatureC, n, A, MTTF]);
+const [formData, setFormData] = useState({
+  deviceType: "",
+  failureMode: "",
+  productLife: 5,
+  useTemp: 85,
+  testMode: "Unpowered",
+  deltaT: 0,
+  maxBurnTemp: 125,
+  maxBurnDuration: 168,
+  customEa: null,
+});
 
   const graphData = useMemo(() => {
     const EaNum = parseFloat(Ea);
