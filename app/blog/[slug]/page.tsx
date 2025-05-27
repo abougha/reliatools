@@ -4,21 +4,25 @@ import matter from "gray-matter";
 import { remark } from "remark";
 import html from "remark-html";
 
-interface BlogPageProps {
-  params: { slug: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
-
 export async function generateStaticParams() {
-  const files = fs.readdirSync(path.join(process.cwd(), "blog"));
-  return files.map((file) => ({ slug: file.replace(".md", "") }));
+  const blogDir = path.join(process.cwd(), "blog");
+  const files = fs.readdirSync(blogDir);
+
+  return files.map((file) => ({
+    slug: file.replace(".md", ""),
+  }));
 }
 
-export default async function BlogPost({ params }: BlogPageProps) {
-  const filePath = path.join(process.cwd(), "blog", `${params.slug}.md`);
+export default async function BlogPost({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const blogDir = path.join(process.cwd(), "blog");
+  const filePath = path.join(blogDir, `${params.slug}.md`);
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { content, data } = matter(fileContent);
 
+  const { content, data } = matter(fileContent);
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
