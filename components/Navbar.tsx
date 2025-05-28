@@ -8,7 +8,7 @@ const navItems = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Tools", href: "/tools" },
-   { label: "Blog", href: "/blog" },
+   { label: "Resources", href: "/resources" },
 ];
 
 export default function Navbar() {

@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "arrhenius-article",
+    "title": "Understanding Arrhenius for Reliability",
+    "category": "Article",
+    "description": "A deep dive into thermal aging models and their application in reliability engineering.",
+    "date": "2025-05-27",
+    "content": "### The Arrhenius Model\n\nHere's the acceleration factor graph:\n\n<ArrheniusGraph />\n\nMore details coming soon."
+  },
+  {
+    "slug": "microelectronics-case-study",
+    "title": "Microelectronics Case Study: Failure Modes",
+    "category": "Case Study",
+    "description": "Real-world insights into microchip reliability failures and design implications.",
+    "date": "2025-04-15",
+    "content": "### Case Study Highlights\n\n- Failure rates increased 15% at elevated humidity.\n- Common modes: electromigration, dielectric breakdown.\n- Mitigation strategies include design rule adjustments and protective coatings.\n\n[Download the full case study PDF](/downloads/microelectronics-case-study.pdf)"
+  }
+]
