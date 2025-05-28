@@ -111,7 +111,7 @@ export default function ArrheniusArticle() {
       <p>
         In <strong>microelectronics</strong>, the Arrhenius equation helps predict failure mechanisms like electromigration and dielectric breakdown.
         For example, a chip operating at 85°C may fail in 10 years, but testing at 150°C can simulate this lifetime in just a few months.
-        The <Link href="https://ntrs.nasa.gov/api/citations/20020083691/downloads/20020083691.pdf" 
+        The <Link href="https://ntrs.nasa.gov/citations/20230004376" 
         target="_blank" 
         className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</Link> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
       </p>
@@ -137,9 +137,9 @@ export default function ArrheniusArticle() {
 
       <p>
         Ready to try it yourself? Visit our{" "}
-        <Link href="/tools/arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link>{" "}
+        <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link>{" "}
         and{" "}
-        <Link href="/tools/burn-in-wizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link>{" "}
+        <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link>{" "}
         to simplify your reliability test planning today.
       </p>
     </main>
