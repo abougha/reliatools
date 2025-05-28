@@ -77,7 +77,7 @@ export default function ArrheniusArticle() {
       </p>
 
       <h3 className="text-xl font-semibold mt-6 mb-2">Microelectronics: Managing Thermal Risks</h3>
-      <p>
+      <p>  
         In <strong>microelectronics</strong>, the Arrhenius equation helps predict failure mechanisms like electromigration and dielectric breakdown.
         For example, a chip operating at 85°C may fail in 10 years, but testing at 150°C can simulate this lifetime in just a few months.
         The <a href="https://ntrs.nasa.gov/citations/20230004376" 

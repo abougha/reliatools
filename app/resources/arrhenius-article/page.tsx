@@ -86,9 +86,9 @@ export default function ArrheniusArticle() {
       </p>
       <BlockMath math={"AF = \\exp \\left( \\frac{E_a}{k} \\left( \\frac{1}{T_{use}} - \\frac{1}{T_{test}} \\right) \\right)"} />
 
-      <p>For example, an automotive control module might undergo a 1000-hour burn-in test at 125°C. Using Arrhenius, engineers can estimate that this is equivalent to 10 years at 55°C in the field. This capability is essential for industries like:</p>
+      <p>For example, an automotive control module might undergo a 1000-hour test at 125°C. Using Arrhenius, engineers can estimate that this is equivalent to 10 years at 55°C in the field. This capability is essential for industries like:</p>
       <ul className="list-disc list-inside">
-        <li><strong>Automotive:</strong> Validating ECUs, sensors, and connectors to withstand years of harsh thermal cycling.</li>
+        <li><strong>Automotive:</strong> Validating ECUs, sensors, and connectors to withstand years of harsh thermal exposure.</li>
         <li><strong>Microelectronics:</strong> Testing chips and packages under accelerated thermal and voltage stresses to predict long-term reliability.</li>
       </ul>
 
@@ -97,23 +97,30 @@ export default function ArrheniusArticle() {
       <p>
         In the <strong>Robustness Validation</strong> process for automotive electronic modules, the Arrhenius model underpins burn-in tests and mission profile validations.
         By applying realistic environmental stressors (e.g., -40°C to +125°C temperature ranges, vibration, humidity), engineers ensure that control units, sensors, and actuators can survive 15 years of vehicle life.
-        The <a href="https://www.zvei.org" target="_blank" className="text-blue-600 hover:underline">ZVEI Handbook</a> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
+        The <Link href="https://www.zvei.org" 
+        target="_blank" 
+        className="text-blue-600 hover:underline">ZVEI Handbook</Link> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
       </p>
       <p>
-        Want to estimate your own burn-in conditions? Try our{" "}
-        <Link href="/tools/burn-in-wizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
+        Curious how temperature affects your reliability? Check out our{" "}
+        <Link href="/tools/Arrhenius" 
+        className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
       </p>
 
       <h3 className="text-xl font-semibold mt-6 mb-2">Microelectronics: Managing Thermal Risks</h3>
       <p>
         In <strong>microelectronics</strong>, the Arrhenius equation helps predict failure mechanisms like electromigration and dielectric breakdown.
         For example, a chip operating at 85°C may fail in 10 years, but testing at 150°C can simulate this lifetime in just a few months.
-        The <a href="https://ntrs.nasa.gov/api/citations/20020083691/downloads/20020083691.pdf" target="_blank" className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</a> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
+        The <Link href="https://ntrs.nasa.gov/api/citations/20020083691/downloads/20020083691.pdf" 
+        target="_blank" 
+        className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</Link> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
       </p>
       <p>
-        Curious how temperature affects your chip's reliability? Check out our{" "}
-        <Link href="/tools/arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
+        Want to estimate your own short burn-in test conditions to check for early failures? Try our{" "}
+        <Link href="/tools/BurnInWizard" 
+        className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
       </p>
+      
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Limitations and Cautions</h2>
       <ul className="list-disc list-inside">
