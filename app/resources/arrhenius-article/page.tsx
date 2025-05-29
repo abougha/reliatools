@@ -97,9 +97,9 @@ export default function ArrheniusArticle() {
       <p>
         In the <strong>Robustness Validation</strong> process for automotive electronic modules, the Arrhenius model underpins burn-in tests and mission profile validations.
         By applying realistic environmental stressors (e.g., -40°C to +125°C temperature ranges, vibration, humidity), engineers ensure that control units, sensors, and actuators can survive 15 years of vehicle life.
-        The <Link href="https://www.zvei.org" 
+        The <a href="https://www.zvei.org" 
         target="_blank" 
-        className="text-blue-600 hover:underline">ZVEI Handbook</Link> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
+        className="text-blue-600 hover:underline">ZVEI Handbook</a> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
       </p>
       <p>
         Curious how temperature affects your reliability? Check out our{" "}
@@ -111,9 +111,9 @@ export default function ArrheniusArticle() {
       <p>
         In <strong>microelectronics</strong>, the Arrhenius equation helps predict failure mechanisms like electromigration and dielectric breakdown.
         For example, a chip operating at 85°C may fail in 10 years, but testing at 150°C can simulate this lifetime in just a few months.
-        The <Link href="https://ntrs.nasa.gov/citations/20230004376" 
+        The <a href="https://ntrs.nasa.gov/citations/20230004376" 
         target="_blank" 
-        className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</Link> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
+        className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</a> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
       </p>
       <p>
         Want to estimate your own short burn-in test conditions to check for early failures? Try our{" "}
