@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { BlockMath } from "react-katex";
@@ -90,10 +92,8 @@ export default function CoffinMansonArticle() {
       </ul>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Conclusion: Designing for Durability</h2>
-      <p>
-        The Coffin-Manson model is essential for understanding fatigue from thermal cycling in microelectronics.
-        <p>With predictive tools like our <Link href="/tools/coffin-manson" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link>, engineers can make smarter design decisions and ensure devices remain reliable in everyday use.</p>
-      </p>
+      <p>The Coffin-Manson model is essential for understanding fatigue from thermal cycling in microelectronics.</p>
+      <p>With predictive tools like our <Link href="/tools/coffin-manson" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link>, engineers can make smarter design decisions and ensure devices remain reliable in everyday use.</p>
     </main>
   );
 }
