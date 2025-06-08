@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import Image from "next/image";
+import ArrheniusGraph from "@/components/ArrheniusGraph";
 
 export default function ArrheniusArticle() {
   return (
@@ -34,13 +35,7 @@ export default function ArrheniusArticle() {
       <p>The graph below illustrates how the acceleration factor increases with temperature for a typical activation energy:</p>
 
       <div className="my-6">
-        <Image
-          src="/arrhenius_graph.png"
-          alt="Acceleration Factor vs. Temperature"
-          width={800}
-          height={400}
-          className="rounded border"
-        />
+        <ArrheniusGraph />
       </div>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Why Activation Energy Matters</h2>
