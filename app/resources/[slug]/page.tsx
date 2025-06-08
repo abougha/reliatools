@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import resourceData from "@/data/resources.json";
 import ReactMarkdown from "react-markdown";
-import ArrheniusGraph from "@/components/ArrheniusGraph";
+import ArrheniusArticle from "@/components/ArrheniusArticle";
 
 interface Resource {
   slug: string;
@@ -41,10 +41,7 @@ export default function ResourceDetailPage({ params }: PageProps) {
         <ReactMarkdown>{resource.content}</ReactMarkdown>
 
         {resource.slug === "arrhenius-article" && (
-          <>
-            <h2 className="text-2xl font-semibold mt-8 mb-4">Arrhenius Graph</h2>
-            <ArrheniusGraph />
-          </>
+          <ArrheniusArticle />
         )}
 
         {resource.slug === "microelectronics-case-study" && (

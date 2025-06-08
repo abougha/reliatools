@@ -5,7 +5,7 @@
     "category": "Article",
     "description": "A deep dive into thermal aging models and their application in reliability engineering.",
     "date": "2025-05-27",
-    "content": "### The Arrhenius Model\n\nHere's the acceleration factor graph:\n\n<ArrheniusGraph />\n\nMore details coming soon."
+    "content": "### The Arrhenius Model\n\nHere's the acceleration factor graph:\n\n<ArrheniusArticle />\n\nMore details coming soon."
   },
   {
   "slug": "thermal-shock-article",
