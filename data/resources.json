@@ -8,6 +8,15 @@
     "content": "### The Arrhenius Model\n\nHere's the acceleration factor graph:\n\n<ArrheniusGraph />\n\nMore details coming soon."
   },
   {
+  "slug": "thermal-shock-article",
+  "title": "Thermal Shock & Coffin-Manson in Microelectronics",
+  "category": "Article",
+  "description": "Learn how thermal cycling affects solder joint fatigue using the Coffin-Manson model. Ideal for consumer electronics.",
+  "date": "2025-06-08",
+  "content": "",
+  "link": "/resources/thermal-shock-article"
+},
+  {
     "slug": "microelectronics-case-study",
     "title": "Microelectronics Case Study: Failure Modes",
     "category": "Case Study",

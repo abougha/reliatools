@@ -3,24 +3,7 @@
 import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceLine,
-} from "recharts";
-
-const arrheniusData = [
-  { temperature: 50, AF: 1.5 },
-  { temperature: 75, AF: 2.5 },
-  { temperature: 100, AF: 5 },
-  { temperature: 125, AF: 10 },
-  { temperature: 150, AF: 18 },
-];
+import Image from "next/image";
 
 export default function ArrheniusArticle() {
   return (
@@ -49,29 +32,15 @@ export default function ArrheniusArticle() {
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Graph: Acceleration Factor vs. Temperature</h2>
       <p>The graph below illustrates how the acceleration factor increases with temperature for a typical activation energy:</p>
-<div className="h-4"></div>  {/* 4 = 1rem space */}
-      <div className="w-full h-64 bg-white rounded border mb-6">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={arrheniusData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="temperature"
-              label={{ value: "Temperature (°C)", position: "insideBottom", offset: -3 }}
-            />
-            <YAxis
-  label={{
-    value: "Acceleration Factor (AF)",
-    angle: -90,
-    position: "insideLeft",
-    offset: 20, // Add space from the axis line
-    style: { textAnchor: "middle" }, // Ensures centered label
-  }}
-/>
-            <Tooltip />
-            <Line type="monotone" dataKey="AF" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} />
-            <ReferenceLine x={125} stroke="gray" strokeDasharray="3 3" label="Test Temp" />
-          </LineChart>
-        </ResponsiveContainer>
+
+      <div className="my-6">
+        <Image
+          src="/arrhenius_graph.png"
+          alt="Acceleration Factor vs. Temperature"
+          width={800}
+          height={400}
+          className="rounded border"
+        />
       </div>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Why Activation Energy Matters</h2>
@@ -107,8 +76,8 @@ export default function ArrheniusArticle() {
         target="_blank" 
         className="text-blue-600 hover:underline">ZVEI Handbook</a> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
       </p>
-      <div className="h-4"></div>  {/* 4 = 1rem space */}
-      <p className="text-center">
+
+      <p className="text-center mt-4">
         Curious how temperature affects your reliability? Check out our{" "}
         <Link href="/tools/Arrhenius" 
         className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
@@ -122,13 +91,12 @@ export default function ArrheniusArticle() {
         target="_blank" 
         className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</a> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
       </p>
-      <div className="h-4"></div>  {/* 4 = 1rem space */}
-      <p className="text-center">
+
+      <p className="text-center mt-4">
         Want to estimate your own short burn-in test conditions to check for early failures? Try our{" "}
         <Link href="/tools/BurnInWizard" 
         className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
       </p>
-      
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Limitations and Cautions</h2>
       <ul className="list-disc list-inside">
@@ -142,8 +110,8 @@ export default function ArrheniusArticle() {
         The Arrhenius equation remains a cornerstone of accelerated life testing and physics-of-failure reliability engineering.
         By understanding the materials, the failure modes, and the operating environment, engineers can use Arrhenius-based models to predict, validate, and improve product reliability—whether it’s a car’s control module surviving 15 years on the road or a microchip enduring a decade of power cycling.
       </p>
-<div className="h-4"></div>  {/* 4 = 1rem space */}
-      <p className="text-center">
+
+      <p className="text-center mt-6">
         Ready to try it yourself? Visit our{" "}
         <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link>{" "}
         and{" "}
