@@ -35,7 +35,7 @@ export default function ArrheniusArticle() {
 
       <div className="my-6">
         <Image
-          src="/arrhenius_Graph.png"
+          src="/arrhenius_graph.png"
           alt="Arrhenius acceleration factor vs temperature graph"
           width={800}
           height={400}
