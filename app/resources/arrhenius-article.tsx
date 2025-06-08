@@ -4,7 +4,6 @@ import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import Image from "next/image";
-import ArrheniusGraph from "@/components/ArrheniusGraph";
 
 export default function ArrheniusArticle() {
   return (
@@ -35,7 +34,13 @@ export default function ArrheniusArticle() {
       <p>The graph below illustrates how the acceleration factor increases with temperature for a typical activation energy:</p>
 
       <div className="my-6">
-        <ArrheniusGraph />
+        <Image
+          src="/arrhenius_Graph.png"
+          alt="Arrhenius acceleration factor vs temperature graph"
+          width={800}
+          height={400}
+          className="rounded border"
+        />
       </div>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Why Activation Energy Matters</h2>
@@ -67,30 +72,22 @@ export default function ArrheniusArticle() {
       <p>
         In the <strong>Robustness Validation</strong> process for automotive electronic modules, the Arrhenius model underpins burn-in tests and mission profile validations.
         By applying realistic environmental stressors (e.g., -40°C to +125°C temperature ranges, vibration, humidity), engineers ensure that control units, sensors, and actuators can survive 15 years of vehicle life.
-        The <a href="https://www.zvei.org" 
-        target="_blank" 
-        className="text-blue-600 hover:underline">ZVEI Handbook</a> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
+        The <a href="https://www.zvei.org" target="_blank" className="text-blue-600 hover:underline">ZVEI Handbook</a> provides structured methodologies for integrating Arrhenius-based models into testing protocols.
       </p>
 
       <p className="text-center mt-4">
-        Curious how temperature affects your reliability? Check out our{" "}
-        <Link href="/tools/Arrhenius" 
-        className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
+        Curious how temperature affects your reliability? Check out our <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
       </p>
 
       <h3 className="text-xl font-semibold mt-6 mb-2">Microelectronics: Managing Thermal Risks</h3>
       <p>
         In <strong>microelectronics</strong>, the Arrhenius equation helps predict failure mechanisms like electromigration and dielectric breakdown.
         For example, a chip operating at 85°C may fail in 10 years, but testing at 150°C can simulate this lifetime in just a few months.
-        The <a href="https://ntrs.nasa.gov/citations/20230004376" 
-        target="_blank" 
-        className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</a> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
+        The <a href="https://ntrs.nasa.gov/citations/20230004376" target="_blank" className="text-blue-600 hover:underline">NASA Physics of Failure Handbook</a> emphasizes the importance of understanding the underlying failure physics—not just applying the equation blindly.
       </p>
 
       <p className="text-center mt-4">
-        Want to estimate your own short burn-in test conditions to check for early failures? Try our{" "}
-        <Link href="/tools/BurnInWizard" 
-        className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
+        Want to estimate your own short burn-in test conditions to check for early failures? Try our <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Limitations and Cautions</h2>
@@ -107,11 +104,7 @@ export default function ArrheniusArticle() {
       </p>
 
       <p className="text-center mt-6">
-        Ready to try it yourself? Visit our{" "}
-        <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link>{" "}
-        and{" "}
-        <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link>{" "}
-        to simplify your reliability test planning today.
+        Ready to try it yourself? Visit our <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> and <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simplify your reliability test planning today.
       </p>
     </main>
   );
