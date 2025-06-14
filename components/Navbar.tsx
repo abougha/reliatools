@@ -8,7 +8,7 @@ const navItems = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Tools", href: "/tools" },
-   { label: "Resources", href: "/resources" },
+  { label: "Resources", href: "/resources" },
 ];
 
 export default function Navbar() {
@@ -16,8 +16,8 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Navbar */}
       <header className="w-full bg-white shadow-sm sticky top-0 z-50">
+        {/* Logo + Navigation */}
         <div className="max-w-7xl mx-auto px-6 pt-4 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3">
             <div className="relative w-20 h-20">
@@ -49,22 +49,20 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* Ad Banner (Horizontal Slim) */}
+        {/* Google AdSense Banner */}
         <div className="max-w-7xl mx-auto px-6 py-2">
-          <div className="w-full h-[70px] flex items-center justify-center overflow-hidden">
+          <div className="w-full flex items-center justify-center overflow-hidden">
             <ins
               className="adsbygoogle"
-              style={{
-                display: "block",
-                width: "100%",
-                height: "70px",
-                textAlign: "center",
-              }}
-              data-ad-client="ca-pub-9300099645509490" // Replace with your AdSense publisher ID
-              data-ad-slot="f08c47fec0942fa0"           // Replace with your Ad Slot ID
-              data-ad-format="horizontal"
-              data-full-width-responsive="false"
+              style={{ display: "block" }}
+              data-ad-client="ca-pub-9300099645509490"
+              data-ad-slot="2792740719"
+              data-ad-format="auto"
+              data-full-width-responsive="true"
             ></ins>
+            <Script id="adsbygoogle-init" strategy="afterInteractive">
+              {`(adsbygoogle = window.adsbygoogle || []).push({});`}
+            </Script>
           </div>
         </div>
       </header>
