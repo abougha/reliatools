@@ -18,12 +18,12 @@
     "link": "/resources/thermal-shock-article"
   },
   {
-    "slug": "microelectronics-case-study",
-    "title": "Microelectronics Case Study: Failure Modes",
-    "category": "Case Study",
-    "description": "Real-world insights into microchip reliability failures and design implications.",
+    "slug": "halt",
+    "title": "Highly Accelerated Life Testing (HALT)",
+    "category": "Knowledge",
+    "description": "Understanding Highly Accelerated Life Testing (HALT): Principles, History, and Applications",
     "date": "2025-04-15",
     "content": "### Case Study Highlights\n\n- Failure rates increased 15% at elevated humidity.\n- Common modes: electromigration, dielectric breakdown.\n- Mitigation strategies include design rule adjustments and protective coatings.\n\n[Download the full case study PDF](/downloads/microelectronics-case-study.pdf)",
-    "link": "/resources/microelectronics-case-study"
+    "link": "/resources/halt"
   }
 ]

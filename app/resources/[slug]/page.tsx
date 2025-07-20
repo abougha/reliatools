@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import resourceData from "@/data/resources.json";
 import ArrheniusArticle from "@/app/resources/arrhenius-article";
 import ThermalShockArticle from "@/app/resources/thermal-shock-article";
+import HALTArticle from "@/app/resources/halt";
 
 interface Resource {
   slug: string;
@@ -29,6 +30,7 @@ export default function ResourceDetailPage({ params }: PageProps) {
 
   if (params.slug === "arrhenius-article") return <ArrheniusArticle />;
   if (params.slug === "thermal-shock-article") return <ThermalShockArticle />;
+  if (params.slug === "halt") return <HALTArticle />;
 
   return (
     <main className="max-w-3xl mx-auto p-6">
