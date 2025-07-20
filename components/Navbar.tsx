@@ -17,6 +17,23 @@ export default function Navbar() {
   return (
     <>
       <header className="w-full bg-white shadow-sm sticky top-0 z-50">
+        {/* Google AdSense Banner at the very top */}
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="w-full flex items-center justify-center overflow-hidden">
+            <ins
+              className="adsbygoogle"
+              style={{ display: "block" }}
+              data-ad-client="ca-pub-9300099645509490"
+              data-ad-slot="2792740719"
+              data-ad-format="auto"
+              data-full-width-responsive="true"
+            ></ins>
+            <Script id="adsbygoogle-init" strategy="afterInteractive">
+              {`(adsbygoogle = window.adsbygoogle || []).push({});`}
+            </Script>
+          </div>
+        </div>
+
         {/* Logo + Navigation */}
         <div className="max-w-7xl mx-auto px-6 pt-4 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3">
@@ -47,23 +64,6 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
-        </div>
-
-        {/* Google AdSense Banner */}
-        <div className="max-w-7xl mx-auto px-6 py-2">
-          <div className="w-full flex items-center justify-center overflow-hidden">
-            <ins
-              className="adsbygoogle"
-              style={{ display: "block" }}
-              data-ad-client="ca-pub-9300099645509490"
-              data-ad-slot="2792740719"
-              data-ad-format="auto"
-              data-full-width-responsive="true"
-            ></ins>
-            <Script id="adsbygoogle-init" strategy="afterInteractive">
-              {`(adsbygoogle = window.adsbygoogle || []).push({});`}
-            </Script>
-          </div>
         </div>
       </header>
     </>
