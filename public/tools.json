@@ -1,5 +1,19 @@
 [
   {
+  "id": "p-diagram",
+  "title": "P Diagram Generator",
+  "route": "/tools/p-diagram",
+  "description": "Build signal/control/noise/outputs P-Diagrams with inline editing, presets, and SVG/PNG/PDF export.",
+  "formulaLatex": "\\boxed{\\text{P-Diagram}}"
+},
+{
+"id": "rbd-generator",
+"title": "Reliability Block Diagram (RBD) Generator",
+"route": "/tools/rbd",
+"description": "Build reliability block diagrams from a table, compute Series/Parallel reliability, and export SVG/CSV diagrams.",
+"formulaLatex": "R_{sys} = 1 - \nabla (1 - R_i)"
+},
+    {
     "id": "arrhenius",
     "title": "Arrhenius Calculator",
     "route": "/tools/Arrhenius",
