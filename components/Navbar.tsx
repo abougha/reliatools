@@ -89,7 +89,7 @@ export default function Navbar() {
               data-full-width-responsive="false"
             ></ins>
             <Script id="adsbygoogle-init" strategy="afterInteractive">
-              {`(adsbygoogle = (window as any).adsbygoogle || []).push({});`}
+              {`(adsbygoogle = window.adsbygoogle || []).push({});`}
             </Script>
           </div>
         </div>
