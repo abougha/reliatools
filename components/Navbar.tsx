@@ -6,61 +6,49 @@ import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 
-type NavChild = { label: string; href: string };
-type NavItem =
-  | { label: string; href: string; children?: never }
-  | { label: string; href: string; children: NavChild[] };
+type ToolItem = {
+  id?: string;
+  title?: string;
+  route?: string;
+  description?: string;
+  formulaLatex?: string;
+};
 
-const SIDEBAR_WIDTH = 200; // px
+const SIDEBAR_WIDTH = 200; // px (adjust to make narrower/wider)
 const HEADER_OFFSET = 40; // px (height of sticky AdSense header area)
-
-const navItems: NavItem[] = [
-  { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
-  {
-    label: "Tools",
-    href: "/tools",
-    children: [
-      { label: "Arrhenius Calculator", href: "/tools/Arrhenius" },
-      { label: "Electromigration", href: "/tools/Electromigration" },
-      { label: "Burn-In Wizard", href: "/tools/BurnInWizard" },
-      { label: "Sample Size (Binomial)", href: "/tools/SampleSize" },
-      { label: "Coffin-Manson", href: "/tools/CoffinManson" },
-    ],
-  },
-  {
-    label: "Resources",
-    href: "/resources",
-    children: [
-      { label: "Blog", href: "/blog" },
-      { label: "Articles", href: "/resources/articles" },
-    ],
-  },
-];
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
 
+  // Mobile drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const closeDrawer = () => setDrawerOpen(false);
+
+  // Submenu open state (we only use "tools" here)
+  const [toolsOpen, setToolsOpen] = useState(false);
+
+  // Tools list loaded from /tools.json
+  const [calculators, setCalculators] = useState<ToolItem[]>([]);
+
+  // Load calculators for Tools submenu
+  useEffect(() => {
+    fetch("/tools.json")
+      .then((res) => res.json())
+      .then((data: ToolItem[]) => setCalculators(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Failed to load tools list:", err));
+  }, []);
+
+  // Auto-open Tools when current path is under /tools
+  useEffect(() => {
+    setToolsOpen(Boolean(pathname?.startsWith("/tools")));
+  }, [pathname]);
+
+  // Active path helper
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
 
-  // Auto-open parent for current path
-  useEffect(() => {
-    const next: Record<string, boolean> = {};
-    navItems.forEach((item) => {
-      if ("children" in item && item.children?.length) {
-        next[item.href] = isActive(item.href);
-      }
-    });
-    setOpen((prev) => ({ ...prev, ...next }));
-  }, [pathname]);
-
-  const toggleGroup = (href: string) =>
-    setOpen((prev) => ({ ...prev, [href]: !prev[href] }));
-
-  const closeDrawer = () => setDrawerOpen(false);
+  // Build href for a tool item robustly
+  const toolHref = (t: ToolItem) => t.route ?? (t.id ? `/tools/${t.id}` : "/tools");
 
   return (
     <>
@@ -89,7 +77,7 @@ export default function Navbar() {
               data-full-width-responsive="false"
             ></ins>
             <Script id="adsbygoogle-init" strategy="afterInteractive">
-              {`(adsbygoogle = window.adsbygoogle || []).push({});`}
+              {`(adsbygoogle = (window as any).adsbygoogle || []).push({});`}
             </Script>
           </div>
         </div>
@@ -121,23 +109,17 @@ export default function Navbar() {
       </header>
 
       {/* ===== Desktop Sidebar (always visible) =====
-          - Starts at very top (top: 0), full-height.
-          - We add a spacer equal to HEADER_OFFSET so content begins below the sticky header.
-          - The header stays above (z-50 > z-40). */}
+          - Full-height from top; header overlays it (higher z-index).
+          - Spacer makes content start below the sticky header area. */}
       <aside
-  className="hidden md:flex fixed left-0 z-40 bg-white shadow-sm border-r border-gray-200 flex-col"
-  style={{
-    width: SIDEBAR_WIDTH,
-    top: HEADER_OFFSET,
-    height: `calc(100vh - ${HEADER_OFFSET}px)`,
-  }}
-  aria-label="Primary navigation"
->
-
-        {/* Spacer so sidebar content starts below the sticky header area */}
+        className="hidden md:flex fixed left-0 top-0 z-40 bg-white shadow-sm border-r border-gray-200 flex-col"
+        style={{ width: SIDEBAR_WIDTH, height: "100vh" }}
+        aria-label="Primary navigation"
+      >
+        {/* Spacer so sidebar content begins under the sticky header */}
         <div style={{ height: HEADER_OFFSET }} aria-hidden />
 
-        {/* Logo — centered relative to sidebar width */}
+        {/* Centered logo */}
         <div className="px-4 pb-3 border-b border-gray-200 flex justify-center">
           <Link href="/" className="flex items-center justify-center">
             <div className="relative w-24 h-24">
@@ -157,8 +139,9 @@ export default function Navbar() {
         <div className="px-3 py-3 overflow-y-auto">
           <NavList
             isActive={isActive}
-            open={open}
-            toggleGroup={toggleGroup}
+            calculators={calculators}
+            toolsOpen={toolsOpen}
+            setToolsOpen={setToolsOpen}
             onNavigate={() => {}}
           />
         </div>
@@ -176,12 +159,12 @@ export default function Navbar() {
       />
       {/* Drawer panel */}
       <aside
-  className={[
-    "fixed left-0 top-0 z-50 h-screen bg-white shadow-xl border-r border-gray-200 md:hidden",
-    "transform transition-transform duration-300",
-    drawerOpen ? "translate-x-0" : "-translate-x-full",
-  ].join(" ")}
-  style={{ width: SIDEBAR_WIDTH }}
+        className={[
+          "fixed left-0 top-0 z-50 h-screen bg-white shadow-xl border-r border-gray-200 md:hidden",
+          "transform transition-transform duration-300",
+          drawerOpen ? "translate-x-0" : "-translate-x-full",
+        ].join(" ")}
+        style={{ width: SIDEBAR_WIDTH }}
         role="dialog"
         aria-modal="true"
         aria-label="Site navigation"
@@ -218,114 +201,154 @@ export default function Navbar() {
 
           <NavList
             isActive={isActive}
-            open={open}
-            toggleGroup={toggleGroup}
+            calculators={calculators}
+            toolsOpen={toolsOpen}
+            setToolsOpen={setToolsOpen}
             onNavigate={closeDrawer}
           />
         </div>
       </aside>
     </>
   );
+
+  function NavList({
+    isActive,
+    calculators,
+    toolsOpen,
+    setToolsOpen,
+    onNavigate,
+  }: {
+    isActive: (href: string) => boolean;
+    calculators: ToolItem[];
+    toolsOpen: boolean;
+    setToolsOpen: (v: boolean) => void;
+    onNavigate: () => void;
+  }) {
+    return (
+      <nav className="text-sm">
+        <ul className="space-y-1">
+          {/* Home */}
+          <li>
+            <LinkItem href="/" label="Home" active={isActive("/")} onNavigate={onNavigate} />
+          </li>
+
+          {/* About */}
+          <li>
+            <LinkItem href="/about" label="About" active={isActive("/about")} onNavigate={onNavigate} />
+          </li>
+
+          {/* Tools (expandable, auto-generated) */}
+          <li>
+            <div
+              className={[
+                "flex items-center w-full px-3 py-2 rounded-lg transition",
+                isActive("/tools")
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "text-gray-700 hover:bg-gray-100",
+              ].join(" ")}
+            >
+              <Link href="/tools" className="flex-1 min-w-0" onClick={onNavigate}>
+                Tools
+              </Link>
+              <button
+                type="button"
+                aria-expanded={toolsOpen}
+                aria-controls="submenu-tools"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setToolsOpen(!toolsOpen);
+                }}
+                className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Expand menu"
+              >
+                <svg
+                  className={["w-4 h-4 transition-transform", toolsOpen ? "rotate-180" : ""].join(" ")}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Auto-generated calculators */}
+            <ul
+              id="submenu-tools"
+              className={[
+                "ml-2 mt-1 overflow-hidden transition-all",
+                toolsOpen ? "max-h-96" : "max-h-0",
+              ].join(" ")}
+            >
+              {calculators.map((tool, idx) => {
+                const href = toolHref(tool);
+                const title = tool.title ?? tool.id ?? `Tool ${idx + 1}`;
+                return (
+                  <li key={`${href}-${idx}`}>
+                    <Link
+                      href={href}
+                      onClick={onNavigate}
+                      className={[
+                        "block px-3 py-1.5 rounded-md text-[0.95rem] transition",
+                        isActive(href)
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+                      ].join(" ")}
+                    >
+                      {title}
+                    </Link>
+                  </li>
+                );
+              })}
+              {calculators.length === 0 && (
+                <li className="px-3 py-1.5 text-gray-400 text-[0.95rem]">
+                  No calculators found.
+                </li>
+              )}
+            </ul>
+          </li>
+
+          {/* Resources (flat link, no children) */}
+          <li>
+            <LinkItem
+              href="/resources"
+              label="Resources"
+              active={isActive("/resources")}
+              onNavigate={onNavigate}
+            />
+          </li>
+        </ul>
+      </nav>
+    );
+  }
 }
 
-/** Shared Nav rendering for drawer & sidebar */
-function NavList({
-  isActive,
-  open,
-  toggleGroup,
+/** Small helper for single-level links */
+function LinkItem({
+  href,
+  label,
+  active,
   onNavigate,
 }: {
-  isActive: (href: string) => boolean;
-  open: Record<string, boolean>;
-  toggleGroup: (href: string) => void;
+  href: string;
+  label: string;
+  active: boolean;
   onNavigate: () => void;
 }) {
   return (
-    <nav className="text-sm">
-      <ul className="space-y-1">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          const hasChildren = "children" in item && item.children?.length;
-          const isOpen = open[item.href];
-
-          return (
-            <li key={item.href}>
-              <div
-                className={[
-                  "flex items-center w-full px-3 py-2 rounded-lg transition",
-                  active
-                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : "text-gray-700 hover:bg-gray-100",
-                ].join(" ")}
-              >
-                <Link href={item.href} className="flex-1 min-w-0" onClick={onNavigate}>
-                  {item.label}
-                </Link>
-
-                {hasChildren && (
-                  <button
-                    type="button"
-                    aria-expanded={!!isOpen}
-                    aria-controls={`submenu-${item.href}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleGroup(item.href);
-                    }}
-                    className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    title="Expand menu"
-                  >
-                    <svg
-                      className={[
-                        "w-4 h-4 transition-transform",
-                        isOpen ? "rotate-180" : "rotate-0",
-                      ].join(" ")}
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {hasChildren && (
-                <ul
-                  id={`submenu-${item.href}`}
-                  className={[
-                    "ml-2 mt-1 overflow-hidden transition-all",
-                    isOpen ? "max-h-96" : "max-h-0",
-                  ].join(" ")}
-                >
-                  {(item as Extract<NavItem, { children: NavChild[] }>).children.map((child) => {
-                    const childActive = isActive(child.href);
-                    return (
-                      <li key={child.href}>
-                        <Link
-                          href={child.href}
-                          onClick={onNavigate}
-                          className={[
-                            "block px-3 py-1.5 rounded-md text-[0.95rem] transition",
-                            childActive
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-                          ].join(" ")}
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={[
+        "block px-3 py-2 rounded-lg transition",
+        active ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-700 hover:bg-gray-100",
+      ].join(" ")}
+    >
+      {label}
+    </Link>
   );
 }

@@ -1,37 +1,61 @@
+// app/resources/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import resourceData from "@/data/resources.json";
+import resourceDataRaw from "@/data/resources.json";
 import ArrheniusArticle from "@/app/resources/arrhenius-article";
 import ThermalShockArticle from "@/app/resources/thermal-shock-article";
 import HALTArticle from "@/app/resources/halt";
+import SoftwareBRPArticle from "@/app/resources/SoftwareBRP-article";
 
-interface Resource {
+type Resource = {
   slug: string;
   title: string;
   category: string;
   description: string;
   date: string;
-  content: string;
+  content?: string;
+  link?: string;
+};
+
+const resourceData = resourceDataRaw as Resource[];
+
+// Build all slugs at build-time (good for static export)
+export function generateStaticParams() {
+  return resourceData.map((r) => ({ slug: r.slug }));
 }
 
-interface PageProps {
-  params: { slug: string };
+// (Optional) per-page SEO
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const safeSlug = decodeURIComponent(slug).toLowerCase();
+  const res = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
+  return {
+    title: res?.title ?? "Resource",
+    description: res?.description ?? "Resource details",
+  };
 }
 
-export async function generateStaticParams() {
-  return resourceData.map((resource: Resource) => ({
-    slug: resource.slug,
-  }));
-}
+export default async function ResourceDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params; // <-- fixes your error
+  const safeSlug = decodeURIComponent(slug).toLowerCase();
 
-export default function ResourceDetailPage({ params }: PageProps) {
-  const resource = resourceData.find((res) => res.slug === params.slug);
-
+  const resource = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
   if (!resource) return notFound();
 
-  if (params.slug === "arrhenius-article") return <ArrheniusArticle />;
-  if (params.slug === "thermal-shock-article") return <ThermalShockArticle />;
-  if (params.slug === "halt") return <HALTArticle />;
+  // Route to your React articles
+  if (safeSlug === "arrhenius-article") return <ArrheniusArticle />;
+  if (safeSlug === "thermal-shock-article") return <ThermalShockArticle />;
+  if (safeSlug === "halt") return <HALTArticle />;
+  if (safeSlug === "softwarebrp-article") return <SoftwareBRPArticle />;
 
+  // Fallback renderer for JSON-defined content
   return (
     <main className="max-w-3xl mx-auto p-6">
       <h1 className="text-4xl font-bold mb-2">{resource.title}</h1>
