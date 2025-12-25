@@ -119,21 +119,42 @@ export default function Navbar() {
         {/* Spacer so sidebar content begins under the sticky header */}
         <div style={{ height: HEADER_OFFSET }} aria-hidden />
 
-        {/* Centered logo */}
-        <div className="px-4 pb-3 border-b border-gray-200 flex justify-center">
-          <Link href="/" className="flex items-center justify-center">
-            <div className="relative w-24 h-24">
-              <Image
-                src="/logo.png"
-                alt="Reliability Tools Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <span className="sr-only">Reliability Tools</span>
-          </Link>
-        </div>
+       {/* Centered logo + Buy Me a Coffee */}
+<div className="px-4 pb-3 border-b border-gray-200">
+  <div className="flex justify-center">
+    <Link href="/" className="flex items-center justify-center">
+      <div className="relative w-24 h-24">
+        <Image
+          src="/logo.png"
+          alt="Reliability Tools Logo"
+          fill
+          className="object-contain"
+          priority
+        />
+      </div>
+      <span className="sr-only">Reliability Tools</span>
+    </Link>
+  </div>
+
+  {/* Buy Me a Coffee button (inline, reliable) */}
+  <div className="mt-3 flex justify-center">
+    <a
+      href="https://www.buymeacoffee.com/Reliatools"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Buy me a coffee"
+      title="Buy me a coffee"
+      className="block"
+    >
+      <img
+        src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=Reliatools&button_colour=40DCA5&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00"
+        alt="Buy me a coffee"
+        className="h-[40px] w-auto"
+        loading="lazy"
+      />
+    </a>
+  </div>
+</div>
 
         {/* Nav list */}
         <div className="px-3 py-3 overflow-y-auto">
