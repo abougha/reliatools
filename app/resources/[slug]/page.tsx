@@ -5,6 +5,8 @@ import ArrheniusArticle from "@/app/resources/arrhenius-article";
 import ThermalShockArticle from "@/app/resources/thermal-shock-article";
 import HALTArticle from "@/app/resources/halt";
 import SoftwareBRPArticle from "@/app/resources/SoftwareBRP-article";
+import TaguchiBayesianArticle from "@/app/resources/taguchi-bayesian-article";
+
 
 type Resource = {
   slug: string;
@@ -54,6 +56,7 @@ export default async function ResourceDetailPage({
   if (safeSlug === "thermal-shock-article") return <ThermalShockArticle />;
   if (safeSlug === "halt") return <HALTArticle />;
   if (safeSlug === "softwarebrp-article") return <SoftwareBRPArticle />;
+  if (safeSlug === "taguchi-bayesian-article") return <TaguchiBayesianArticle />;
 
   // Fallback renderer for JSON-defined content
   return (

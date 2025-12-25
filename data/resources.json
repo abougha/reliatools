@@ -34,5 +34,14 @@
     "date": "2025-10-19",
     "content": "",
     "link": "/resources/softwarebrp-article"
-  }
+  },
+  {
+  "slug": "taguchi-bayesian-article",
+  "title": "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
+  "category": "DfR 2.0 / Advanced Validation",
+  "description": "A practical guide to combining Taguchi DOE with in-situ Bayesian updating and Monte Carlo reasoning to create adaptive, confidence-driven validation plans.",
+  "date": "2025-12-24",
+  "content": "",
+  "link": "/resources/taguchi-bayesian-article"
+}
 ]
