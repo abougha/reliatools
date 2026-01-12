@@ -61,6 +61,13 @@
   "route": "/tools/SoftwareBRP",
   "description": "Software Reliability",
   "formulaLatex": "\\boxed{\\text{Bayesian Prediction}}"
+},
+{
+  "id": "Psychrometric calculator",
+  "title": "Psychrometric calculator",
+  "route": "/tools/Psychrometrics",
+  "description": "Psychrometric calculator",
+  "formulaLatex": "\\boxed{\\text{Psychrometric calculator}}"
 }
 
 ]
