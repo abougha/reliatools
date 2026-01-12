@@ -111,10 +111,29 @@ export default function PsychrometricsCalculator() {
   const [RH, setRH] = useState("50");
   const [P, setP] = useState("101.325");
 
-  // Requested display x-axis: 10 → 120 in increments of 10 (in selected unit)
-  const TminDisp = 10;
-  const TmaxDisp = 120;
-  const xTicks = useMemo(() => Array.from({ length: 12 }, (_, i) => 10 + i * 10), []);
+  // Requested display x-axis:
+  // - In °F mode: 10 → 120 (per your request)
+  // - In °C mode: we MUST cap below boiling at 1 atm (P≈101 kPa), otherwise pws>P and Wsat becomes negative/invalid.
+  //   Classic 1-atm psychrometric charts typically top out around ~50–60°C.
+  const axis = useMemo(() => {
+    if (tempUnit === "F") {
+      return {
+        TminDisp: 10,
+        TmaxDisp: 120,
+        xTicks: Array.from({ length: 12 }, (_, i) => 10 + i * 10),
+      };
+    }
+    // °C
+    return {
+      TminDisp: 10,
+      TmaxDisp: 55,
+      xTicks: [10, 20, 30, 40, 50, 55],
+    };
+  }, [tempUnit]);
+
+  const TminDisp = axis.TminDisp;
+  const TmaxDisp = axis.TmaxDisp;
+  const xTicks = axis.xTicks;
 
   const Wmax = 30; // g/kg
 
@@ -219,7 +238,13 @@ export default function PsychrometricsCalculator() {
   const enthalpyLines = useMemo(() => {
     if (!isFinite(PkPa) || PkPa <= 0) return [] as any[];
 
-    const hList_kj = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+    // Enthalpy families:
+    // - In °C mode we label in kJ/kgda (nice round values)
+    // - In °F mode you asked for 5, 10, 15… Btu/lbda
+    const hList_kj = (tempUnit === "C"
+      ? [10, 20, 30, 40, 50, 60, 70, 80, 90]
+      : [5, 10, 15, 20, 25, 30, 35, 40, 45].map((btu) => btu / KJ_PER_KG_TO_BTU_PER_LB)
+    );
 
     return hList_kj.map((h_kj) => {
       const data: Array<{ x: number; W: number }> = [];
@@ -296,7 +321,13 @@ export default function PsychrometricsCalculator() {
   const enthalpyLabelsOnSat = useMemo(() => {
     if (!isFinite(PkPa) || PkPa <= 0) return [] as Array<{ h_kj: number; h_ip: number; x: number; W: number }>;
 
-    const hList_kj = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+    // Enthalpy families:
+    // - In °C mode we label in kJ/kgda (nice round values)
+    // - In °F mode you asked for 5, 10, 15… Btu/lbda
+    const hList_kj = (tempUnit === "C"
+      ? [10, 20, 30, 40, 50, 60, 70, 80, 90]
+      : [5, 10, 15, 20, 25, 30, 35, 40, 45].map((btu) => btu / KJ_PER_KG_TO_BTU_PER_LB)
+    );
 
     const solvePointForH = (h_kj: number) => {
       let bestX = NaN;
