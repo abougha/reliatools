@@ -1,5 +1,14 @@
 [
   {
+    "slug": "derating",
+    "title": "Reliability by Design: A Technical Guide to Component Derating",
+    "category": "Knowledge",
+    "description": "A physics-of-failure-based guide to component derating, covering thermal and electrical stress models, design margin, and why derating is critical for modern high-power systems including AI data centers.",
+    "date": "2026-01-17",
+    "content": "",
+    "link": "/resources/derating"
+  },
+  {
     "slug": "arrhenius-article",
     "title": "Understanding Arrhenius for Reliability",
     "category": "Article",
@@ -36,12 +45,12 @@
     "link": "/resources/softwarebrp-article"
   },
   {
-  "slug": "taguchi-bayesian-article",
-  "title": "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
-  "category": "DfR 2.0 / Advanced Validation",
-  "description": "A practical guide to combining Taguchi DOE with in-situ Bayesian updating and Monte Carlo reasoning to create adaptive, confidence-driven validation plans.",
-  "date": "2025-12-24",
-  "content": "",
-  "link": "/resources/taguchi-bayesian-article"
-}
+    "slug": "taguchi-bayesian-article",
+    "title": "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
+    "category": "DfR 2.0 / Advanced Validation",
+    "description": "A practical guide to combining Taguchi DOE with in-situ Bayesian updating and Monte Carlo reasoning to create adaptive, confidence-driven validation plans.",
+    "date": "2025-12-24",
+    "content": "",
+    "link": "/resources/taguchi-bayesian-article"
+  }
 ]
