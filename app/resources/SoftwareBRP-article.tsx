@@ -19,7 +19,12 @@ export default function SoftwareBRPArticle() {
         Bayesian methods combine <strong>prior knowledge</strong> (historical data or expert judgment) with <strong>new evidence</strong> (testing metrics, code analysis, process maturity) to update the estimated probability of achieving target reliability. This approach is ideal for early-stage design evaluations and continuous reliability tracking throughout the development lifecycle.
       </p>
 
-      <BlockMath math={`P(High\ Reliability | Evidence) = \frac{P(Evidence | High\ Reliability) P(High\ Reliability)}{P(Evidence)}`} />
+      <BlockMath
+  math={`P(\\text{High Reliability} \\mid \\text{Evidence}) =
+  \\frac{P(\\text{Evidence} \\mid \\text{High Reliability})\\,P(\\text{High Reliability})}
+       {P(\\text{Evidence})}`}
+/>
+
 
       <p className="mt-4 text-gray-700">
         In odds form, this can be expressed as:

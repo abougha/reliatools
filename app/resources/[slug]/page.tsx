@@ -21,7 +21,6 @@ type Resource = {
 
 const resourceData = resourceDataRaw as Resource[];
 
-export const runtime = "edge";
 
 // Build all slugs at build-time (good for static export)
 export function generateStaticParams() {
