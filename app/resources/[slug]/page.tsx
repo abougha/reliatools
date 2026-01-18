@@ -27,12 +27,12 @@ export function generateStaticParams() {
 }
 
 // (Optional) per-page SEO
-export async function generateMetadata({
+export function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
+  const { slug } = params;
   const safeSlug = decodeURIComponent(slug).toLowerCase();
   const res = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
   return {
@@ -41,12 +41,12 @@ export async function generateMetadata({
   };
 }
 
-export default async function ResourceDetailPage({
+export default function ResourceDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params; // <-- fixes your error
+  const { slug } = params;
   const safeSlug = decodeURIComponent(slug).toLowerCase();
 
   const resource = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
