@@ -1,0 +1,41 @@
+{
+  "Low-alloy steel": { "type": "metal", "modes": ["Corrosion", "Fatigue cracking"] },
+  "Stainless steel": { "type": "metal", "modes": ["Fatigue cracking"] },
+  "Aluminum alloys": { "type": "metal", "modes": ["Fatigue cracking", "Pitting"] },
+  "Copper alloys": { "type": "metal", "modes": ["Fretting corrosion", "Stress relaxation"] },
+  "PA6/PA66 (Nylon)": { "type": "polymer", "modes": ["Hydrolysis/embrittlement", "Creep"] },
+  "PBT": { "type": "polymer", "modes": ["Thermal aging", "Creep"] },
+  "PC": { "type": "polymer", "modes": ["ESCR", "UV embrittlement"] },
+  "ABS": { "type": "polymer", "modes": ["Thermal aging", "Stress cracking"] },
+  "PP": { "type": "polymer", "modes": ["Oxidative embrittlement", "UV embrittlement"] },
+  "PEI/PEEK": { "type": "polymer", "modes": ["Thermal aging"] },
+  "PTFE": { "type": "polymer", "modes": ["Creep/Cold flow"] },
+  "EPDM": { "type": "elastomer", "modes": ["Compression set", "Cracking"] },
+  "Silicone": { "type": "elastomer", "modes": ["Compression set"] },
+  "NBR": { "type": "elastomer", "modes": ["Swelling/softening"] },
+  "FKM": { "type": "elastomer", "modes": ["Swelling", "Aging"] },
+  "FR-4": { "type": "pcba", "modes": ["Delamination", "Creep corrosion", "ECM"] },
+  "Solder (SAC305)": { "type": "pcba", "modes": ["Solder fatigue"] },
+  "Conformal coat": { "type": "pcba", "modes": ["Cracking", "Loss of protection"] },
+  "Plating (Sn/Ni/Au)": {
+    "type": "connector",
+    "modes": [
+      "Fretting corrosion",
+      "Wear",
+      "Contact heating/derating",
+      "Dynamic load (connector)",
+      "Watertightness"
+    ]
+  },
+  "Wire insulation": { "type": "pcba", "modes": ["Insulation embrittlement"] },
+  "Epoxy adhesive": { "type": "adhesive", "modes": ["Adhesive failure", "Cohesive failure", "ESCR"] },
+  "PU adhesive": { "type": "adhesive", "modes": ["Adhesive failure", "Cohesive failure"] },
+  "Acrylic adhesive": { "type": "adhesive", "modes": ["Adhesive failure", "ESCR"] },
+  "Silicone adhesive": { "type": "adhesive", "modes": ["Adhesive failure", "Compression set"] },
+  "Powder coat": { "type": "coating", "modes": ["Underfilm corrosion", "Chalking"] },
+  "Anodize": { "type": "coating", "modes": ["Underfilm corrosion"] },
+  "E-coat": { "type": "coating", "modes": ["Underfilm corrosion"] },
+  "Ceramics/Glass": { "type": "ceramic", "modes": ["Brittle fracture", "Cracking"] },
+  "Composites": { "type": "composite", "modes": ["Delamination", "Matrix cracking", "Fiber breakage"] },
+  "Energy storage": { "type": "pcba", "modes": ["Capacity fade", "Thermal runaway risk"] }
+}

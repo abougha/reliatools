@@ -2,6 +2,8 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import materialsData from "@/data/test-plan-materials.json";
+import testsData from "@/data/test-plan-tests.json";
 
 /**
  * Reliatools – Test Plan Generator (v10)
@@ -59,161 +61,34 @@ const PRESETS: Record<string, Record<string, Preset>> = {
   },
 };
 
-const STRESS_DOMAINS = [
-  "Thermal",
-  "Humidity/Corrosion",
-  "Mechanical Vibration",
-  "Mechanical Shock/Drop",
-  "Mechanical Durability",
-  "Electrical/ESD/EMC",
-  "Chemicals/Fluids",
-  "UV/Weathering",
-  "Dust/Ingress",
-  "Pressure/Vacuum/Altitude",
-  "Packaging/Transportation",
-] as const;
+type MaterialType =
+  | "connector"
+  | "pcba"
+  | "mech"
+  | "polymer"
+  | "metal"
+  | "coating"
+  | "elastomer"
+  | "adhesive"
+  | "ceramic"
+  | "composite";
 
-/** Corrosion defaults (environment-agnostic) */
-const CORROSION_DEFAULTS = {
-  gmwCycle: "D",      // Generic, mid-severity
-  gmwHours: 480,      // Cyclic corrosion total hours
-  mfgClass: "III",    // Mixed flowing gas class
-  mfgHours: 336,
-  saltFogHours: 96,
-} as const;
-
-/** Expanded Materials DB */
-const MATERIALS_DB: Record<string, { modes: string[]; type: "connector" | "pcba" | "mech" | "polymer" | "metal" | "coating" | "elastomer" | "adhesive" | "ceramic" | "composite" }> = {
-  // Metals
-  "Low-alloy steel": { type: "metal", modes: ["Corrosion", "Fatigue cracking"] },
-  "Stainless steel": { type: "metal", modes: ["Fatigue cracking"] },
-  "Aluminum alloys": { type: "metal", modes: ["Fatigue cracking", "Pitting"] },
-  "Copper alloys": { type: "metal", modes: ["Fretting corrosion", "Stress relaxation"] },
-  // Polymers
-  "PA6/PA66 (Nylon)": { type: "polymer", modes: ["Hydrolysis/embrittlement", "Creep"] },
-  "PBT": { type: "polymer", modes: ["Thermal aging", "Creep"] },
-  "PC": { type: "polymer", modes: ["ESCR", "UV embrittlement"] },
-  "ABS": { type: "polymer", modes: ["Thermal aging", "Stress cracking"] },
-  "PP": { type: "polymer", modes: ["Oxidative embrittlement", "UV embrittlement"] },
-  "PEI/PEEK": { type: "polymer", modes: ["Thermal aging"] },
-  "PTFE": { type: "polymer", modes: ["Creep/Cold flow"] },
-  // Elastomers
-  "EPDM": { type: "elastomer", modes: ["Compression set", "Cracking"] },
-  "Silicone": { type: "elastomer", modes: ["Compression set"] },
-  "NBR": { type: "elastomer", modes: ["Swelling/softening"] },
-  "FKM": { type: "elastomer", modes: ["Swelling", "Aging"] },
-  // Electronics/Interconnect
-  "FR-4": { type: "pcba", modes: ["Delamination", "Creep corrosion", "ECM"] },
-  "Solder (SAC305)": { type: "pcba", modes: ["Solder fatigue"] },
-  "Conformal coat": { type: "pcba", modes: ["Cracking", "Loss of protection"] },
-  "Plating (Sn/Ni/Au)": { type: "connector", modes: ["Fretting corrosion", "Wear", "Contact heating/derating", "Dynamic load (connector)", "Watertightness"] },
-  "Wire insulation": { type: "pcba", modes: ["Insulation embrittlement"] },
-  // Adhesives/Sealants
-  "Epoxy adhesive": { type: "adhesive", modes: ["Adhesive failure", "Cohesive failure", "ESCR"] },
-  "PU adhesive": { type: "adhesive", modes: ["Adhesive failure", "Cohesive failure"] },
-  "Acrylic adhesive": { type: "adhesive", modes: ["Adhesive failure", "ESCR"] },
-  "Silicone adhesive": { type: "adhesive", modes: ["Adhesive failure", "Compression set"] },
-  // Coatings/Paints
-  "Powder coat": { type: "coating", modes: ["Underfilm corrosion", "Chalking"] },
-  "Anodize": { type: "coating", modes: ["Underfilm corrosion"] },
-  "E-coat": { type: "coating", modes: ["Underfilm corrosion"] },
-  // Ceramics/Glass
-  "Ceramics/Glass": { type: "ceramic", modes: ["Brittle fracture", "Cracking"] },
-  // Composites
-  "Composites": { type: "composite", modes: ["Delamination", "Matrix cracking", "Fiber breakage"] },
-  // Energy storage
-  "Energy storage": { type: "pcba", modes: ["Capacity fade", "Thermal runaway risk"] },
+const STRESS_DOMAINS = testsData.stressDomains as string[];
+const CORROSION_DEFAULTS = testsData.corrosionDefaults as {
+  gmwCycle: string;
+  gmwHours: number;
+  mfgClass: string;
+  mfgHours: number;
+  saltFogHours: number;
 };
+const MATERIALS_DB = materialsData as Record<string, { modes: string[]; type: MaterialType }>;
+
 
 type TestSuggestion = { test: string; conditionsHint: string; standard: string; domain: string; acceptance?: string };
-const BASE_TESTS: Record<string, TestSuggestion[]> = {
-  "Hydrolysis/embrittlement": [
-    { test: "Temp/Humidity storage", conditionsHint: "85 °C / 85%RH", standard: "IEC 60068-2-78", domain: "Humidity/Corrosion", acceptance: "No cracking; tensile ≥ 80% initial." },
-    { test: "Cyclic humidity", conditionsHint: "IEC 60068-2-38", standard: "IEC 60068-2-38", domain: "Humidity/Corrosion", acceptance: "No visual damage; function OK." },
-  ],
-  "Creep": [
-    { test: "High-temp storage", conditionsHint: "Elevated temp aging", standard: "IEC 60068-2-2", domain: "Thermal", acceptance: "Dimensional change within spec." },
-    { test: "Creep under load", conditionsHint: "ASTM D2990", standard: "ASTM D2990", domain: "Mechanical Durability", acceptance: "Deflection within limit." },
-  ],
-  "ESCR": [
-    { test: "Chemical exposure", conditionsHint: "ASTM D543", standard: "ASTM D543", domain: "Chemicals/Fluids", acceptance: "No cracking/swelling beyond limit." },
-    { test: "Tensile after exposure", conditionsHint: "ASTM D638", standard: "ASTM D638", domain: "Chemicals/Fluids", acceptance: "≥ 80% baseline strength." },
-  ],
-  "UV embrittlement": [
-    { test: "UV weathering", conditionsHint: "ASTM G154", standard: "ASTM G154", domain: "UV/Weathering", acceptance: "No chalking; ΔE within limit." },
-    { test: "Color/Gloss check", conditionsHint: "ASTM D523", standard: "ASTM D523", domain: "UV/Weathering", acceptance: "Gloss retention within spec." },
-  ],
-  "Thermal aging": [
-    { test: "High-temp storage", conditionsHint: "Arrhenius planning", standard: "IEC 60068-2-2", domain: "Thermal", acceptance: "No visual degradation; properties within spec." },
-  ],
-  "Solder fatigue": [
-    { test: "Thermal cycling", conditionsHint: "ΔT, ramp/dwell per JESD22-A104", standard: "JESD22-A104", domain: "Thermal", acceptance: "No opens; resistance within limit." },
-    { test: "Random vibration", conditionsHint: "PSD profile", standard: "MIL-STD-810, 514", domain: "Mechanical Vibration", acceptance: "No functional loss; no cracks." },
-  ],
-  "Delamination": [
-    { test: "Reflow + TCT", conditionsHint: "JESD22-A113 + A104", standard: "JEDEC", domain: "Thermal", acceptance: "No delam/void growth; CSAM/X-ray pass." },
-  ],
-  "Creep corrosion": [
-    { test: "Mixed Flowing Gas", conditionsHint: "ASTM B845 / IEC 60068-2-60", standard: "ASTM/IEC", domain: "Humidity/Corrosion", acceptance: "No creep bridging; SIR within limits." },
-  ],
-  "ECM": [
-    { test: "THB with bias", conditionsHint: "Bias & 85/85; SIR per IPC", standard: "JESD22-A101 / IPC-TM-650 2.6.3.3", domain: "Humidity/Corrosion", acceptance: "SIR ≥ 1e8–1e9 Ω; no ECM dendrites." },
-  ],
-  "Fretting corrosion": [
-    { test: "Micro-motion vibration", conditionsHint: "Continuity monitoring; small amplitude; pre-age optional", standard: "USCAR-2 style", domain: "Mechanical Vibration", acceptance: "ΔR ≤ 10–20 mΩ; no ≥1 µs discontinuities." },
-  ],
-  "Corrosion": [
-    { test: "Salt fog", conditionsHint: "ASTM B117", standard: "ASTM B117", domain: "Humidity/Corrosion", acceptance: "No excessive corrosion on functional surfaces." },
-    { test: "Cyclic corrosion", conditionsHint: "GMW14872", standard: "GMW14872", domain: "Humidity/Corrosion", acceptance: "No red rust on critical surfaces." },
-  ],
-  "Fatigue cracking": [
-    { test: "Random vibration", conditionsHint: "PSD + duration", standard: "MIL-STD-810, 514", domain: "Mechanical Vibration", acceptance: "No fracture; function OK." },
-    { test: "Sine-on-random", conditionsHint: "MIL-STD-810", standard: "MIL-STD-810", domain: "Mechanical Vibration", acceptance: "No resonant failure." },
-  ],
-  "Brittle fracture": [
-    { test: "Mechanical shock", conditionsHint: "g-level, pulses", standard: "MIL-STD-810, 516", domain: "Mechanical Shock/Drop", acceptance: "No cracks or catastrophic failure." },
-    { test: "Drop", conditionsHint: "IEC 60068-2-31", standard: "IEC 60068-2-31", domain: "Mechanical Shock/Drop", acceptance: "No damage affecting function." },
-  ],
-  "Insulation embrittlement": [
-    { test: "High-temp storage", conditionsHint: "aging temp", standard: "IEC 60068-2-2", domain: "Thermal", acceptance: "Insulation passes hi-pot; no cracks." },
-  ],
-  "Underfilm corrosion": [
-    { test: "Cyclic corrosion", conditionsHint: "GMW14872", standard: "GMW14872", domain: "Humidity/Corrosion", acceptance: "No blistering; scribe creep within limit." },
-  ],
-  "Adhesive failure": [
-    { test: "Lap shear after exposure", conditionsHint: "ASTM D1002 / D3165", standard: "ASTM D1002 / D3165", domain: "Mechanical Durability", acceptance: "Strength ≥ 80% baseline." },
-  ],
-  "Cohesive failure": [
-    { test: "Lap shear after exposure", conditionsHint: "ASTM D1002 / D3165", standard: "ASTM D1002 / D3165", domain: "Mechanical Durability", acceptance: "Strength ≥ 80% baseline." },
-  ],
-  "ESCR (chem cracking)": [
-    { test: "Chemical exposure panel", conditionsHint: "ASTM D543", standard: "ASTM D543", domain: "Chemicals/Fluids", acceptance: "No cracking; ΔM within limit." },
-  ],
-  "Wear": [
-    { test: "Insertion/withdrawal cycles", conditionsHint: "Cycles & force per spec", standard: "USCAR-2 style", domain: "Mechanical Durability", acceptance: "ΔR within limits; no damage." },
-  ],
-  "Contact heating/derating": [
-    { test: "Temperature Rise / Derating", conditionsHint: "Rated current vs ΔT", standard: "ZVEI TLF0214-12", domain: "Electrical/ESD/EMC", acceptance: "ΔT ≤ 30 K at rated current." },
-  ],
-  "Dynamic load (connector)": [
-    { test: "Dynamic Load (vibration on mated pair)", conditionsHint: "Monitor discontinuities under vib.", standard: "ZVEI TLF0214-17", domain: "Mechanical Vibration", acceptance: "No ≥1 µs discontinuities; ΔR ≤ 10–20 mΩ." },
-  ],
-  "Watertightness": [
-    { test: "Ingress (IP67/IP69K)", conditionsHint: "Submersion/pressure wash", standard: "IEC 60529 / ISO 20653", domain: "Dust/Ingress", acceptance: "No water ingress; insulation OK." },
-  ],
-};
+const BASE_TESTS = testsData.baseTests as Record<string, TestSuggestion[]>;
+const ELECTRICAL_PACK = testsData.electricalPack as TestSuggestion[];
+const PACKAGING_TESTS = testsData.packagingTests as Record<string, TestSuggestion>;
 
-const ELECTRICAL_PACK: TestSuggestion[] = [
-  { test: "ESD", conditionsHint: "ISO 10605 HBM, MM; contact/air levels", standard: "ISO 10605", domain: "Electrical/ESD/EMC", acceptance: "No latch-up; function within limits." },
-  { test: "Supply transients", conditionsHint: "ISO 7637-2/-3 pulses; OEM adders", standard: "ISO 7637-2/-3", domain: "Electrical/ESD/EMC", acceptance: "No reset/damage; parametric within limits." },
-  { test: "Power cycling under load", conditionsHint: "Current on/off with dwell", standard: "Best practice", domain: "Electrical/ESD/EMC", acceptance: "ΔR/ΔV within limits; no thermal damage." },
-];
-
-const PACKAGING_TESTS: Record<string, TestSuggestion> = {
-  Truck: { test: "Transport Vibration + Drop", conditionsHint: "ISTA / D4169 Truck profile", standard: "ISTA 2A / ASTM D4169", domain: "Packaging/Transportation", acceptance: "No damage/loose hardware; function OK." },
-  Rail:  { test: "Transport Vibration + Drop", conditionsHint: "ISTA / D4169 Rail profile",  standard: "ISTA 2A / ASTM D4169", domain: "Packaging/Transportation", acceptance: "No damage; function OK." },
-  Air:   { test: "Transport Vibration + Drop", conditionsHint: "ISTA Air profile",           standard: "ISTA 2A / ASTM D4169", domain: "Packaging/Transportation", acceptance: "No damage; function OK." },
-};
 
 function toK(t: number) { return t + 273.15; }
 function arrAF(Ea: number, Tu: number, Tt: number) { const a = Math.exp((Ea / K_BOLTZ) * (1 / toK(Tu) - 1 / toK(Tt))); return isFinite(a) && a > 0 ? a : 1; }

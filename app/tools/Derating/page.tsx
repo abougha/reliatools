@@ -166,10 +166,6 @@ export default function DeratingToolPage() {
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold">Derating Navigator</h1>
-                <p className="mt-1 text-sm text-neutral-600">
-                    Rule library: <code className="rounded bg-neutral-100 px-1">Table.xlsx</code> (server). Matches rules,
-                    computes DM/FOS + thermal checks, and summarizes compliance.
-                </p>
             </div>
 
             <Tabs active={tab} onChange={setTab} items={tabItems} />
