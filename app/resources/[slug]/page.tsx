@@ -22,10 +22,7 @@ type Resource = {
 const resourceData = resourceDataRaw as Resource[];
 
 
-// Build all slugs at build-time (good for static export)
-export function generateStaticParams() {
-  return resourceData.map((r) => ({ slug: r.slug }));
-}
+export const runtime = "edge";
 
 // (Optional) per-page SEO
 export function generateMetadata({
