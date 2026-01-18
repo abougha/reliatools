@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import toolsData from "@/data/tools.json";
 
 interface Tool {
   id: string;
@@ -14,19 +14,7 @@ interface Tool {
 }
 
 export default function ToolsPage() {
-  const [tools, setTools] = useState<Tool[]>([]);
-
-  useEffect(() => {
-    fetch("/tools.json")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => setTools(data))
-      .catch((err) => console.error("Failed to fetch tools:", err));
-  }, []);
+  const tools = toolsData as Tool[];
 
   return (
     <div className="max-w-6xl mx-auto p-6">

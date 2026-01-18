@@ -14,7 +14,7 @@ export default function derating() {
             </h1>
 
             <p className="text-lg text-gray-700 mb-6">
-                In high-reliability systems, performance alone is insufficient—durability over the intended
+                In high-reliability systems, performance alone is insufficient durability over the intended
                 life is the real objective. <strong>Derating</strong> is the deliberate practice of operating
                 components below their rated limits to introduce reliability margin. By reducing applied
                 stresses such as voltage, current, power, and temperature, failure mechanisms are slowed,
@@ -254,7 +254,7 @@ export default function derating() {
             <h2 className="text-2xl font-semibold mt-8 mb-4">Closing Perspective</h2>
 
             <p>
-                Derating is not conservatism—it is <strong>engineered robustness</strong>. In emerging AI compute
+                Derating is not conservatism it is <strong>engineered robustness</strong>. In emerging AI compute
                 infrastructure, where performance scaling is increasingly limited by thermal and power constraints
                 rather than raw silicon capability, derating becomes a strategic enabler of reliability,
                 availability, and sustainable performance scaling. By intentionally maintaining positive design

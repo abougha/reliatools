@@ -1,0 +1,79 @@
+[
+  {
+    "id": "p-diagram",
+    "title": "P Diagram Generator",
+    "route": "/tools/p-diagram",
+    "description": "Build signal/control/noise/outputs P-Diagrams with inline editing, presets, and SVG/PNG/PDF export.",
+    "formulaLatex": "\\boxed{\\text{P-Diagram}}"
+  },
+  {
+    "id": "rbd-generator",
+    "title": "Reliability Block Diagram (RBD) Generator",
+    "route": "/tools/rbd",
+    "description": "Build reliability block diagrams from a table, compute Series/Parallel reliability, and export SVG/CSV diagrams.",
+    "formulaLatex": "R_{sys} = 1 - \\nabla (1 - R_i)"
+  },
+  {
+    "id": "arrhenius",
+    "title": "Arrhenius Calculator",
+    "route": "/tools/Arrhenius",
+    "description": "Calculate acceleration factor (AF) using the Arrhenius equation.",
+    "formulaLatex": "AF = e^{\\left(\\frac{E_a}{k} \\left(\\frac{1}{T_{\\text{use}}} - \\frac{1}{T_{\\text{stress}}} \\right)\\right)}"
+  },
+  {
+    "id": "coffin-manson",
+    "title": "Coffin-Manson Calculator",
+    "route": "/tools/CoffinManson",
+    "description": "Estimate fatigue life under cyclic thermal loading.",
+    "formulaLatex": "N_f = A \\cdot \\Delta\\varepsilon^{-c}"
+  },
+  {
+    "id": "Samplesize",
+    "title": "Sample Size Calculator",
+    "route": "/tools/Samplesize",
+    "description": "Determine required sample size or reliability/confidence using the binomial distribution.",
+    "formulaLatex": "1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i} \\geq CL"
+  },
+  {
+    "id": "electromigration",
+    "title": "Electromigration Lifetime Calculator",
+    "route": "/tools/Electromigration",
+    "description": "Estimate the Mean Time to Failure (MTTF) of microelectronics using Black's equation.",
+    "formulaLatex": "MTTF = A \\cdot j^{-n} \\cdot e^{\\frac{E_a}{kT}}"
+  },
+  {
+    "id": "burnin",
+    "title": "Burn-In Test Wizard",
+    "route": "/tools/BurnInWizard",
+    "description": "Interactive wizard to recommend optimal Burn-In test conditions and duration for early-life failure detection in semiconductors.",
+    "formulaLatex": "AF = e^{\\frac{E_a}{k} \\left( \\frac{1}{T_{use}} - \\frac{1}{T_{stress}} \\right)}"
+  },
+  {
+    "id": "test-plan",
+    "title": "Test Plan Generator",
+    "route": "/tools/testplangenerator",
+    "description": "Generate test plan",
+    "formulaLatex": "\\boxed{\\text{Test Plan Generator}}"
+  },
+  {
+    "id": "bayesian-prediction",
+    "title": "Bayesian Reliability Predictor (Software)",
+    "route": "/tools/SoftwareBRP",
+    "description": "Software Reliability",
+    "formulaLatex": "\\boxed{\\text{Bayesian Prediction}}"
+  },
+  {
+    "id": "Psychrometric calculator",
+    "title": "Psychrometric calculator",
+    "route": "/tools/Psychrometrics",
+    "description": "Psychrometric calculator",
+    "formulaLatex": "\\boxed{\\text{Psychrometric calculator}}"
+  },
+  {
+    "id": "derating",
+    "title": "Derating Navigator",
+    "route": "/tools/Derating",
+    "description": "Apply MIL-style derating rules to electronic and mechanical components, compute derated DM/FOS, thermal margins, and generate compliance summaries and exports.",
+    "formulaLatex": "\\boxed{DM = 1 - \\frac{\\text{Applied}}{\\text{Rated}}}"
+  }
+]

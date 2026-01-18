@@ -1,0 +1,156 @@
+[
+  {
+    "id": "row_1",
+    "componentType": "Silicon: Digital MOS",
+    "parameterDerated": "Junction Temperature (TJ​)",
+    "applicationCategory": "Military/Aerospace",
+    "qualityClass": "Class 2",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "(TJmax​−50 °C)",
+    "typicalFailureMode": "Not in source",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_2",
+    "componentType": "Silicon: Digital MOS",
+    "parameterDerated": "Junction Temperature (TJ​)",
+    "applicationCategory": "Commercial",
+    "qualityClass": "Class 1",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "90 °C",
+    "typicalFailureMode": "Not in source",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_3",
+    "componentType": "Resistor",
+    "parameterDerated": "Power",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Burning, melting, or hot spot formation",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_4",
+    "componentType": "Resistor Variable",
+    "parameterDerated": "Power",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Pitted or contaminated contacts",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_5",
+    "componentType": "Fixed, film, chip (PD < 1 W)",
+    "parameterDerated": "Power (D)",
+    "applicationCategory": "Space",
+    "qualityClass": "Class 1",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Not in source",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_6",
+    "componentType": "Transistor",
+    "parameterDerated": "Power",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Junction overstress",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_7",
+    "componentType": "Diode Signal",
+    "parameterDerated": "Voltage",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Thermal breakdown",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_8",
+    "componentType": "Capacitor",
+    "parameterDerated": "Voltage",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Dielectric breakdown",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_9",
+    "componentType": "Transformer",
+    "parameterDerated": "Power (VA Load)",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Insulation breakdown",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_10",
+    "componentType": "Relays",
+    "parameterDerated": "Contact Current",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Contact welding or pitting",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_11",
+    "componentType": "Switches",
+    "parameterDerated": "Contact Current",
+    "applicationCategory": "Defence/Industry",
+    "qualityClass": "Class 1 (Verified Pedigree)",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Mechanical wear or open circuit",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_12",
+    "componentType": "Bearings",
+    "parameterDerated": "Speed, Load, Lubrication",
+    "applicationCategory": "Mechanical",
+    "qualityClass": "Not in source",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Overloading, Brinelling, or overheating",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_13",
+    "componentType": "Springs",
+    "parameterDerated": "Material properties, Size",
+    "applicationCategory": "Mechanical",
+    "qualityClass": "Not in source",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Fatigue fracture or plastic deformation",
+    "source": "Table.xlsx"
+  },
+  {
+    "id": "row_14",
+    "componentType": "Seals",
+    "parameterDerated": "Material characteristics, Size",
+    "applicationCategory": "Mechanical",
+    "qualityClass": "Not in source",
+    "deratingFactor": null,
+    "maxOperatingLimitExpr": "Not in source",
+    "typicalFailureMode": "Leakage",
+    "source": "Table.xlsx"
+  }
+]

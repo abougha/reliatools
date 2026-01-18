@@ -1,11 +1,10 @@
 // app/layout.tsx
 import "../styles/globals.css";
-import 'katex/dist/katex.min.css';
+import "katex/dist/katex.min.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import Navbar from "../components/Navbar";
 import Script from "next/script";
-import "katex/dist/katex.min.css";
 
 // Import Geist font family
 const geistSans = Geist({

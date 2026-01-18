@@ -1,7 +1,6 @@
 
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import * as XLSX from "xlsx";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 
 /**
@@ -9,7 +8,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recha
  * - Removed Service Environment selector and Regional labels
  * - Corrosion tests kept with fixed defaults and shown only when Humidity/Corrosion domain is selected
  * - Retains: Thermal (Arrhenius, Coffin–Manson, Peck), Mechanical Vibration AF, Materials→Modes→Tests,
- *   DVP&R + Sequence + FMEA + Excel export
+ *   DVP&R + Sequence + FMEA + CSV export
  */
 
 const K_BOLTZ = 8.617333262e-5; // eV/K
@@ -426,23 +425,77 @@ export default function Page() {
     return out;
   }, [dvp, start]);
 
-  function exportX() {
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const fname = `TestPlan_${(productName || "Product").replace(/\s+/g, "_")}_${date}.xlsx`;
-    const hdr = [["Product", productName], ["Category", `${cat} / ${loc}`], ["Reliability R", R], ["Confidence C", Cc], ["Suggested n (zero-failure)", nSuggested], ["Streams", streams], ["Spares %", sparesPct], ["Total with spares", totalWithSpares], ["Per stream", perStream]];
-    const ws1 = XLSX.utils.aoa_to_sheet([...hdr, [], ["Item", "Failure Mode Addressed", "Test", "Conditions (suggested)", "Duration (h)", "Sample Size (suggested)", "Acceptance Criteria", "Standard Ref"], ...dvp.map((r) => [r.Item, r.FailureMode, r.Test, r.Conditions, r.Duration_h, r.SampleSize, r.Acceptance, r.StandardRef])]);
-    const ws2 = XLSX.utils.aoa_to_sheet([["Test", "Duration (h)", "Offset (h)", "Start", "End"], ...seq.map((r) => [r.Test, r.Duration_h, r.Offset_h, r.StartISO, r.EndISO])]);
-    const fmeaRows = modes.map((m, i) => { let S = 7, O = 6, D = 6; if (["Brittle fracture", "Thermal runaway", "Dielectric breakdown"].some((x) => m.includes(x))) S = 9; if (["Corrosion", "Fretting corrosion", "Humidity", "ECM"].some((x) => m.includes(x))) O = 7; const linked = dvp.filter((r) => r.FailureMode === m).map((r) => `${r.Test} (${r.StandardRef})`).join("; "); if (linked.length) D = 5; return [`${i + 1} / ${productName || "—"}`, "Default function (edit)", m, "Performance degradation or functional loss (edit)", S, O, D, S * O * D, linked || "—", ""]; });
-    const ws3 = XLSX.utils.aoa_to_sheet([["Item / Subcomponent", "Function", "Potential Failure Mode", "Potential Effects of Failure", "S", "O", "D", "RPN", "Current Controls", "Recommended Actions"], ...fmeaRows]);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws1, "DVP&R"); XLSX.utils.book_append_sheet(wb, ws2, "Test_Sequence"); XLSX.utils.book_append_sheet(wb, ws3, "FMEA_RPN");
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" }); const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = fname; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+  function downloadText(filename: string, text: string, mime = "text/csv;charset=utf-8") {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
+
+  function csvEscape(value: unknown): string {
+    const s = value === null || value === undefined ? "" : String(value);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+
+  function toCsv(rows: unknown[][]): string {
+    return rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  }
+
+  function exportCsvs() {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const base = `TestPlan_${(productName || "Product").replace(/\s+/g, "_")}_${date}`;
+    const hdr = [
+      ["Product", productName],
+      ["Category", `${cat} / ${loc}`],
+      ["Reliability R", R],
+      ["Confidence C", Cc],
+      ["Suggested n (zero-failure)", nSuggested],
+      ["Streams", streams],
+      ["Spares %", sparesPct],
+      ["Total with spares", totalWithSpares],
+      ["Per stream", perStream],
+    ];
+
+    const dvpRows = [
+      ...hdr,
+      [],
+      ["Item", "Failure Mode Addressed", "Test", "Conditions (suggested)", "Duration (h)", "Sample Size (suggested)", "Acceptance Criteria", "Standard Ref"],
+      ...dvp.map((r) => [r.Item, r.FailureMode, r.Test, r.Conditions, r.Duration_h, r.SampleSize, r.Acceptance, r.StandardRef]),
+    ];
+
+    const seqRows = [
+      ["Test", "Duration (h)", "Offset (h)", "Start", "End"],
+      ...seq.map((r) => [r.Test, r.Duration_h, r.Offset_h, r.StartISO, r.EndISO]),
+    ];
+
+    const fmeaRows = modes.map((m, i) => {
+      let S = 7, O = 6, D = 6;
+      if (["Brittle fracture", "Thermal runaway", "Dielectric breakdown"].some((x) => m.includes(x))) S = 9;
+      if (["Corrosion", "Fretting corrosion", "Humidity", "ECM"].some((x) => m.includes(x))) O = 7;
+      const linked = dvp.filter((r) => r.FailureMode === m).map((r) => `${r.Test} (${r.StandardRef})`).join("; ");
+      if (linked.length) D = 5;
+      return [`${i + 1} / ${productName || "N/A"}`, "Default function (edit)", m, "Performance degradation or functional loss (edit)", S, O, D, S * O * D, linked || "N/A", ""];
+    });
+
+    const fmeaTable = [
+      ["Item / Subcomponent", "Function", "Potential Failure Mode", "Potential Effects of Failure", "S", "O", "D", "RPN", "Current Controls", "Recommended Actions"],
+      ...fmeaRows,
+    ];
+
+    downloadText(`${base}_DVP.csv`, toCsv(dvpRows));
+    downloadText(`${base}_Test_Sequence.csv`, toCsv(seqRows));
+    downloadText(`${base}_FMEA.csv`, toCsv(fmeaTable));
+  }
+
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
       <h1 className="text-3xl md:text-4xl font-bold">Test Plan Generator</h1>
-      <p className="text-sm text-muted-foreground">Robust Validation: guided flow → DVP&R, Test Sequence, FMEA → Excel export</p>
+      <p className="text-sm text-muted-foreground">Robust Validation: guided flow → DVP&R, Test Sequence, FMEA → CSV export</p>
 
       {/* Step 1 */}
       <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
@@ -817,8 +870,8 @@ export default function Page() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <button onClick={exportX} className="px-4 py-2 rounded-xl bg-black text-white shadow hover:opacity-90">Download Excel</button>
-            <span className="text-xs text-gray-500">3 tabs: DVP&R, Test_Sequence, FMEA_RPN. Durations come from your acceleration knobs & selections.</span>
+            <button onClick={exportCsvs} className="px-4 py-2 rounded-xl bg-black text-white shadow hover:opacity-90">Download CSVs</button>
+            <span className="text-xs text-gray-500">3 files: DVP, Test_Sequence, FMEA. Durations come from your acceleration knobs & selections.</span>
           </div>
         </section>
       )}
