@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Script from "next/script";
 import { useEffect, useState } from "react";
 import toolsData from "@/data/tools.json";
 
@@ -44,6 +43,20 @@ export default function Navbar() {
     calculators.slice(0, 6).forEach((tool) => router.prefetch(toolHref(tool)));
   }, [router, calculators]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = setTimeout(() => {
+      try {
+        const ads = (window as any).adsbygoogle || [];
+        (window as any).adsbygoogle = ads;
+        ads.push({});
+      } catch {
+        // Ignore if ads script isn't ready yet
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <>
       {/* Shift main content so it doesn't sit under the fixed sidebar (desktop) */}
@@ -70,9 +83,6 @@ export default function Navbar() {
               data-ad-format="horizontal"
               data-full-width-responsive="false"
             ></ins>
-            <Script id="adsbygoogle-init" strategy="afterInteractive">
-              {`(adsbygoogle = window.adsbygoogle || []).push({});`}
-            </Script>
           </div>
         </div>
 
