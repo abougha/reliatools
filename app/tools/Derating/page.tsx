@@ -234,7 +234,7 @@ export default function DeratingToolPage() {
                             className="mb-3 mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                             value={state.meta.owner ?? ""}
                             onChange={(e) => onUpdateMeta("owner", e.target.value)}
-                            placeholder="e.g., Ahmed"
+                            placeholder="e.g., Your Name"
                         />
 
                         <label className="block text-xs text-neutral-600">Date (ISO)</label>
