@@ -193,7 +193,7 @@ export default function Page() {
     state.missionProfile.tempMinC !== null &&
     state.missionProfile.tempMaxC !== null &&
     humidityComplete &&
-    state.missionProfile.vibration !== "";
+    Boolean(state.missionProfile.vibration);
 
   const warnings = useMemo(
     () => computeWarnings(state.missionProfile, testsWithAcceleration),
