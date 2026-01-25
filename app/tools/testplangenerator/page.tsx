@@ -1,1067 +1,2882 @@
+﻿"use client";
 
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import materialsData from "@/data/test-plan-materials.json";
-import testsData from "@/data/test-plan-tests.json";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  applyAcceleration,
+  applyFailureModesToMechanisms,
+  buildCandidateTests,
+  buildDvprRows,
+  buildSchedule,
+  computeCoverageBreakdown,
+  computePriorEvidenceMap,
+  computeRequiredSampleSize,
+  computeScheduleStats,
+  computeResidualRisk,
+  computeWarnings,
+  createDefaultWizardState,
+  hydrateWizardState,
+  isHumidityBasedTestId,
+  mergeSelectedTests,
+  mergeTestScores,
+  suggestMechanisms,
+  syncMechanisms,
+} from "@/lib/testPlanWizard/logic";
+import {
+  industryOptions,
+  FAILURE_MODE_LIBRARY,
+  MATERIAL_LIBRARY,
+  productTypeOptions,
+  MECHANISMS,
+  TESTS,
+} from "@/lib/testPlanWizard/knowledgeBase";
+import { clearWizardState, loadWizardState, saveWizardState } from "@/lib/testPlanWizard/storage";
+import type {
+  MechanismSelection,
+  SelectedTest,
+  WizardState,
+} from "@/lib/testPlanWizard/types";
 
-/**
- * Reliatools - Test Plan Generator (v10)
- * - Removed Service Environment selector and Regional labels
- * - Corrosion tests kept with fixed defaults and shown only when Humidity/Corrosion domain is selected
- * - Retains: Thermal (Arrhenius, Coffin-Manson, Peck), Mechanical Vibration AF, Materials->Modes->Tests,
- *   DVP&R + Sequence + FMEA + CSV export
- */
+const STEPS = [
+  "Product Context",
+  "Mission Profile",
+  "Failure Mechanisms",
+  "Design & Change Triggers",
+  "Test Mapping",
+  "Prior Evidence (Bayesian)",
+  "Acceleration & Equivalence",
+  "Risk Prioritization",
+  "Residual Risk Declaration",
+  "Coverage Review",
+  "Output & Export",
+];
 
-const K_BOLTZ = 8.617333262e-5; // eV/K
-const STORAGE_KEY = "testPlanGenerator.v1";
+const mitigationTags = [
+  "Design margin",
+  "Derating",
+  "Monitoring",
+  "Supplier controls",
+  "Process controls",
+];
 
-type Preset = { life_years: number; Tmin: number; Tmax: number; RH: number; auto: boolean };
-const CATEGORIES: Record<string, string[]> = {
-  Automotive: ["In-cabin", "Underhood/Powertrain", "Exterior/Underbody"],
-  Consumer: ["Indoor", "Outdoor/Portable"],
-  Industrial: ["Factory floor", "Outdoor enclosure"],
-  Aerospace: ["Cabin/Avionics", "Exterior/Airframe"],
-  Medical: ["Clinical", "Home-use"],
-  "Data center/ICT": ["Rack equipment"],
-  Storage: ["Office", "Controlled WH", "Uncontrolled WH"],
-  Shipping: ["Truck", "Rail", "Air"],
-};
-const PRESETS: Record<string, Record<string, Preset>> = {
-  Automotive: {
-    "In-cabin": { life_years: 10, Tmin: -40, Tmax: 85, RH: 95, auto: true },
-    "Underhood/Powertrain": { life_years: 10, Tmin: -40, Tmax: 125, RH: 95, auto: true },
-    "Exterior/Underbody": { life_years: 10, Tmin: -40, Tmax: 105, RH: 95, auto: true },
-  },
-  Consumer: {
-    Indoor: { life_years: 5, Tmin: 0, Tmax: 40, RH: 85, auto: false },
-    "Outdoor/Portable": { life_years: 4, Tmin: -20, Tmax: 60, RH: 95, auto: false },
-  },
-  Industrial: {
-    "Factory floor": { life_years: 8, Tmin: -20, Tmax: 60, RH: 95, auto: false },
-    "Outdoor enclosure": { life_years: 10, Tmin: -40, Tmax: 70, RH: 95, auto: false },
-  },
-  Aerospace: {
-    "Cabin/Avionics": { life_years: 15, Tmin: -20, Tmax: 70, RH: 80, auto: false },
-    "Exterior/Airframe": { life_years: 15, Tmin: -55, Tmax: 85, RH: 95, auto: false },
-  },
-  Medical: {
-    Clinical: { life_years: 6, Tmin: 5, Tmax: 40, RH: 80, auto: false },
-    "Home-use": { life_years: 4, Tmin: 0, Tmax: 40, RH: 85, auto: false },
-  },
-  "Data center/ICT": { "Rack equipment": { life_years: 8, Tmin: 10, Tmax: 45, RH: 80, auto: false } },
-  Storage: {
-    Office: { life_years: 3, Tmin: 15, Tmax: 25, RH: 50, auto: false },
-    "Controlled WH": { life_years: 3, Tmin: 5, Tmax: 35, RH: 70, auto: false },
-    "Uncontrolled WH": { life_years: 3, Tmin: -10, Tmax: 45, RH: 95, auto: false },
-  },
-  Shipping: {
-    Truck: { life_years: 0.05, Tmin: -20, Tmax: 60, RH: 95, auto: false },
-    Rail: { life_years: 0.05, Tmin: -20, Tmax: 60, RH: 95, auto: false },
-    Air: { life_years: 0.02, Tmin: -30, Tmax: 60, RH: 95, auto: false },
-  },
-};
+function clampInt(value: string, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(parsed)));
+}
 
-type MaterialType =
-  | "connector"
-  | "pcba"
-  | "mech"
-  | "polymer"
-  | "metal"
-  | "coating"
-  | "elastomer"
-  | "adhesive"
-  | "ceramic"
-  | "composite";
+function clampFloat(value: string, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
 
-const STRESS_DOMAINS = testsData.stressDomains as string[];
-const CORROSION_DEFAULTS = testsData.corrosionDefaults as {
-  gmwCycle: string;
-  gmwHours: number;
-  mfgClass: string;
-  mfgHours: number;
-  saltFogHours: number;
-};
-const MATERIALS_DB = materialsData as Record<string, { modes: string[]; type: MaterialType }>;
+function downloadText(filename: string, text: string, mime: string) {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
 
+function toCsvValue(value: string | number | null | undefined) {
+  const raw = value === null || value === undefined ? "" : String(value);
+  return /[,"\n\r]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+}
 
-type TestSuggestion = { test: string; conditionsHint: string; standard: string; domain: string; acceptance?: string };
-const BASE_TESTS = testsData.baseTests as Record<string, TestSuggestion[]>;
-const ELECTRICAL_PACK = testsData.electricalPack as TestSuggestion[];
-const PACKAGING_TESTS = testsData.packagingTests as Record<string, TestSuggestion>;
-
-
-function toK(t: number) { return t + 273.15; }
-function arrAF(Ea: number, Tu: number, Tt: number) { const a = Math.exp((Ea / K_BOLTZ) * (1 / toK(Tu) - 1 / toK(Tt))); return isFinite(a) && a > 0 ? a : 1; }
-function peckAF(n: number, Ru: number, Rt: number, Ea: number, Tu: number, Tt: number) { return (Math.max(1, Rt) / Math.max(1, Ru)) ** n * arrAF(Ea, Tu, Tt); }
-function nZero(R = 0.9, C = 0.9) { return Math.ceil(Math.max(1, Math.log(1 - C) / Math.log(R))); }
-function uniq<T>(a: T[]) { return Array.from(new Set(a)); }
-function clampNum(value: string, fallback: number, min = -Infinity, max = Infinity) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, n));
+function buildCsv(rows: Array<Array<string | number | null | undefined>>) {
+  return rows.map((row) => row.map(toCsvValue).join(",")).join("\n");
 }
 
 export default function Page() {
-  const cats = Object.keys(CATEGORIES);
   const [step, setStep] = useState(1);
-  const stepLabels = ["Preset", "Sample plan", "Acceleration", "Materials", "Previews"];
-  const [productName, setProductName] = useState("");
-  const [cat, setCat] = useState<string>(cats[0]);
-  const [loc, setLoc] = useState<string>(CATEGORIES[cats[0]][0]);
-  const preset = PRESETS[cat][loc];
-  const [applyPreset, setApplyPreset] = useState(true);
+  const [state, setState] = useState<WizardState>(createDefaultWizardState);
+  const [userTouchedMechanisms, setUserTouchedMechanisms] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
+  const [step3Tab, setStep3Tab] = useState<"mechanisms" | "materials" | "failure-modes">("mechanisms");
+  const [specModal, setSpecModal] = useState<{ title: string; refs: Array<{ standard: string; clause?: string; note?: string }> } | null>(null);
+  const [ganttView, setGanttView] = useState<"weeks" | "days">("weeks");
+  const [ganttPxPerDay, setGanttPxPerDay] = useState(18);
+  const savedRef = useRef(false);
+  const suggestionKeyRef = useRef("");
+  const ganttLeftRef = useRef<HTMLDivElement | null>(null);
+  const ganttRightRef = useRef<HTMLDivElement | null>(null);
+  const ganttSyncingRef = useRef(false);
+  const ganttTimelineRef = useRef<HTMLDivElement | null>(null);
 
-  const [R, setR] = useState(0.9); const [Cc, setCc] = useState(0.9);
-  const nSuggested = useMemo(() => nZero(R, Cc), [R, Cc]);
-
-  const [streams, setStreams] = useState(2);
-  const [sparesPct, setSparesPct] = useState(20);
-  const totalWithSpares = useMemo(() => Math.ceil(nSuggested * (1 + sparesPct / 100)), [nSuggested, sparesPct]);
-  const perStream = useMemo(() => Math.max(1, Math.ceil(totalWithSpares / Math.max(1, streams))), [totalWithSpares, streams]);
-
-  const [life, setLife] = useState(preset.life_years);
-  const [Tmin, setTmin] = useState(preset.Tmin);
-  const [Tmax, setTmax] = useState(preset.Tmax);
-  const [RH, setRH] = useState(preset.RH);
   useEffect(() => {
-    if (!applyPreset) return;
-    const p = PRESETS[cat][loc];
-    setLife(p.life_years);
-    setTmin(p.Tmin);
-    setTmax(p.Tmax);
-    setRH(p.RH);
-  }, [cat, loc, applyPreset]);
-
-  const [hpd, setHpd] = useState(8);
-  const [cpd, setCpd] = useState(100);
-  const lifeHours = useMemo(() => life * 365 * hpd, [life, hpd]);
-  const lifeCycles = useMemo(() => life * 365 * cpd, [life, cpd]);
-
-  const [domains, setDomains] = useState<string[]>(["Thermal", "Humidity/Corrosion", "Electrical/ESD/EMC", "Mechanical Vibration"]);
-
-  // Thermal ageing (Arrhenius)
-  const [Tuse, setTuse] = useState(Tmax);
-  const [Ttest, setTtest] = useState(Tmax + 20);
-  const [Ea, setEa] = useState(1.1);
-  useEffect(() => { setTuse(Tmax); setTtest(Tmax + 20); }, [Tmax]);
-
-  // Thermal cycling (Coffin-Manson flavored)
-  const [dUse, setDUse] = useState(Math.max(1, Tmax - Tmin));
-  const [link, setLink] = useState(true);
-  const [dStress, setDStress] = useState(Math.max(1, Tmax - Tmin) + 20);
-  useEffect(() => { const d = Math.max(1, Tmax - Tmin); setDUse(d); if (link) setDStress(d + 20); }, [Tmin, Tmax, link]);
-  useEffect(() => { if (link) setDStress(dUse + 20); }, [link, dUse]);
-  const [M, setM] = useState(3.0);
-  const [ramp, setRamp] = useState(10), [dHot, setDHot] = useState(10), [dCold, setDCold] = useState(10);
-  const cycleMin = useMemo(() => (dStress / ramp) * 2 + dHot + dCold, [dStress, ramp, dHot, dCold]);
-
-  // Humidity (Arrhenius-Peck)
-  const [Tpeck, setTpeck] = useState(Math.min(85, Tmax));
-  const [RHuse, setRHuse] = useState(Math.min(85, RH));
-  const [RHtest, setRHtest] = useState(85);
-  const [nPeck, setNPeck] = useState(2.5);
-  useEffect(() => { setRHuse(Math.min(100, Math.max(0, RH))); setTpeck(Math.min(125, Math.max(Tuse, Tmax))); }, [RH, Tmax]);
-
-  // Mechanical Vibration acceleration knob
-  const [grmsUse, setGrmsUse] = useState(0.5);
-  const [grmsTest, setGrmsTest] = useState(7.5);
-  const [vibExpB, setVibExpB] = useState(4.0);
-  const AF_vib = useMemo(() => Math.pow(Math.max(1e-6, grmsTest) / Math.max(1e-6, grmsUse || 0.1), vibExpB), [grmsUse, grmsTest, vibExpB]);
-  const durVib = useMemo(() => Math.max(2, Math.min(500, lifeHours / Math.max(1, AF_vib))), [lifeHours, AF_vib]);
-
-  // Link : preview metrics
-  const AF_arr = useMemo(() => arrAF(Ea, Tuse, Ttest), [Ea, Tuse, Ttest]);
-  const durArr = useMemo(() => Math.max(24, Math.min(8 * 7 * 24, lifeHours / Math.max(1, AF_arr))), [lifeHours, AF_arr]);
-  const AF_pe = useMemo(() => peckAF(nPeck, RHuse, RHtest, Ea, Tuse, Tpeck), [nPeck, RHuse, RHtest, Ea, Tuse, Tpeck]);
-  const durPe = useMemo(() => Math.max(168, Math.min(2000, lifeHours / Math.max(1, AF_pe))), [lifeHours, AF_pe]);
-  const AF_cm = useMemo(() => Math.pow(Math.max(1, dStress) / Math.max(1e-9, dUse), M), [dUse, dStress, M]);
-  const Nuse = useMemo(() => Math.max(1, Math.round(lifeCycles)), [lifeCycles]);
-  const Nacc = useMemo(() => Math.max(1, Math.round(Nuse / Math.max(1, AF_cm))), [Nuse, AF_cm]);
-  const cmHours = useMemo(() => Nacc * (cycleMin / 60), [Nacc, cycleMin]);
-
-  // Materials & modes
-  const mats = Object.keys(MATERIALS_DB);
-  const [selM, setSelM] = useState<string[]>(["Plating (Sn/Ni/Au)", "FR-4", "Solder (SAC305)"]);
-  const sugModes = useMemo(() => uniq(selM.flatMap((m) => MATERIALS_DB[m]?.modes || [])).sort(), [selM]);
-  const [custom, setCustom] = useState("");
-  const cust = useMemo(() => uniq(custom.split(",").map((s) => s.trim()).filter(Boolean)), [custom]);
-  const modes = useMemo(() => uniq([...sugModes, ...cust]), [sugModes, cust]);
-  const [editDvp, setEditDvp] = useState(false);
-  const [editFmea, setEditFmea] = useState(false);
-  const [dvpEdits, setDvpEdits] = useState<Record<string, Partial<Dvp>>>({});
-  const [fmeaEdits, setFmeaEdits] = useState<Record<string, Partial<FmeaRow>>>({});
-  const [notice, setNotice] = useState("");
-
-  type Dvp = { Item: string; FailureMode: string; Test: string; Conditions: string; Duration_h: number; SampleSize: number; Acceptance: string; StandardRef: string };
-  type FmeaRow = {
-    Item: string;
-    Function: string;
-    FailureMode: string;
-    Effects: string;
-    S: number;
-    O: number;
-    D: number;
-    RPN: number;
-    Controls: string;
-    Actions: string;
-  };
-
-  function durFor(t: TestSuggestion, mode: string) {
-    const name = t.test.toLowerCase();
-    if (name.includes("high-temp") || (t.domain === "Thermal" && name.includes("storage"))) {
-      return { h: Math.round(durArr), c: `${t.conditionsHint}; T_use=${Tuse}C; T_test=${Ttest}C; Ea=${Ea.toFixed(2)}eV; AF~${AF_arr.toFixed(2)}` };
+    const stored = loadWizardState();
+    if (stored) {
+      setState(hydrateWizardState(stored));
     }
-    if (t.domain === "Humidity/Corrosion" || name.includes("humidity") || name.includes("mixed flowing gas") || name.includes("salt")) {
-      return { h: Math.round(durPe), c: `${t.conditionsHint}; ${Tpeck}C/${RHtest}%RH; n=${nPeck}; Ea=${Ea}eV; AF~${AF_pe.toFixed(2)}` };
+    savedRef.current = true;
+  }, []);
+
+  const suggestedMechanisms = useMemo(
+    () => suggestMechanisms(state.product, state.missionProfile),
+    [state.product, state.missionProfile]
+  );
+
+  useEffect(() => {
+    if (userTouchedMechanisms) return;
+    const key = JSON.stringify(suggestedMechanisms);
+    if (suggestionKeyRef.current === key) return;
+    suggestionKeyRef.current = key;
+    setState((prev) => ({
+      ...prev,
+      mechanisms: syncMechanisms(prev.mechanisms, suggestedMechanisms),
+    }));
+  }, [suggestedMechanisms, userTouchedMechanisms]);
+
+  const candidateTests = useMemo(
+    () => buildCandidateTests(state.mechanisms, state.changes, state.missionProfile, state.materials),
+    [state.mechanisms, state.changes, state.missionProfile, state.materials]
+  );
+
+  useEffect(() => {
+    setState((prev) => ({
+      ...prev,
+      selectedTests: mergeSelectedTests(prev.selectedTests, candidateTests),
+    }));
+  }, [candidateTests]);
+
+  const testsWithAcceleration = useMemo(
+    () => applyAcceleration(state.selectedTests, state.missionProfile, state.product, state.materials),
+    [state.selectedTests, state.missionProfile, state.product, state.materials]
+  );
+
+  const mergedScores = useMemo(
+    () =>
+      mergeTestScores(
+        testsWithAcceleration,
+        state.mechanisms,
+        state.product.safetyCritical,
+        state.failureModes,
+        state.prioritization.testScores,
+        state.priorEvidence
+      ),
+    [
+      testsWithAcceleration,
+      state.mechanisms,
+      state.product.safetyCritical,
+      state.failureModes,
+      state.prioritization.testScores,
+      state.priorEvidence,
+    ]
+  );
+
+  const residualPerMechanism = useMemo(
+    () => computeResidualRisk(state.mechanisms, testsWithAcceleration, state.residualRisk.perMechanism),
+    [state.mechanisms, testsWithAcceleration, state.residualRisk.perMechanism]
+  );
+
+  const requiredSampleSize = useMemo(
+    () =>
+      computeRequiredSampleSize(
+        state.reliabilityPlan.targetReliability,
+        state.reliabilityPlan.confidence,
+        state.reliabilityPlan.allowedFailures,
+        state.reliabilityPlan.method
+      ),
+    [
+      state.reliabilityPlan.targetReliability,
+      state.reliabilityPlan.confidence,
+      state.reliabilityPlan.allowedFailures,
+      state.reliabilityPlan.method,
+    ]
+  );
+
+  const humidityComplete =
+    state.missionProfile.humidityPct !== null || state.missionProfile.humidity !== "";
+  const missionComplete =
+    state.missionProfile.tempMinC !== null &&
+    state.missionProfile.tempMaxC !== null &&
+    humidityComplete &&
+    state.missionProfile.vibration !== "";
+
+  const warnings = useMemo(
+    () => computeWarnings(state.missionProfile, testsWithAcceleration),
+    [state.missionProfile, testsWithAcceleration]
+  );
+
+  const coverageBreakdown = useMemo(
+    () => computeCoverageBreakdown(state, testsWithAcceleration),
+    [state, testsWithAcceleration]
+  );
+  const coverageScore = coverageBreakdown.totalScore;
+  const priorEvidenceMap = useMemo(
+    () => computePriorEvidenceMap(testsWithAcceleration, state.priorEvidence),
+    [testsWithAcceleration, state.priorEvidence]
+  );
+
+  const scheduleTasks = useMemo(
+    () => buildSchedule({ ...state, selectedTests: testsWithAcceleration }),
+    [state, testsWithAcceleration]
+  );
+
+  const stateForSave = useMemo<WizardState>(
+    () => ({
+      ...state,
+      selectedTests: testsWithAcceleration,
+      prioritization: { testScores: mergedScores },
+      residualRisk: { perMechanism: residualPerMechanism },
+      reliabilityPlan: { ...state.reliabilityPlan, requiredSampleSize },
+      dvpr: { rows: state.dvpr.rows },
+      schedule: { ...state.schedule, tasks: scheduleTasks },
+    }),
+    [state, testsWithAcceleration, mergedScores, residualPerMechanism, requiredSampleSize, scheduleTasks]
+  );
+
+  useEffect(() => {
+    if (!savedRef.current) return;
+    saveWizardState(stateForSave);
+  }, [stateForSave]);
+
+
+  const removalMissing = useMemo(
+    () => testsWithAcceleration.some((test) => test.status === "remove" && !test.removalJustification?.trim()),
+    [testsWithAcceleration]
+  );
+  const humidityRequiresTest = (state.missionProfile.humidityPct ?? 0) >= 60;
+  const hasHumidityTestKept = testsWithAcceleration.some(
+    (test) => test.status === "keep" && isHumidityBasedTestId(test.id)
+  );
+
+  const stepValid = useMemo(() => {
+    if (step === 1) {
+      return (
+        state.product.productType !== "" &&
+        state.product.industry !== "" &&
+        Boolean(state.product.serviceLifeYears && state.product.serviceLifeYears > 0)
+      );
     }
-    if (t.domain === "Mechanical Vibration") {
-      return { h: Math.round(durVib), c: `${t.conditionsHint}; Grms_use=${grmsUse}; Grms_test=${grmsTest}; b=${vibExpB}; AF_vib~${AF_vib.toFixed(2)}` };
+    if (step === 2) {
+      return missionComplete;
     }
-    if (name.includes("thermal cycling")) {
-      const h = Math.max(2, Math.min(2000, cmHours));
-      return { h: Math.round(h), c: `${t.conditionsHint}; dT_use=${dUse}C; dT_stress=${dStress}C; M=${M}; AF_CM~${AF_cm.toFixed(3)}; N_use~${Nuse.toLocaleString()}; N_acc~${Nacc.toLocaleString()}; cycle~${cycleMin.toFixed(1)}min` };
+    if (step === 3) {
+      return state.mechanisms.every((mech) =>
+        mech.selected || mech.exclusionJustification === null || Boolean(mech.exclusionJustification.trim())
+      );
     }
-    if (t.domain === "UV/Weathering") return { h: 500, c: t.conditionsHint };
-    if (t.domain === "Mechanical Shock/Drop") return { h: 2, c: t.conditionsHint };
-    if (t.domain === "Packaging/Transportation") return { h: 4, c: t.conditionsHint };
-    return { h: 168, c: t.conditionsHint };
+    if (step === 5) {
+      const hasKeep = testsWithAcceleration.some((test) => test.status === "keep");
+      return hasKeep && !removalMissing && (!humidityRequiresTest || hasHumidityTestKept);
+    }
+    return true;
+  }, [step, state.product, state.mechanisms, missionComplete, testsWithAcceleration, removalMissing, humidityRequiresTest, hasHumidityTestKept]);
+
+  const keptTests = testsWithAcceleration.filter((test) => test.status === "keep");
+  const activeTests = testsWithAcceleration.filter((test) => test.status !== "remove");
+  const keepMissing = testsWithAcceleration.every((test) => test.status !== "keep");
+
+  const dvprKey = useMemo(
+    () => keptTests.map((test) => test.id).sort().join("|"),
+    [keptTests]
+  );
+
+  useEffect(() => {
+    setState((prev) => ({
+      ...prev,
+      dvpr: {
+        rows: mergeDvprRows(buildDvprRows({ ...prev, selectedTests: testsWithAcceleration }), prev.dvpr.rows),
+      },
+    }));
+  }, [dvprKey, testsWithAcceleration, state.priorEvidence]);
+
+  const materialsByCategory = useMemo(() => {
+    return MATERIAL_LIBRARY.reduce<Record<string, typeof MATERIAL_LIBRARY>>((acc, material) => {
+      if (!acc[material.category]) acc[material.category] = [];
+      acc[material.category].push(material);
+      return acc;
+    }, {});
+  }, []);
+
+  const scheduleStats = useMemo(
+    () => computeScheduleStats(scheduleTasks),
+    [scheduleTasks]
+  );
+  const scheduleTotalDays = scheduleStats.currentDays;
+  const scheduleStartDate = state.schedule.startDateISO
+    ? new Date(`${state.schedule.startDateISO}T00:00:00`)
+    : null;
+  const ganttLaneOrder = ["Thermal", "Humidity", "Vibration", "Mechanical", "Chemical"];
+  const ganttRender = useMemo(() => {
+    const keepIds = new Set(keptTests.map((test) => test.id));
+    const tasks = scheduleTasks.filter((task) => keepIds.size === 0 || keepIds.has(task.testId));
+    const tasksById = new Map(tasks.map((task) => [task.id, task]));
+    const lanes = ganttLaneOrder.map((lane) => {
+      const laneTasks = tasks
+        .filter((task) => task.resourceLane === lane)
+        .map((task) => {
+          const startDay = task.earliestStartDay ?? 0;
+          const endDay = startDay + task.durationDays;
+          const startWeek = Math.floor(startDay / 7) + 1;
+          const endWeek = Math.ceil(endDay / 7);
+          const tier = mergedScores[task.testId]?.tier ?? null;
+          const deps = task.dependsOnTaskIds.map((depId) => tasksById.get(depId)?.name || depId);
+          return {
+            ...task,
+            startDay,
+            endDay,
+            startWeek,
+            endWeek,
+            tier,
+            dependencies: deps,
+          };
+        })
+        .sort((a, b) => a.startDay - b.startDay);
+      return { lane, tasks: laneTasks };
+    });
+    const totalDays = Math.max(1, scheduleTotalDays || 0);
+    return { lanes, totalDays };
+  }, [scheduleTasks, ganttLaneOrder, keptTests, mergedScores, scheduleTotalDays]);
+  const ganttTotalDays = ganttRender.totalDays;
+  const ganttTimelineWidth = ganttTotalDays * ganttPxPerDay;
+  const ganttWeekCount = Math.max(1, Math.ceil(ganttTotalDays / 7));
+  const ganttTickWidth = ganttView === "weeks" ? ganttPxPerDay * 7 : ganttPxPerDay;
+
+  const tierOneCount = Object.values(mergedScores).filter((score) => score.tier === 1).length;
+
+  const topResidualRisks = Object.entries(residualPerMechanism)
+    .filter(([, entry]) => entry.residual !== "low")
+    .slice(0, 3)
+    .map(([id]) => MECHANISMS.find((mech) => mech.id === id)?.name || id);
+
+  const assumptionList = warnings
+    .filter((warn) => warn.toLowerCase().includes("assum"))
+    .slice(0, 3);
+  const overrideAssumptions = testsWithAcceleration
+    .filter((test) => test.acceleration.userOverrides.enabled)
+    .map((test) => `${test.name} overrides`);
+  const combinedAssumptions = [...assumptionList, ...overrideAssumptions].slice(0, 4);
+
+  function handleSaveDraft() {
+    saveWizardState(stateForSave);
+    setSaveNotice("Draft saved.");
+    window.setTimeout(() => setSaveNotice(""), 1500);
   }
 
-  function corrosionRows(): Dvp[] {
-    if (!domains.includes("Humidity/Corrosion")) return [];
-    const out: Dvp[] = [];
-    out.push({
-      Item: "",
-      FailureMode: "Corrosion",
-      Test: `Cyclic Corrosion (GMW14872 ${CORROSION_DEFAULTS.gmwCycle})`,
-      Conditions: `Cycle ${CORROSION_DEFAULTS.gmwCycle}, total ${CORROSION_DEFAULTS.gmwHours} h`,
-      Duration_h: CORROSION_DEFAULTS.gmwHours,
-      SampleSize: nSuggested,
-      Acceptance: "No red rust on critical surfaces; dR within limits; no functional loss.",
-      StandardRef: "GMW14872",
-    });
-    out.push({
-      Item: "",
-      FailureMode: "Creep corrosion",
-      Test: `Mixed Flowing Gas (MFG)`,
-      Conditions: `Class ${CORROSION_DEFAULTS.mfgClass}; monitor SIR / visual creep`,
-      Duration_h: CORROSION_DEFAULTS.mfgHours,
-      SampleSize: nSuggested,
-      Acceptance: "No dendrites/creep bridging; SIR >= threshold; visual OK.",
-      StandardRef: "ASTM B845 / IEC 60068-2-60",
-    });
-    out.push({
-      Item: "",
-      FailureMode: "Corrosion (screening)",
-      Test: "Salt Fog",
-      Conditions: `NaCl fog ${CORROSION_DEFAULTS.saltFogHours} h (if no cyclic corrosion run or for screening)`,
-      Duration_h: CORROSION_DEFAULTS.saltFogHours,
-      SampleSize: nSuggested,
-      Acceptance: "No excessive corrosion on functional surfaces; connectors mate/demate OK.",
-      StandardRef: "ASTM B117",
-    });
-    return out;
+  function handleReset() {
+    clearWizardState();
+    setState(createDefaultWizardState());
+    setStep(1);
+    setUserTouchedMechanisms(false);
   }
 
-  const dvp: Dvp[] = useMemo(() => {
-    const out: Dvp[] = [];
-    let i = 1;
+  function updateMechanism(id: string, updates: Partial<MechanismSelection>) {
+    setUserTouchedMechanisms(true);
+    setState((prev) => ({
+      ...prev,
+      mechanisms: prev.mechanisms.map((mech) => (mech.id === id ? { ...mech, ...updates } : mech)),
+    }));
+  }
 
-    const anyPcba = Object.keys(MATERIALS_DB).some((k) => selM.includes(k) && MATERIALS_DB[k].type === "pcba");
-    if (anyPcba) {
-      out.push({ Item: String(i++), FailureMode: "--", Test: "Pre-conditioning: MSL Bake", Conditions: "Per J-STD-020; prior to reflow / TCT", Duration_h: 0, SampleSize: 0, Acceptance: "--", StandardRef: "J-STD-020" });
+  function handleGanttScroll(source: "left" | "right") {
+    if (ganttSyncingRef.current) return;
+    ganttSyncingRef.current = true;
+    const left = ganttLeftRef.current;
+    const right = ganttRightRef.current;
+    if (source === "left" && left && right) {
+      right.scrollTop = left.scrollTop;
     }
-
-    const allModes = modes.length ? modes : ["Thermal aging"];
-    allModes.forEach((mode) => {
-      (BASE_TESTS[mode] || []).forEach((s) => {
-        if (!domains.includes(s.domain)) return;
-        const d = durFor(s, mode);
-        out.push({ Item: String(i++), FailureMode: mode, Test: s.test, Conditions: d.c, Duration_h: d.h, SampleSize: nSuggested, Acceptance: s.acceptance || "No functional loss; visual per spec; electrical within limits; no safety hazards.", StandardRef: s.standard });
-      });
-    });
-
-    const needsElectrical = domains.includes("Electrical/ESD/EMC") && selM.some((m) => ["connector", "pcba"].includes(MATERIALS_DB[m]?.type as MaterialType));
-    if (needsElectrical) {
-      ELECTRICAL_PACK.forEach((t) => out.push({ Item: String(i++), FailureMode: "Electrical robustness", Test: t.test, Conditions: t.conditionsHint, Duration_h: 2, SampleSize: nSuggested, Acceptance: t.acceptance || "Function within limits; no damage.", StandardRef: t.standard }));
+    if (source === "right" && left && right) {
+      left.scrollTop = right.scrollTop;
     }
+    window.setTimeout(() => {
+      ganttSyncingRef.current = false;
+    }, 0);
+  }
 
-    corrosionRows().forEach((r) => out.push({ ...r, Item: String(i++) }));
+  function handleFitToScreen() {
+    const viewport = ganttRightRef.current;
+    if (!viewport) return;
+    const width = viewport.clientWidth;
+    const next = Math.floor(width / Math.max(1, ganttTotalDays));
+    setGanttPxPerDay(clampInt(String(next), ganttPxPerDay, 8, 40));
+  }
 
-    if (selM.includes("Plating (Sn/Ni/Au)") && domains.includes("Mechanical Vibration")) {
-      out.push({
-        Item: String(i++),
-        FailureMode: "Dynamic load (connector)",
-        Test: "Dynamic Load (vibration on mated pair)",
-        Conditions: `Continuity monitoring under vibration`,
-        Duration_h: Math.round(durVib),
-        SampleSize: nSuggested,
-        Acceptance: "No >=1 us discontinuities; dR <= 10-20 mOhm.",
-        StandardRef: "ZVEI TLF0214-17",
-      });
+  function handleZoom(delta: number) {
+    setGanttPxPerDay((prev) => clampInt(String(prev + delta), prev, 8, 40));
+  }
+
+  function exportScheduleCsv() {
+    const rows: Array<Array<string | number>> = [
+      ["lane", "test", "startDay", "endDay", "durationDays", "dependencies"],
+      ...ganttRender.lanes.flatMap((lane) =>
+        lane.tasks.map((task) => [
+          lane.lane,
+          task.name,
+          task.startDay + 1,
+          task.endDay,
+          task.durationDays,
+          task.dependencies.join(" | "),
+        ])
+      ),
+    ];
+    downloadText("test-sequence.csv", buildCsv(rows), "text/csv");
+  }
+
+  async function copyScheduleSummary() {
+    const lanesUsed = Object.values(scheduleStats.laneCounts).filter((count) => count > 0).length;
+    const totalWeeks = Math.max(1, Math.ceil(scheduleStats.currentDays / 7));
+    const summary = [
+      `Total duration: ${scheduleStats.currentDays} days (~${totalWeeks} weeks)`,
+      `Strategy: ${state.schedule.strategy}`,
+      `Sequential: ${scheduleStats.sequentialDays} days`,
+      `Current: ${scheduleStats.currentDays} days`,
+      `Savings: ${scheduleStats.savingsPct}%`,
+      `Tests: ${keptTests.length}`,
+      `Lanes used: ${lanesUsed}`,
+      `Critical lane: ${scheduleStats.criticalLane}`,
+    ].join("\n");
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(summary);
     }
+  }
 
-    if (domains.includes("Packaging/Transportation")) {
-      let shipKey: keyof typeof PACKAGING_TESTS = "Truck";
-      if (cat === "Shipping") shipKey = loc as keyof typeof PACKAGING_TESTS;
-      const t = PACKAGING_TESTS[shipKey];
-      out.push({ Item: String(i++), FailureMode: "Shipping damage", Test: t.test, Conditions: t.conditionsHint, Duration_h: 4, SampleSize: nSuggested, Acceptance: t.acceptance || "No damage; function OK.", StandardRef: t.standard });
-    }
+  function updateTest(id: string, updates: Partial<SelectedTest>) {
+    setState((prev) => ({
+      ...prev,
+      selectedTests: prev.selectedTests.map((test) => (test.id === id ? { ...test, ...updates } : test)),
+    }));
+  }
 
-    return out.map((r, idx) => ({ ...r, Item: String(idx + 1) }));
-  }, [modes, domains, nSuggested, Ea, Tuse, Ttest, Tpeck, RHtest, nPeck, dUse, dStress, M, Nuse, Nacc, cycleMin, cmHours, lifeHours, selM, cat, loc, durVib]);
+  function updateAcceleration(
+    id: string,
+    updates: Partial<SelectedTest["acceleration"]>,
+    overrideUpdates?: Partial<SelectedTest["acceleration"]["userOverrides"]>
+  ) {
+    setState((prev) => ({
+      ...prev,
+      selectedTests: prev.selectedTests.map((test) =>
+        test.id === id
+          ? {
+              ...test,
+              acceleration: {
+                ...test.acceleration,
+                ...updates,
+                userOverrides: {
+                  ...test.acceleration.userOverrides,
+                  ...overrideUpdates,
+                },
+              },
+            }
+          : test
+      ),
+    }));
+  }
 
-  const dvpWithEdits = useMemo(() => dvp.map((r) => ({ ...r, ...(dvpEdits[r.Item] || {}) })), [dvp, dvpEdits]);
-  const updateDvpEdit = (item: string, field: keyof Dvp, value: string | number) => {
-    setDvpEdits((prev) => ({ ...prev, [item]: { ...prev[item], [field]: value } }));
-  };
+  function updateStressProfile(id: string, updates: Partial<SelectedTest["stressProfile"]>) {
+    setState((prev) => ({
+      ...prev,
+      selectedTests: prev.selectedTests.map((test) =>
+        test.id === id ? { ...test, stressProfile: { ...test.stressProfile, ...updates } } : test
+      ),
+    }));
+  }
 
-  const fmeaRows: FmeaRow[] = useMemo(() => {
-    return modes.map((m, i) => {
-      let S = 7, O = 6, D = 6;
-      if (["Brittle fracture", "Thermal runaway", "Dielectric breakdown"].some((x) => m.includes(x))) S = 9;
-      if (["Corrosion", "Fretting corrosion", "Humidity", "ECM"].some((x) => m.includes(x))) O = 7;
-      const linked = dvpWithEdits.filter((r) => r.FailureMode === m).map((r) => `${r.Test} (${r.StandardRef})`).join("; ");
-      if (linked.length) D = 5;
-      const base: FmeaRow = {
-        Item: `${i + 1} / ${productName || "N/A"}`,
-        Function: "Default function (edit)",
-        FailureMode: m,
-        Effects: "Performance degradation or functional loss (edit)",
-        S,
-        O,
-        D,
-        RPN: S * O * D,
-        Controls: linked || "N/A",
-        Actions: "",
+  function openSpecModal(title: string, refs: Array<{ standard: string; clause?: string; note?: string }>) {
+    if (!refs.length) return;
+    setSpecModal({ title, refs });
+  }
+
+  function updateMaterialField(field: keyof WizardState["materials"], value: string) {
+    setState((prev) => ({
+      ...prev,
+      materials: { ...prev.materials, [field]: value },
+    }));
+  }
+
+  function updateFailureMode(id: string, updates: Partial<WizardState["failureModes"][string]>) {
+    setUserTouchedMechanisms(true);
+    setState((prev) => {
+      const nextFailureModes = {
+        ...prev.failureModes,
+        [id]: { ...prev.failureModes[id], ...updates },
       };
-      const merged = { ...base, ...(fmeaEdits[base.Item] || {}) };
-      return { ...merged, RPN: Number(merged.S) * Number(merged.O) * Number(merged.D) };
+      return {
+        ...prev,
+        failureModes: nextFailureModes,
+        mechanisms: applyFailureModesToMechanisms(prev.mechanisms, nextFailureModes),
+      };
     });
-  }, [modes, productName, dvpWithEdits, fmeaEdits]);
-
-  const updateFmeaEdit = (item: string, field: keyof FmeaRow, value: string | number) => {
-    setFmeaEdits((prev) => ({ ...prev, [item]: { ...prev[item], [field]: value } }));
-  };
-
-  const [start, setStart] = useState(new Date().toISOString().slice(0, 10));
-  const seq = useMemo(() => {
-    const pr: Record<string, number> = { "Temperature Rise / Derating": 1, "Ingress (IP67/IP69K)": 2, ESD: 3, "Supply transients": 4, "Transport Vibration + Drop": 5, "Temp/Humidity storage": 6, "Mixed Flowing Gas (MFG)": 7, "Cyclic Corrosion (GMW14872 D)": 8, "Thermal cycling": 9, "Dynamic Load (vibration on mated pair)": 10, "Micro-motion vibration": 11 };
-    const startD = new Date(start + "T00:00:00");
-    const map = new Map<string, number>();
-    dvpWithEdits.forEach((r) => map.set(r.Test, Math.max(map.get(r.Test) || 0, Number(r.Duration_h || 0))));
-    const arr = [...map.entries()].map(([name, d]) => ({ name, d, pr: pr[name] ?? 50 })).sort((a, b) => a.pr - b.pr || a.name.localeCompare(b.name));
-    let cur = new Date(startD);
-    const out: any[] = [];
-    for (const it of arr) {
-      const s = new Date(cur);
-      const e = new Date(s.getTime() + it.d * 3600 * 1000);
-      const off = (s.getTime() - startD.getTime()) / 3600000;
-      out.push({ Test: it.name, Duration_h: Math.round(it.d), Offset_h: Math.max(0, off), StartISO: s.toISOString(), EndISO: e.toISOString() });
-      cur = new Date(e.getTime() + 2 * 3600 * 1000);
-    }
-    return out;
-  }, [dvpWithEdits, start]);
-
-
-  function downloadText(filename: string, text: string, mime = "text/csv;charset=utf-8") {
-    const blob = new Blob([text], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  function csvEscape(value: unknown): string {
-    const s = value === null || value === undefined ? "" : String(value);
-    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  function updatePriorEvidence(testId: string, updates: Partial<WizardState["priorEvidence"][string]>) {
+    setState((prev) => ({
+      ...prev,
+      priorEvidence: {
+        ...prev.priorEvidence,
+        [testId]: {
+          nPrev: null,
+          fPrev: null,
+          similarityPct: 100,
+          priorType: "jeffreys",
+          ...prev.priorEvidence[testId],
+          ...updates,
+        },
+      },
+    }));
   }
 
-  function toCsv(rows: unknown[][]): string {
-    return rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  function updateDvprRow(id: string, updates: Partial<WizardState["dvpr"]["rows"][number]>) {
+    setState((prev) => ({
+      ...prev,
+      dvpr: {
+        rows: prev.dvpr.rows.map((row) => (row.id === id ? { ...row, ...updates } : row)),
+      },
+    }));
   }
 
-  function exportCsvs() {
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const base = `TestPlan_${(productName || "Product").replace(/\s+/g, "_")}_${date}`;
-    const hdr = [
-      ["Product", productName],
-      ["Category", `${cat} / ${loc}`],
-      ["Reliability R", R],
-      ["Confidence C", Cc],
-      ["Suggested n (zero-failure)", nSuggested],
-      ["Streams", streams],
-      ["Spares %", sparesPct],
-      ["Total with spares", totalWithSpares],
-      ["Per stream", perStream],
-      ["Assumptions", "Arrhenius: exp(Ea/k*(1/Tuse-1/Ttest)); Peck: (RHtest/RHuse)^n * Arrhenius; CM: (dT_stress/dT_use)^M; Vib: (Grms_test/Grms_use)^b"],
+  function exportJson() {
+    downloadText(
+      "reliability-test-plan.json",
+      JSON.stringify(stateForSave, null, 2),
+      "application/json"
+    );
+  }
+
+  function exportCsv() {
+    const rows: Array<Array<string | number | null>> = [
+      [
+        "testName",
+        "mechanisms",
+        "coverage",
+        "durationWeeks",
+        "tier",
+        "af",
+        "equivYears",
+        "warnings",
+        "justification",
+      ],
     ];
+    testsWithAcceleration.forEach((test) => {
+      const tier = mergedScores[test.id]?.tier ?? "";
+      rows.push([
+        test.name,
+        test.mechanismIds
+          .map((id) => MECHANISMS.find((mech) => mech.id === id)?.name || id)
+          .join("; "),
+        test.coverage,
+        test.durationWeeks,
+        tier,
+        test.acceleration?.af ?? "",
+        test.acceleration?.equivYears ?? "",
+        (test.acceleration?.warnings || []).join("; "),
+        test.removalJustification || "",
+      ]);
+    });
+    downloadText("reliability-tests.csv", buildCsv(rows), "text/csv;charset=utf-8");
+  }
 
-    const dvpRows = [
-      ...hdr,
-      [],
-      ["Item", "Failure Mode Addressed", "Test", "Conditions (suggested)", "Duration (h)", "Sample Size (suggested)", "Acceptance Criteria", "Standard Ref"],
-      ...dvpWithEdits.map((r) => [r.Item, r.FailureMode, r.Test, r.Conditions, r.Duration_h, r.SampleSize, r.Acceptance, r.StandardRef]),
+  function exportDvprJson() {
+    downloadText("dvpr.json", JSON.stringify({ rows: state.dvpr.rows }, null, 2), "application/json");
+  }
+
+  function exportDvprCsv() {
+    const rows: Array<Array<string | number | null>> = [
+      [
+        "requirement",
+        "method",
+        "testId",
+        "specRefs",
+        "conditions",
+        "sampleSize",
+        "durationValue",
+        "durationUnit",
+        "durationDays",
+        "priorMeanPct",
+        "priorUpper95Pct",
+        "priorN",
+        "priorF",
+        "similarityPct",
+        "badge",
+        "acceptanceCriteria",
+        "owner",
+        "phase",
+        "notes",
+      ],
     ];
-
-    const seqRows = [
-      ["Test", "Duration (h)", "Offset (h)", "Start", "End"],
-      ...seq.map((r) => [r.Test, r.Duration_h, r.Offset_h, r.StartISO, r.EndISO]),
-    ];
-
-    const fmeaTable = [
-      ["Item / Subcomponent", "Function", "Potential Failure Mode", "Potential Effects of Failure", "S", "O", "D", "RPN", "Current Controls", "Recommended Actions"],
-      ...fmeaRows.map((r) => [r.Item, r.Function, r.FailureMode, r.Effects, r.S, r.O, r.D, r.RPN, r.Controls, r.Actions]),
-    ];
-
-    downloadText(`${base}_DVP.csv`, toCsv(dvpRows));
-    downloadText(`${base}_Test_Sequence.csv`, toCsv(seqRows));
-    downloadText(`${base}_FMEA.csv`, toCsv(fmeaTable));
+    state.dvpr.rows.forEach((row) => {
+      const durationDays = row.duration.unit === "weeks" ? row.duration.value * 7 : row.duration.value;
+      const priorMeanPct = row.risk?.priorMean !== undefined ? (row.risk.priorMean * 100).toFixed(2) : "";
+      const priorUpper95Pct = row.risk?.priorUpper95 !== undefined ? (row.risk.priorUpper95 * 100).toFixed(2) : "";
+      rows.push([
+        row.requirement,
+        row.validationMethod,
+        row.testId ?? "",
+        row.specRefs.map((ref) => ref.standard).join("; "),
+        row.conditions,
+        row.sampleSize ?? "",
+        row.duration.value,
+        row.duration.unit,
+        durationDays,
+        priorMeanPct,
+        priorUpper95Pct,
+        row.risk?.priorN ?? "",
+        row.risk?.priorF ?? "",
+        row.risk?.similarityPct ?? "",
+        row.risk?.badge ?? "",
+        row.acceptanceCriteria,
+        row.owner,
+        row.phase,
+        row.notes ?? "",
+      ]);
+    });
+    downloadText("dvpr.csv", buildCsv(rows), "text/csv;charset=utf-8");
   }
-
-  function showNotice(msg: string) {
-    setNotice(msg);
-    if (typeof window !== "undefined") {
-      window.setTimeout(() => setNotice(""), 3000);
-    }
-  }
-
-  function savePlan() {
-    if (typeof window === "undefined") return;
-    const state = {
-      productName,
-      cat,
-      loc,
-      applyPreset,
-      R,
-      Cc,
-      streams,
-      sparesPct,
-      life,
-      Tmin,
-      Tmax,
-      RH,
-      hpd,
-      cpd,
-      domains,
-      Tuse,
-      Ttest,
-      Ea,
-      dUse,
-      link,
-      dStress,
-      M,
-      ramp,
-      dHot,
-      dCold,
-      Tpeck,
-      RHuse,
-      RHtest,
-      nPeck,
-      grmsUse,
-      grmsTest,
-      vibExpB,
-      selM,
-      custom,
-      start,
-      dvpEdits,
-      fmeaEdits,
-      editDvp,
-      editFmea,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    showNotice("Plan saved.");
-  }
-
-  function loadPlan() {
-    if (typeof window === "undefined") return;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      showNotice("No saved plan found.");
-      return;
-    }
-    try {
-      const data = JSON.parse(raw);
-      const nextCat = cats.includes(data.cat) ? data.cat : cats[0];
-      const locs = CATEGORIES[nextCat] || CATEGORIES[cats[0]];
-      const nextLoc = locs.includes(data.loc) ? data.loc : locs[0];
-      setApplyPreset(false);
-      setProductName(data.productName || "");
-      setCat(nextCat);
-      setLoc(nextLoc);
-      setR(clampNum(String(data.R), R, 0.5, 0.999));
-      setCc(clampNum(String(data.Cc), Cc, 0.5, 0.999));
-      setStreams(Math.max(1, clampNum(String(data.streams), streams, 1, 100)));
-      setSparesPct(Math.max(0, clampNum(String(data.sparesPct), sparesPct, 0, 1000)));
-      setLife(clampNum(String(data.life), life, 0.01, 50));
-      setTmin(clampNum(String(data.Tmin), Tmin, -100, 200));
-      setTmax(clampNum(String(data.Tmax), Tmax, -100, 200));
-      setRH(clampNum(String(data.RH), RH, 0, 100));
-      setHpd(clampNum(String(data.hpd), hpd, 0, 24));
-      setCpd(clampNum(String(data.cpd), cpd, 0, 100000));
-      setDomains(Array.isArray(data.domains) ? data.domains : domains);
-      setTuse(clampNum(String(data.Tuse), Tuse, -100, 200));
-      setTtest(clampNum(String(data.Ttest), Ttest, -100, 250));
-      setEa(clampNum(String(data.Ea), Ea, 0.1, 3));
-      setDUse(clampNum(String(data.dUse), dUse, 1, 200));
-      setLink(Boolean(data.link));
-      setDStress(clampNum(String(data.dStress), dStress, 1, 300));
-      setM(clampNum(String(data.M), M, 1, 10));
-      setRamp(clampNum(String(data.ramp), ramp, 0.1, 100));
-      setDHot(clampNum(String(data.dHot), dHot, 0, 240));
-      setDCold(clampNum(String(data.dCold), dCold, 0, 240));
-      setTpeck(clampNum(String(data.Tpeck), Tpeck, -100, 200));
-      setRHuse(clampNum(String(data.RHuse), RHuse, 0, 100));
-      setRHtest(clampNum(String(data.RHtest), RHtest, 0, 100));
-      setNPeck(clampNum(String(data.nPeck), nPeck, 0.1, 10));
-      setGrmsUse(clampNum(String(data.grmsUse), grmsUse, 0.01, 50));
-      setGrmsTest(clampNum(String(data.grmsTest), grmsTest, 0.01, 100));
-      setVibExpB(clampNum(String(data.vibExpB), vibExpB, 0.1, 10));
-      setSelM(Array.isArray(data.selM) ? data.selM : selM);
-      setCustom(data.custom || "");
-      setStart(typeof data.start === "string" ? data.start : start);
-      setDvpEdits(data.dvpEdits && typeof data.dvpEdits === "object" ? data.dvpEdits : {});
-      setFmeaEdits(data.fmeaEdits && typeof data.fmeaEdits === "object" ? data.fmeaEdits : {});
-      setEditDvp(Boolean(data.editDvp));
-      setEditFmea(Boolean(data.editFmea));
-      setStep(5);
-      showNotice("Plan loaded.");
-    } catch (err) {
-      showNotice("Saved plan is invalid.");
-    }
-  }
-
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-      <h1 className="text-3xl md:text-4xl font-bold">Test Plan Generator</h1>
-      <p className="text-sm text-muted-foreground">Robust validation: guided flow -&gt; DVP&R, Test Sequence, FMEA -&gt; CSV export</p>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {stepLabels.map((label, idx) => {
-          const stepNum = idx + 1;
-          const canJump = stepNum <= step && (stepNum === 1 || Boolean(productName));
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {specModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Reference specs</div>
+                <h3 className="text-lg font-semibold">{specModal.title}</h3>
+              </div>
+              <button
+                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500"
+                onClick={() => setSpecModal(null)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-4 space-y-3 text-sm">
+              {specModal.refs.map((ref) => (
+                <div key={`${specModal.title}-${ref.standard}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="font-semibold">{ref.standard}</div>
+                  {ref.clause && <div className="text-xs text-slate-500">Clause: {ref.clause}</div>}
+                  {ref.note && <div className="text-xs text-slate-500">Note: {ref.note}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+          <div>
+            <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Reliatools</div>
+            <h1 className="text-2xl font-semibold">Reliability Test Architect</h1>
+            <p className="text-sm text-slate-600">
+              Build a defensible, step-by-step reliability test plan in minutes.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition hover:border-slate-300"
+              onClick={handleSaveDraft}
+            >
+              Save Draft
+            </button>
+            <button
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition hover:border-slate-300"
+              onClick={handleReset}
+            >
+              Reset
+            </button>
+            {saveNotice && <span className="text-xs text-emerald-600">{saveNotice}</span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto grid max-w-7xl items-start gap-6 px-6 pb-14 pt-8 lg:grid-cols-[220px_minmax(0,1fr)_280px]">
+        <aside className="self-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <WizardStepper step={step} onStepChange={setStep} />
+        </aside>
+
+        <main className="space-y-6">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Step {step}</div>
+            <h2 className="text-xl font-semibold">{STEPS[step - 1]}</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              {step === 1 && "Define the product context to anchor the plan."}
+              {step === 2 && "Capture mission profile details that drive stress conditions."}
+              {step === 3 && "Confirm or exclude likely failure mechanisms."}
+              {step === 4 && "Identify design changes that trigger additional tests."}
+              {step === 5 && "Review candidate tests and set keep/downgrade/remove status."}
+              {step === 6 && "Capture prior testing evidence to inform Bayesian risk."}
+              {step === 7 && "Review acceleration factors and equivalence assumptions."}
+              {step === 8 && "Assign S/L/D scores to prioritize the plan."}
+              {step === 9 && "Document residual risk coverage and mitigations."}
+              {step === 10 && "Review coverage score, gaps, and fixes before export."}
+              {step === 11 && "Export a defensible summary and deliverables."}
+            </p>
+          </section>
+
+          {step === 1 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Product type
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.product.productType}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        product: {
+                          ...prev.product,
+                          productType: event.target.value as WizardState["product"]["productType"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="">Select a product type</option>
+                    {productTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Industry
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.product.industry}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        product: {
+                          ...prev.product,
+                          industry: event.target.value as WizardState["product"]["industry"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="">Select an industry</option>
+                    {industryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Service life target (years)
+                  <input
+                    type="number"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.product.serviceLifeYears ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        product: {
+                          ...prev.product,
+                          serviceLifeYears: clampFloat(event.target.value, 0, 0, 50),
+                        },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Warranty (years)
+                  <input
+                    type="number"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.product.warrantyYears ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        product: {
+                          ...prev.product,
+                          warrantyYears: clampFloat(event.target.value, 0, 0, 30),
+                        },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={state.product.safetyCritical}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        product: { ...prev.product, safetyCritical: event.target.checked },
+                      }))
+                    }
+                  />
+                  Safety critical system
+                </label>
+              </div>
+            </section>
+          )}
+
+          {step === 2 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Temperature min (°C)
+                  <input
+                    type="number"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.tempMinC ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          tempMinC: clampFloat(event.target.value, 0, -60, 180),
+                        },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Temperature max (°C)
+                  <input
+                    type="number"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.tempMaxC ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          tempMaxC: clampFloat(event.target.value, 0, -40, 200),
+                        },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Thermal cycling frequency
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.thermalCycleFreq}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          thermalCycleFreq: event.target.value as WizardState["missionProfile"]["thermalCycleFreq"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="rare">Rare</option>
+                    <option value="daily">Daily</option>
+                    <option value="power-cycling">Power cycling</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Humidity
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.humidity}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          humidity: event.target.value as WizardState["missionProfile"]["humidity"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Humidity (%RH)
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.humidityPct ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          humidityPct: event.target.value === "" ? null : clampInt(event.target.value, 0, 0, 100),
+                        },
+                      }))
+                    }
+                  />
+                  <span className="text-xs text-slate-500">
+                    Controlled warehouse: 40–60%RH · Coastal: 70–90%RH · Condensing/rain prone: consider cycling + ingress tests
+                  </span>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Humidity scenario
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.humidityScenario ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          humidityScenario: event.target.value as WizardState["missionProfile"]["humidityScenario"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="">Select a scenario</option>
+                    <option value="controlled">Controlled indoor</option>
+                    <option value="warehouse">Warehouse</option>
+                    <option value="coastal">Coastal</option>
+                    <option value="condensing">Rain/Condensing</option>
+                  </select>
+                  <span className="text-xs text-slate-500">
+                    Scenario guides test selection only; it does not change calculations.
+                  </span>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Vibration
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.vibration}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          vibration: event.target.value as WizardState["missionProfile"]["vibration"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="none">None</option>
+                    <option value="low">Low</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+                {state.missionProfile.humidityPct !== null &&
+                  state.missionProfile.humidityPct > 80 &&
+                  (state.missionProfile.chemicalExposure === "salt" || state.missionProfile.chemicalExposure === "mixed") && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                      High corrosion risk: ensure humidity + chemical test coverage.
+                    </div>
+                  )}
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Shock
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.shock}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          shock: event.target.value as WizardState["missionProfile"]["shock"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="none">None</option>
+                    <option value="occasional">Occasional</option>
+                    <option value="frequent">Frequent</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Chemical exposure
+                  <select
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.chemicalExposure}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          chemicalExposure: event.target.value as WizardState["missionProfile"]["chemicalExposure"],
+                        },
+                      }))
+                    }
+                  >
+                    <option value="none">None</option>
+                    <option value="salt">Salt</option>
+                    <option value="oil">Oil</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-sm font-medium">
+                  Active duty (%)
+                  <input
+                    type="number"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    value={state.missionProfile.activeDutyPct ?? ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        missionProfile: {
+                          ...prev.missionProfile,
+                          activeDutyPct: clampInt(event.target.value, 0, 0, 100),
+                        },
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+            </section>
+          )}
+
+          {step === 3 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold">Mechanisms, materials, and failure modes</h3>
+                  <p className="text-sm text-slate-500">
+                    Use tabs to refine mechanisms, materials, and failure modes.
+                  </p>
+                </div>
+                <button
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium"
+                  onClick={() => {
+                    setUserTouchedMechanisms(false);
+                    setState((prev) => ({
+                      ...prev,
+                      mechanisms: syncMechanisms(prev.mechanisms, suggestedMechanisms),
+                    }));
+                  }}
+                >
+                  Re-apply suggestions
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide">
+                {[
+                  { id: "mechanisms", label: "Mechanisms" },
+                  { id: "materials", label: "Materials" },
+                  { id: "failure-modes", label: "Failure Modes" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={`rounded-full border px-3 py-1 transition ${
+                      step3Tab === tab.id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-500"
+                    }`}
+                    onClick={() => setStep3Tab(tab.id as typeof step3Tab)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {step3Tab === "mechanisms" && (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {state.mechanisms.map((mechanism) => (
+                    <MechanismCard
+                      key={mechanism.id}
+                      mechanism={mechanism}
+                      onUpdate={updateMechanism}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {step3Tab === "materials" && (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Housing material
+                    <select
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.housingMaterialId ?? ""}
+                      onChange={(event) => updateMaterialField("housingMaterialId", event.target.value)}
+                    >
+                      <option value="">Select housing material</option>
+                      {(materialsByCategory.housing || []).map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Seal material
+                    <select
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.sealMaterialId ?? ""}
+                      onChange={(event) => updateMaterialField("sealMaterialId", event.target.value)}
+                    >
+                      <option value="">Select seal material</option>
+                      {(materialsByCategory.seal || []).map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Contact material
+                    <select
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.contactMaterialId ?? ""}
+                      onChange={(event) => updateMaterialField("contactMaterialId", event.target.value)}
+                    >
+                      <option value="">Select contact material</option>
+                      {(materialsByCategory.contact || []).map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Plating
+                    <select
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.platingId ?? ""}
+                      onChange={(event) => updateMaterialField("platingId", event.target.value)}
+                    >
+                      <option value="">Select plating</option>
+                      {(materialsByCategory.plating || []).map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    PCB substrate
+                    <select
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.pcbSubstrateId ?? ""}
+                      onChange={(event) => updateMaterialField("pcbSubstrateId", event.target.value)}
+                    >
+                      <option value="">Select PCB substrate</option>
+                      {(materialsByCategory.pcb || []).map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Solder alloy
+                    <select
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.solderAlloyId ?? ""}
+                      onChange={(event) => updateMaterialField("solderAlloyId", event.target.value)}
+                    >
+                      <option value="">Select solder alloy</option>
+                      {(materialsByCategory.solder || []).map((material) => (
+                        <option key={material.id} value={material.id}>
+                          {material.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="md:col-span-2 flex flex-col gap-2 text-sm font-medium">
+                    Materials notes
+                    <textarea
+                      className="min-h-[90px] rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      value={state.materials.notes ?? ""}
+                      onChange={(event) => updateMaterialField("notes", event.target.value)}
+                      placeholder="Capture material-specific concerns or specs."
+                    />
+                  </label>
+                </div>
+              )}
+
+              {step3Tab === "failure-modes" && (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {FAILURE_MODE_LIBRARY.map((mode) => {
+                    const selection = state.failureModes[mode.id];
+                    return (
+                      <div key={mode.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-semibold">{mode.name}</div>
+                            <div className="text-xs text-slate-500">{mode.description}</div>
+                          </div>
+                          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <input
+                              type="checkbox"
+                              checked={selection?.selected ?? false}
+                              onChange={(event) => updateFailureMode(mode.id, { selected: event.target.checked })}
+                            />
+                            Include
+                          </label>
+                        </div>
+                        <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                          {[
+                            { key: "severity", label: "S" },
+                            { key: "occurrence", label: "O" },
+                            { key: "detection", label: "D" },
+                          ].map((item) => (
+                            <label key={item.key} className="flex flex-col gap-1">
+                              <span className="font-semibold text-slate-500">{item.label}</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={5}
+                                className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                                value={selection?.[item.key as keyof typeof selection] ?? 3}
+                                onChange={(event) =>
+                                  updateFailureMode(mode.id, {
+                                    [item.key]: clampInt(event.target.value, 3, 1, 5),
+                                  } as Partial<WizardState["failureModes"][string]>)
+                                }
+                              />
+                            </label>
+                          ))}
+                        </div>
+                        <div className="mt-3 text-xs text-slate-500">
+                          Mechanisms: {mode.mechanismIds.join(", ")}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+
+          {step === 4 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  ["newMaterial", "New material or resin system"],
+                  ["newSupplier", "New supplier or supplier change"],
+                  ["geometryChange", "Geometry or interface change"],
+                  ["mountingRelocation", "Mounting or installation change"],
+                  ["processChange", "Process or assembly change"],
+                  ["deratingChange", "Derating update"],
+                  ["costDownVariant", "Cost-down variant"],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={state.changes[key as keyof WizardState["changes"]]}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          changes: {
+                            ...prev.changes,
+                            [key]: event.target.checked,
+                          },
+                        }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {step === 5 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Candidate tests</h3>
+                  <p className="text-sm text-slate-500">
+                    Keep the tests that defend your mechanisms. Downgrade or remove with justification.
+                  </p>
+                </div>
+                {(keepMissing || removalMissing) && (
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold text-amber-700">
+                    {keepMissing && (
+                      <span className="rounded-full bg-amber-100 px-3 py-1">
+                        Keep at least one test to continue
+                      </span>
+                    )}
+                    {removalMissing && (
+                      <span className="rounded-full bg-amber-100 px-3 py-1">
+                        Add justification for removed tests
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {humidityRequiresTest && !hasHumidityTestKept && (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                  Humidity is specified at {state.missionProfile.humidityPct}%RH — add at least one humidity-based test
+                  (constant exposure and/or cycling).
+                </div>
+              )}
+              <div className="mt-4 space-y-3">
+                {testsWithAcceleration.map((test) => (
+                  <TestRow
+                    key={test.id}
+                    test={test}
+                    onUpdate={updateTest}
+                    onOpenSpecs={openSpecModal}
+                  />
+                ))}
+                {testsWithAcceleration.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+                    Select mechanisms or change triggers to populate tests.
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {step === 6 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Prior evidence (Bayesian)</h3>
+                  <p className="text-sm text-slate-500">
+                    Evidence-based risk from prior similar testing; this does not replace validation requirements.
+                  </p>
+                </div>
+                <button
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+                  onClick={() => {
+                    const first = keptTests[0];
+                    if (!first) return;
+                    const seed = state.priorEvidence[first.id];
+                    if (!seed) return;
+                    keptTests.forEach((test) => {
+                      updatePriorEvidence(test.id, seed);
+                    });
+                  }}
+                >
+                  Copy first row to all kept tests
+                </button>
+              </div>
+              <div className="mt-4 overflow-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      {[
+                        "Test",
+                        "Prior runs (n)",
+                        "Prior failures (f)",
+                        "Similarity (%)",
+                        "Mean fail p",
+                        "Upper 95% fail p",
+                        "Risk",
+                        "Copy",
+                      ].map((header) => (
+                        <th key={header} className="px-3 py-2 text-left">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {keptTests.map((test) => {
+                      const prior = state.priorEvidence[test.id];
+                      const computed = priorEvidenceMap[test.id];
+                      const nPrev = prior?.nPrev ?? null;
+                      const fPrev = prior?.fPrev ?? null;
+                      const similarity = prior?.similarityPct ?? 100;
+                      const fOver = nPrev !== null && fPrev !== null && fPrev > nPrev;
+                      const meanPct =
+                        computed?.meanFailProb !== undefined
+                          ? `${(computed.meanFailProb * 100).toFixed(2)}%`
+                          : "—";
+                      const upperPct =
+                        computed?.upperFailProb95 !== undefined
+                          ? `${(computed.upperFailProb95 * 100).toFixed(2)}%`
+                          : "—";
+                      const badge = computed?.badge ?? "None";
+                      return (
+                        <tr key={test.id} className="border-t border-slate-100">
+                          <td className="px-3 py-2 font-medium">{test.name}</td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              className="w-24 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                              value={nPrev ?? ""}
+                              onChange={(event) => {
+                                const next = event.target.value === "" ? null : clampInt(event.target.value, 0, 0, 100000);
+                                const cappedF =
+                                  next === null || fPrev === null ? fPrev : Math.min(fPrev, next);
+                                updatePriorEvidence(test.id, {
+                                  nPrev: next,
+                                  fPrev: cappedF,
+                                });
+                              }}
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              className={`w-20 rounded-lg border px-2 py-1 text-sm ${
+                                fOver ? "border-amber-400 bg-amber-50" : "border-slate-200"
+                              }`}
+                              value={fPrev ?? ""}
+                              onChange={(event) => {
+                                const next = event.target.value === "" ? null : clampInt(event.target.value, 0, 0, 100000);
+                                const capped = nPrev !== null && next !== null ? Math.min(next, nPrev) : next;
+                                updatePriorEvidence(test.id, { fPrev: capped });
+                              }}
+                            />
+                            {fOver && (
+                              <div className="mt-1 text-[11px] text-amber-700">Failures clamped to n.</div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              step={1}
+                              className="w-32"
+                              value={similarity}
+                              onChange={(event) =>
+                                updatePriorEvidence(test.id, { similarityPct: clampInt(event.target.value, 100, 0, 100) })
+                              }
+                            />
+                            <div className="text-[11px] text-slate-500">{similarity}%</div>
+                            <select
+                              className="mt-1 w-28 rounded-md border border-slate-200 px-2 py-1 text-[11px]"
+                              value={prior?.priorType ?? "jeffreys"}
+                              onChange={(event) =>
+                                updatePriorEvidence(test.id, { priorType: event.target.value as "jeffreys" | "uniform" })
+                              }
+                            >
+                              <option value="jeffreys">Jeffreys</option>
+                              <option value="uniform">Uniform</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-2">{meanPct}</td>
+                          <td className="px-3 py-2">{upperPct}</td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                badge === "Low"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : badge === "Med"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : badge === "High"
+                                      ? "bg-rose-100 text-rose-700"
+                                      : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {badge}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <button
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600"
+                              onClick={() => {
+                                const source = state.priorEvidence[test.id];
+                                if (!source) return;
+                                keptTests.forEach((item) => {
+                                  updatePriorEvidence(item.id, source);
+                                });
+                              }}
+                            >
+                              Copy to all
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {keptTests.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-3 py-6 text-center text-sm text-slate-500">
+                          Keep at least one test to record prior evidence.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {step === 7 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Acceleration review</h3>
+                  <p className="text-sm text-slate-500">
+                    Transparent placeholders for acceleration and equivalence.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                {activeTests.map((test) => (
+                  <div key={test.id} className="rounded-xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold">{test.name}</div>
+                        <div className="text-xs text-slate-500">
+                          Model: {test.acceleration.model} · AF {test.acceleration.af ?? "--"}
+                        </div>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="font-semibold">{test.acceleration.equivYears ?? "--"} years equiv.</div>
+                        <div className="text-xs text-slate-500">{test.durationWeeks} weeks planned</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Stress profile</div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <label className="flex flex-col gap-1">
+                            Temp low (C)
+                            <input
+                              type="number"
+                              className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                              value={test.stressProfile.tempLowC ?? ""}
+                              onChange={(event) =>
+                                updateStressProfile(test.id, { tempLowC: clampFloat(event.target.value, 0, -60, 200) })
+                              }
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            Temp high (C)
+                            <input
+                              type="number"
+                              className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                              value={test.stressProfile.tempHighC ?? ""}
+                              onChange={(event) =>
+                                updateStressProfile(test.id, { tempHighC: clampFloat(event.target.value, 0, -40, 220) })
+                              }
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            Humidity (%)
+                            <input
+                              type="number"
+                              className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                              value={test.stressProfile.humidityPct ?? ""}
+                              onChange={(event) =>
+                                updateStressProfile(test.id, { humidityPct: clampFloat(event.target.value, 0, 0, 100) })
+                              }
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1">
+                            Electrical load notes
+                            <input
+                              type="text"
+                              className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                              value={test.stressProfile.electricalLoadNote ?? ""}
+                              onChange={(event) => updateStressProfile(test.id, { electricalLoadNote: event.target.value })}
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Assumptions</div>
+                          <label className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                            <input
+                              type="checkbox"
+                              checked={test.acceleration.userOverrides.enabled}
+                              onChange={(event) =>
+                                updateAcceleration(test.id, {}, { enabled: event.target.checked })
+                              }
+                            />
+                            Override
+                          </label>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          {[
+                            { key: "TuseK", label: "Tuse (K)", min: 200, max: 600 },
+                            { key: "TstressK", label: "Tstress (K)", min: 200, max: 700 },
+                            { key: "deltaTuse", label: "Delta Tuse", min: 1, max: 200 },
+                            { key: "deltaTstress", label: "Delta Tstress", min: 1, max: 250 },
+                            { key: "RHuse", label: "RHuse (%)", min: 1, max: 100 },
+                            { key: "RHstress", label: "RHstress (%)", min: 1, max: 100 },
+                            { key: "Ea", label: "Ea (eV)", min: 0.1, max: 2.5 },
+                            { key: "n", label: "n", min: 0.1, max: 6 },
+                            { key: "m", label: "m", min: 0.1, max: 6 },
+                          ].map((field) => (
+                            <label key={field.key} className="flex flex-col gap-1">
+                              {field.label}
+                              <input
+                                type="number"
+                                className="rounded-lg border border-slate-200 px-2 py-1 text-sm disabled:bg-slate-100"
+                                disabled={!test.acceleration.userOverrides.enabled}
+                                value={test.acceleration.userOverrides[field.key as keyof typeof test.acceleration.userOverrides] ?? ""}
+                                onChange={(event) =>
+                                  updateAcceleration(
+                                    test.id,
+                                    {},
+                                    {
+                                      [field.key]: clampFloat(event.target.value, 0, field.min, field.max),
+                                    } as Partial<SelectedTest["acceleration"]["userOverrides"]>
+                                  )
+                                }
+                              />
+                            </label>
+                          ))}
+                          <label className="col-span-2 flex flex-col gap-1">
+                            Override notes
+                            <input
+                              type="text"
+                              className="rounded-lg border border-slate-200 px-2 py-1 text-sm disabled:bg-slate-100"
+                              disabled={!test.acceleration.userOverrides.enabled}
+                              value={test.acceleration.userOverrides.notes ?? ""}
+                              onChange={(event) => updateAcceleration(test.id, {}, { notes: event.target.value })}
+                            />
+                          </label>
+                        </div>
+                        {!test.acceleration.userOverrides.enabled && (
+                          <div className="mt-2 text-xs text-slate-500">
+                            Enable override to customize assumed stress parameters.
+                          </div>
+                        )}
+                        {state.materials.housingMaterialId && (
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                            {(() => {
+                              const material = MATERIAL_LIBRARY.find(
+                                (entry) => entry.id === state.materials.housingMaterialId
+                              );
+                              if (!material?.eaRange) return null;
+                              const midpoint = (material.eaRange.min + material.eaRange.max) / 2;
+                              return (
+                                <>
+                                  <button
+                                    className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
+                                    onClick={() => updateAcceleration(test.id, {}, { Ea: material.eaRange.min, enabled: true })}
+                                  >
+                                    Use Ea min ({material.eaRange.min})
+                                  </button>
+                                  <button
+                                    className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
+                                    onClick={() => updateAcceleration(test.id, {}, { Ea: material.eaRange.max, enabled: true })}
+                                  >
+                                    Use Ea max ({material.eaRange.max})
+                                  </button>
+                                  <button
+                                    className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
+                                    onClick={() =>
+                                      updateAcceleration(test.id, {}, { Ea: Number(midpoint.toFixed(2)), enabled: true })
+                                    }
+                                  >
+                                    Use Ea midpoint ({midpoint.toFixed(2)})
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {test.acceleration.warnings.length > 0 && (
+                      <ul className="mt-3 space-y-1 text-xs text-amber-700">
+                        {test.acceleration.warnings.map((warn) => (
+                          <li key={warn}>• {warn}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+                {activeTests.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+                    Keep at least one test to generate acceleration summaries.
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {step === 8 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Risk prioritization</h3>
+                  <p className="text-sm text-slate-500">Adjust S/L/D scores to align to program risk.</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Reliability demonstration plan
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Target reliability (R)
+                    <input
+                      type="number"
+                      step="0.0001"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      value={state.reliabilityPlan.targetReliability}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          reliabilityPlan: {
+                            ...prev.reliabilityPlan,
+                            targetReliability: clampFloat(event.target.value, prev.reliabilityPlan.targetReliability, 0.5, 0.99999),
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Confidence (CL)
+                    <input
+                      type="number"
+                      step="0.0001"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      value={state.reliabilityPlan.confidence}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          reliabilityPlan: {
+                            ...prev.reliabilityPlan,
+                            confidence: clampFloat(event.target.value, prev.reliabilityPlan.confidence, 0.5, 0.99999),
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Allowed failures (c)
+                    <input
+                      type="number"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      value={state.reliabilityPlan.allowedFailures}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          reliabilityPlan: {
+                            ...prev.reliabilityPlan,
+                            allowedFailures: clampInt(event.target.value, prev.reliabilityPlan.allowedFailures, 0, 20),
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium">
+                    Method
+                    <select
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      value={state.reliabilityPlan.method}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          reliabilityPlan: {
+                            ...prev.reliabilityPlan,
+                            method: event.target.value as WizardState["reliabilityPlan"]["method"],
+                          },
+                        }))
+                      }
+                    >
+                      <option value="binomial">Binomial</option>
+                      <option value="weibull-basic">Weibull (basic)</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    Required sample size: <span className="font-semibold">{requiredSampleSize}</span>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+                    Tier 1: {requiredSampleSize} · Tier 2: {Math.max(6, Math.ceil(requiredSampleSize * 0.5))} ·
+                    Tier 3: {Math.max(3, Math.ceil(requiredSampleSize * 0.25))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 overflow-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Test</th>
+                      <th className="px-3 py-2 text-center">S</th>
+                      <th className="px-3 py-2 text-center">L</th>
+                      <th className="px-3 py-2 text-center">D</th>
+                      <th className="px-3 py-2 text-center">Sample</th>
+                      <th className="px-3 py-2 text-center">Score</th>
+                      <th className="px-3 py-2 text-center">Tier</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeTests.map((test) => {
+                      const score = mergedScores[test.id];
+                      const recommendedSample =
+                        score?.tier === 1
+                          ? requiredSampleSize
+                          : score?.tier === 2
+                            ? Math.max(6, Math.ceil(requiredSampleSize * 0.5))
+                            : Math.max(3, Math.ceil(requiredSampleSize * 0.25));
+                      return (
+                        <tr key={test.id} className="border-t border-slate-100">
+                          <td className="px-3 py-2 font-medium">{test.name}</td>
+                          {(["severity", "likelihood", "detectability"] as const).map((field) => (
+                            <td key={field} className="px-3 py-2 text-center">
+                              <input
+                                type="number"
+                                className="w-16 rounded-lg border border-slate-200 px-2 py-1 text-center text-sm"
+                                min={1}
+                                max={5}
+                                value={score?.[field] ?? 3}
+                                onChange={(event) =>
+                                  setState((prev) => ({
+                                    ...prev,
+                                    prioritization: {
+                                      testScores: {
+                                        ...prev.prioritization.testScores,
+                                        [test.id]: {
+                                          ...score,
+                                          [field]: clampInt(event.target.value, score?.[field] ?? 3, 1, 5),
+                                          score: 0,
+                                          tier: 3,
+                                        },
+                                      },
+                                    },
+                                  }))
+                                }
+                              />
+                            </td>
+                          ))}
+                          <td className="px-3 py-2 text-center">
+                            <input
+                              type="number"
+                              className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-center text-sm"
+                              value={test.sampleSizeOverride ?? recommendedSample}
+                              onChange={(event) =>
+                                updateTest(test.id, {
+                                  sampleSizeOverride: clampInt(event.target.value, recommendedSample, 1, 5000),
+                                })
+                              }
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-center font-semibold">{score?.score ?? "--"}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                score?.tier === 1
+                                  ? "bg-rose-100 text-rose-700"
+                                  : score?.tier === 2
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-emerald-100 text-emerald-700"
+                              }`}
+                            >
+                              Tier {score?.tier ?? "--"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {step === 9 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-4">
+                {state.mechanisms.map((mechanism) => {
+                  const entry = residualPerMechanism[mechanism.id];
+                  return (
+                    <div key={mechanism.id} className="rounded-xl border border-slate-200 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold">{mechanism.name}</div>
+                          <div className="text-xs text-slate-500">
+                            Covered: {entry.covered} · Residual: {entry.residual}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {mitigationTags.map((tag) => {
+                            const active = entry.mitigations.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                  active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-500"
+                                }`}
+                                onClick={() =>
+                                  setState((prev) => ({
+                                    ...prev,
+                                    residualRisk: {
+                                      perMechanism: {
+                                        ...prev.residualRisk.perMechanism,
+                                        [mechanism.id]: {
+                                          ...entry,
+                                          mitigations: active
+                                            ? entry.mitigations.filter((item) => item !== tag)
+                                            : [...entry.mitigations, tag],
+                                        },
+                                      },
+                                    },
+                                  }))
+                                }
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {step === 10 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Coverage Score</div>
+                  <div className="mt-2 text-3xl font-semibold">{coverageScore}</div>
+                  <div
+                    className={`mt-1 text-sm font-semibold ${
+                      coverageScore >= 80
+                        ? "text-emerald-600"
+                        : coverageScore >= 60
+                          ? "text-amber-600"
+                          : "text-rose-600"
+                    }`}
+                  >
+                    {coverageScore >= 80 ? "Green: Strong coverage" : coverageScore >= 60 ? "Amber: Moderate gaps" : "Red: Major gaps"}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Score reflects completeness, mapping strength, and validity of assumptions.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Fix list</div>
+                  <div className="mt-3 space-y-2">
+                    {coverageBreakdown.fixList.length === 0 && (
+                      <div className="text-xs text-slate-500">No high-impact fixes identified.</div>
+                    )}
+                    {coverageBreakdown.fixList.slice(0, 6).map((item) => (
+                      <button
+                        key={`${item.title}-${item.stepIndexToFix}`}
+                        className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-semibold text-slate-700 transition hover:border-slate-300"
+                        onClick={() => setStep(item.stepIndexToFix)}
+                      >
+                        <span>{item.title}</span>
+                        <span className="text-[11px] text-slate-500">+{item.pointsGainEstimate} pts</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 overflow-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      {["Area", "Points", "Status", "Missing", "Action"].map((header) => (
+                        <th key={header} className="px-3 py-2 text-left">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coverageBreakdown.rows.map((row) => (
+                      <tr key={row.area} className="border-t border-slate-100">
+                        <td className="px-3 py-2 font-medium">{row.area}</td>
+                        <td className="px-3 py-2">
+                          {row.pointsEarned} / {row.pointsMax}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                              row.status === "Good"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : row.status === "Partial"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
+                            {row.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-slate-600">
+                          {row.missing.length ? row.missing.join(", ") : "None"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600"
+                            onClick={() => setStep(row.stepIndexToFix)}
+                          >
+                            Go fix
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {step === 11 && (
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">CEO skim</div>
+                <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  <div>Tier 1 tests: {tierOneCount}</div>
+                  <div>Tier 1 sample size: {state.reliabilityPlan.requiredSampleSize ?? requiredSampleSize}</div>
+                  <div>
+                    Total duration: {Math.max(1, Math.ceil(scheduleStats.currentDays / 7))} weeks ({state.schedule.strategy})
+                  </div>
+                  <div>Top residual risks: {topResidualRisks.join(", ") || "None flagged"}</div>
+                  <div>Assumptions: {combinedAssumptions.join(" · ") || "None"}</div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <ExportCard
+                  title="Download JSON"
+                  description="Full wizard state for audit trail or reuse."
+                  actionLabel="Download JSON"
+                  onClick={exportJson}
+                />
+                <ExportCard
+                  title="Download CSV (tests)"
+                  description="Test-level export with coverage, tiers, and acceleration notes."
+                  actionLabel="Download CSV"
+                  onClick={exportCsv}
+                />
+                <ExportCard
+                  title="PDF Summary"
+                  description="Executive-ready report format."
+                  actionLabel="Coming soon"
+                  disabled
+                />
+                <ExportCard
+                  title="Excel Workbook"
+                  description="Editable sheets for DVP&R and risk tracking."
+                  actionLabel="Coming soon"
+                  disabled
+                />
+              </div>
+
+            </section>
+          )}
+
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <button
+              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:opacity-50"
+              onClick={() => setStep((prev) => Math.max(1, prev - 1))}
+              disabled={step === 1}
+            >
+              Back
+            </button>
+            <div className="text-xs text-slate-500">
+              Step {step} of {STEPS.length}
+            </div>
+            <button
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => step < STEPS.length && stepValid && setStep((prev) => prev + 1)}
+              disabled={!stepValid || step === STEPS.length}
+            >
+              Next
+            </button>
+          </div>
+        </main>
+
+        <aside className="space-y-4">
+          <RightPanelSummary
+            productName={
+              productTypeOptions.find((option) => option.value === state.product.productType)?.label ||
+              "Unspecified product"
+            }
+            serviceLife={state.product.serviceLifeYears ?? 0}
+            selectedMechanisms={state.mechanisms.filter((mechanism) => mechanism.selected).length}
+            keptTests={keptTests.length}
+            totalTests={testsWithAcceleration.length}
+            warnings={warnings}
+            coverageScore={coverageScore}
+          />
+        </aside>
+
+        {step === 11 && (
+          <section className="lg:col-start-1 lg:col-span-3 space-y-8">
+            <div className="w-full rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">DVP&R preview</h4>
+                  <p className="text-xs text-slate-500">Edit rows as needed before export.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+                    onClick={exportDvprCsv}
+                  >
+                    Download CSV
+                  </button>
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+                    onClick={exportDvprJson}
+                  >
+                    Download JSON
+                  </button>
+                </div>
+              </div>
+              <div className="mt-4 w-full overflow-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-xs">
+                  <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-500">
+                    <tr>
+                      {[
+                        "Requirement",
+                        "Method",
+                        "Test",
+                        "Spec refs",
+                        "Conditions",
+                        "Sample",
+                        "Duration",
+                        "Prior Evidence Risk",
+                        "Acceptance",
+                        "Owner",
+                        "Phase",
+                      ].map((header) => (
+                        <th key={header} className="px-3 py-2 text-left">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.dvpr.rows.map((row) => (
+                      <tr key={row.id} className="border-t border-slate-100">
+                        <td className="px-3 py-2">
+                          <input
+                            className="w-64 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.requirement}
+                            onChange={(event) => updateDvprRow(row.id, { requirement: event.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <select
+                            className="rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.validationMethod}
+                            onChange={(event) =>
+                              updateDvprRow(row.id, { validationMethod: event.target.value as "Test" | "Analysis" | "Inspection" })
+                            }
+                          >
+                            <option value="Test">Test</option>
+                            <option value="Analysis">Analysis</option>
+                            <option value="Inspection">Inspection</option>
+                          </select>
+                        </td>
+                        <td className="px-3 py-2 text-xs">{row.testId ?? "--"}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-wrap gap-1">
+                            {row.specRefs.map((ref) => (
+                              <button
+                                key={`${row.id}-${ref.standard}`}
+                                className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600"
+                                onClick={() => openSpecModal(row.requirement, row.specRefs)}
+                              >
+                                {ref.standard}
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            className="mt-2 w-40 rounded-md border border-slate-200 px-2 py-1 text-[11px]"
+                            value={row.specRefs.map((ref) => ref.standard).join(", ")}
+                            onChange={(event) =>
+                              updateDvprRow(row.id, {
+                                specRefs: event.target.value
+                                  .split(",")
+                                  .map((value) => value.trim())
+                                  .filter(Boolean)
+                                  .map((standard) => ({ standard })),
+                              })
+                            }
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            className="w-48 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.conditions}
+                            onChange={(event) => updateDvprRow(row.id, { conditions: event.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            className="w-20 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.sampleSize ?? ""}
+                            onChange={(event) =>
+                              updateDvprRow(row.id, { sampleSize: clampInt(event.target.value, 0, 0, 5000) })
+                            }
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={1}
+                              step={1}
+                              className="w-20 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                              value={row.duration.value}
+                              onChange={(event) =>
+                                updateDvprRow(row.id, {
+                                  duration: {
+                                    ...row.duration,
+                                    value: clampInt(event.target.value, row.duration.value, 1, 3650),
+                                  },
+                                })
+                              }
+                            />
+                            <select
+                              className="rounded-md border border-slate-200 px-2 py-1 text-xs"
+                              value={row.duration.unit}
+                              onChange={(event) => {
+                                const currentDays =
+                                  row.duration.unit === "weeks" ? row.duration.value * 7 : row.duration.value;
+                                const nextUnit = event.target.value as "days" | "weeks";
+                                const nextValue =
+                                  nextUnit === "weeks"
+                                    ? Math.max(1, Math.round(currentDays / 7))
+                                    : Math.max(1, Math.round(currentDays));
+                                updateDvprRow(row.id, {
+                                  duration: {
+                                    value: nextValue,
+                                    unit: nextUnit,
+                                  },
+                                });
+                              }}
+                            >
+                              <option value="days">days</option>
+                              <option value="weeks">weeks</option>
+                            </select>
+                          </div>
+                          <div className="mt-1 text-[11px] text-slate-500">
+                            Equivalent: {row.duration.unit === "weeks" ? row.duration.value * 7 : row.duration.value} days
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          {row.risk?.badge && row.risk.badge !== "None" ? (
+                            <div className="space-y-1">
+                              <span
+                                className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
+                                  row.risk.badge === "Low"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : row.risk.badge === "Med"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : "bg-rose-100 text-rose-700"
+                                }`}
+                              >
+                                {row.risk.badge}
+                              </span>
+                              <div className="text-[11px] text-slate-600">
+                                Mean {row.risk.priorMean !== undefined ? `${(row.risk.priorMean * 100).toFixed(2)}%` : "—"}
+                                {" | "}
+                                95% ≤{" "}
+                                {row.risk.priorUpper95 !== undefined ? `${(row.risk.priorUpper95 * 100).toFixed(2)}%` : "—"}
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                n={row.risk.priorN ?? 0}, f={row.risk.priorF ?? 0}, sim={row.risk.similarityPct ?? 100}%
+                              </div>
+                            </div>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            className="w-56 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.acceptanceCriteria}
+                            onChange={(event) => updateDvprRow(row.id, { acceptanceCriteria: event.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            className="w-32 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.owner}
+                            onChange={(event) => updateDvprRow(row.id, { owner: event.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <select
+                            className="rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            value={row.phase}
+                            onChange={(event) =>
+                              updateDvprRow(row.id, { phase: event.target.value as "DV" | "PV" | "PQ" })
+                            }
+                          >
+                            <option value="DV">DV</option>
+                            <option value="PV">PV</option>
+                            <option value="PQ">PQ</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="w-full rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Test sequence</h4>
+                  <p className="text-xs text-slate-500">Planning-grade Gantt view with lanes, dependencies, and zoom.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wide">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-500 normal-case">
+                    Start date
+                    <input
+                      type="date"
+                      className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-700"
+                      value={state.schedule.startDateISO ?? ""}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          schedule: { ...prev.schedule, startDateISO: event.target.value },
+                        }))
+                      }
+                    />
+                  </label>
+                  {[
+                    { id: "sequential", label: "Sequential" },
+                    { id: "parallel-by-stressor", label: "Parallel by stressor" },
+                    { id: "parallel-max", label: "Parallel max" },
+                  ].map((strategy) => (
+                    <button
+                      key={strategy.id}
+                      className={`rounded-full border px-3 py-1 ${
+                        state.schedule.strategy === strategy.id
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 text-slate-500"
+                      }`}
+                      onClick={() =>
+                        setState((prev) => ({
+                          ...prev,
+                          schedule: { ...prev.schedule, strategy: strategy.id as WizardState["schedule"]["strategy"] },
+                        }))
+                      }
+                    >
+                      {strategy.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 md:grid-cols-2 lg:grid-cols-5">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">Total duration</div>
+                  <div className="text-sm font-semibold text-slate-800">
+                    {scheduleStats.currentDays} days (~{Math.max(1, Math.ceil(scheduleStats.currentDays / 7))} weeks)
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">Parallel efficiency</div>
+                  <div className="text-sm font-semibold text-slate-800">
+                    {scheduleStats.savingsPct}% savings
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Seq {scheduleStats.sequentialDays}d → Now {scheduleStats.currentDays}d
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">Tests / lanes</div>
+                  <div className="text-sm font-semibold text-slate-800">
+                    {keptTests.length} tests · {Object.values(scheduleStats.laneCounts).filter((count) => count > 0).length} lanes
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">Critical lane</div>
+                  <div className="text-sm font-semibold text-slate-800">{scheduleStats.criticalLane}</div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600"
+                    onClick={copyScheduleSummary}
+                  >
+                    Copy summary as text
+                  </button>
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600"
+                    onClick={exportScheduleCsv}
+                  >
+                    Download schedule CSV
+                  </button>
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-300"
+                    disabled
+                    title="Coming soon"
+                  >
+                    Download PNG (coming soon)
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="flex items-center gap-2">
+                  {(["weeks", "days"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      className={`rounded-full border px-3 py-1 ${
+                        ganttView === mode ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-500"
+                      }`}
+                      onClick={() => setGanttView(mode)}
+                    >
+                      {mode === "weeks" ? "Weeks" : "Days"}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-slate-600"
+                    onClick={() => handleZoom(-4)}
+                  >
+                    Zoom –
+                  </button>
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-slate-600"
+                    onClick={() => handleZoom(4)}
+                  >
+                    Zoom +
+                  </button>
+                  <button
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-slate-600"
+                    onClick={handleFitToScreen}
+                  >
+                    Fit to screen
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-[260px_minmax(0,1fr)]">
+                  <div className="border-r border-slate-200">
+                    <div className="sticky top-0 z-10 border-b border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Task list
+                    </div>
+                    <div
+                      ref={ganttLeftRef}
+                      className="max-h-[520px] overflow-y-auto"
+                      onScroll={() => handleGanttScroll("left")}
+                    >
+                      {ganttRender.lanes.map((lane) => {
+                        const taskRows = lane.tasks.length > 0 ? lane.tasks : [null];
+                        return (
+                          <div key={lane.lane} className="border-b border-slate-200">
+                            <div className="flex h-8 items-center bg-slate-50 px-3 text-xs font-semibold text-slate-600">
+                              {lane.lane}
+                            </div>
+                            <div className="space-y-2 px-3 py-3">
+                              {taskRows.map((task, index) => (
+                                <div key={task?.id ?? `${lane.lane}-empty-${index}`} className="h-7 text-sm text-slate-700">
+                                  {task ? task.name : <span className="text-xs text-slate-400">No tests</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <div className="sticky top-0 z-20 border-b border-slate-200 bg-white">
+                      <div className="flex">
+                        <div className="w-full overflow-hidden px-2">
+                          <div
+                            className="relative h-8"
+                            style={{ width: Math.max(ganttTimelineWidth, 600) }}
+                          >
+                            {ganttView === "weeks" &&
+                              Array.from({ length: ganttWeekCount }).map((_, index) => (
+                                <div
+                                  key={`week-${index}`}
+                                  className="absolute top-1 text-[10px] text-slate-400"
+                                  style={{ left: index * 7 * ganttPxPerDay }}
+                                >
+                                  W{index + 1}
+                                </div>
+                              ))}
+                            {ganttView === "days" &&
+                              Array.from({ length: ganttTotalDays }).map((_, index) => {
+                                const dayLabel = index + 1;
+                                if (dayLabel % 5 !== 0) return null;
+                                return (
+                                  <div
+                                    key={`day-${dayLabel}`}
+                                    className="absolute top-1 text-[10px] text-slate-400"
+                                    style={{ left: index * ganttPxPerDay }}
+                                  >
+                                    D{dayLabel}
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      ref={ganttRightRef}
+                      className="max-h-[520px] overflow-auto"
+                      onScroll={() => handleGanttScroll("right")}
+                    >
+                      <div
+                        ref={ganttTimelineRef}
+                        className="relative"
+                        style={{
+                          width: Math.max(ganttTimelineWidth, 600),
+                          backgroundImage: `repeating-linear-gradient(to right, rgba(226,232,240,0.8) 0, rgba(226,232,240,0.8) 1px, transparent 1px, transparent ${ganttTickWidth}px)`,
+                        }}
+                      >
+                        {ganttRender.lanes.map((lane) => {
+                          const taskRows = lane.tasks.length > 0 ? lane.tasks : [null];
+                          return (
+                            <div key={lane.lane} className="border-b border-slate-200">
+                              <div className="h-8" />
+                              <div className="space-y-2 px-2 py-3">
+                                {taskRows.map((task, index) => {
+                                  if (!task) {
+                                    return <div key={`${lane.lane}-empty-${index}`} className="h-7" />;
+                                  }
+                                  const left = task.startDay * ganttPxPerDay;
+                                  const width = Math.max(ganttPxPerDay, task.durationDays * ganttPxPerDay);
+                                  const durationLabel =
+                                    ganttView === "weeks"
+                                      ? `${Math.max(1, Math.ceil(task.durationDays / 7))}w`
+                                      : `${task.durationDays}d`;
+                                  const startDisplay = ganttView === "weeks" ? `W${task.startWeek}` : `D${task.startDay + 1}`;
+                                  const endDisplay = ganttView === "weeks" ? `W${task.endWeek}` : `D${task.endDay}`;
+                                  const tooltipParts = [
+                                    task.name,
+                                    `Lane: ${lane.lane}`,
+                                    `Duration: ${task.durationDays} days`,
+                                    `Start: ${startDisplay}`,
+                                    `End: ${endDisplay}`,
+                                  ];
+                                  if (scheduleStartDate) {
+                                    const startDate = new Date(scheduleStartDate);
+                                    startDate.setDate(startDate.getDate() + task.startDay);
+                                    const endDate = new Date(scheduleStartDate);
+                                    endDate.setDate(endDate.getDate() + Math.max(0, task.endDay - 1));
+                                    const formatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+                                    tooltipParts.push(`Dates: ${formatter.format(startDate)} - ${formatter.format(endDate)}`);
+                                  }
+                                  if (task.dependencies.length) {
+                                    tooltipParts.push(`Depends on: ${task.dependencies.join(", ")}`);
+                                  }
+                                  const laneColor =
+                                    lane.lane === "Thermal"
+                                      ? "bg-rose-200 border-rose-400 text-rose-900"
+                                      : lane.lane === "Humidity"
+                                        ? "bg-sky-200 border-sky-400 text-sky-900"
+                                        : lane.lane === "Vibration"
+                                          ? "bg-amber-200 border-amber-400 text-amber-900"
+                                          : lane.lane === "Mechanical"
+                                            ? "bg-slate-200 border-slate-400 text-slate-900"
+                                            : "bg-emerald-200 border-emerald-400 text-emerald-900";
+                                  return (
+                                    <div key={task.id} className="relative h-7">
+                                      {task.dependsOnTaskIds.length > 0 && (
+                                        <>
+                                          <div
+                                            className="absolute top-1/2 h-px border-t border-dashed border-slate-300"
+                                            style={{ left: 0, width: Math.max(0, left) }}
+                                          />
+                                          <div
+                                            className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-slate-400"
+                                            style={{ left: Math.max(0, left - 4) }}
+                                          />
+                                        </>
+                                      )}
+                                      <div
+                                        className={`absolute flex h-7 items-center gap-2 overflow-hidden rounded-md border px-2 text-[11px] font-semibold ${laneColor}`}
+                                        style={{ left, width }}
+                                        title={tooltipParts.join("\n")}
+                                      >
+                                        <span className="truncate">{task.name}</span>
+                                        <span className="ml-auto text-[10px] font-semibold">{durationLabel}</span>
+                                        {task.tier && (
+                                          <span className="rounded-full border border-slate-400 px-2 py-0.5 text-[10px] text-slate-800">
+                                            T{task.tier}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WizardStepper({
+  step,
+  onStepChange,
+}: {
+  step: number;
+  onStepChange: (next: number) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Steps</div>
+      <div className="space-y-2">
+        {STEPS.map((label, index) => {
+          const current = index + 1;
+          const active = current === step;
           return (
             <button
               key={label}
-              onClick={() => canJump && setStep(stepNum)}
-              className={`px-3 py-1 rounded-full border ${step === stepNum ? "bg-black text-white" : "bg-white"} ${canJump ? "" : "opacity-40 cursor-not-allowed"}`}
+              className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${
+                active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+              onClick={() => onStepChange(current)}
             >
-              {stepNum}. {label}
+              <div className="text-xs uppercase tracking-wide text-slate-400">Step {current}</div>
+              <div className="font-medium">{label}</div>
             </button>
           );
         })}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <button onClick={savePlan} className="px-3 py-1 rounded-lg border bg-white">Save plan</button>
-        <button onClick={loadPlan} className="px-3 py-1 rounded-lg border bg-white">Load plan</button>
-        {notice && <span className="text-xs text-gray-600">{notice}</span>}
+    </div>
+  );
+}
+
+function MechanismCard({
+  mechanism,
+  onUpdate,
+}: {
+  mechanism: MechanismSelection;
+  onUpdate: (id: string, updates: Partial<MechanismSelection>) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">{mechanism.name}</div>
+          <div className="text-xs text-slate-500">Confidence: {mechanism.confidence}</div>
+        </div>
+        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <input
+            type="checkbox"
+            checked={mechanism.selected}
+            onChange={(event) =>
+              onUpdate(mechanism.id, {
+                selected: event.target.checked,
+                exclusionJustification: event.target.checked ? null : "",
+              })
+            }
+          />
+          Include
+        </label>
       </div>
-
-      {/* Step 1 */}
-      <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-        <h2 className="text-xl font-semibold mb-4">1) Product / Environment Preset</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Product / Subcomponent</label>
-            <input className="w-full border rounded-xl px-3 py-2" placeholder="e.g., Battery" value={productName} onChange={(e) => setProductName(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Application Category</label>
-            <div className="grid grid-cols-2 gap-2">
-              <select className="w-full border rounded-xl px-3 py-2" value={cat} onChange={(e) => { setCat(e.target.value); setLoc(CATEGORIES[e.target.value][0]); }}>
-                {cats.map((c) => (<option key={c} value={c}>{c}</option>))}
-              </select>
-              <select className="w-full border rounded-xl px-3 py-2" value={loc} onChange={(e) => setLoc(e.target.value)}>
-                {(CATEGORIES[cat] || []).map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-              </select>
-            </div>
-            <label className="mt-2 flex items-center gap-2 text-xs text-gray-600">
-              <input type="checkbox" checked={applyPreset} onChange={(e) => setApplyPreset(e.target.checked)} />
-              Auto-fill from preset on category change
-            </label>
-          </div>
+      <div className="mt-3">
+        <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Confidence
+          <select
+            className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700"
+            value={mechanism.confidence}
+            onChange={(event) =>
+              onUpdate(mechanism.id, { confidence: event.target.value as MechanismSelection["confidence"] })
+            }
+          >
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="assumed">Assumed</option>
+          </select>
+        </label>
+      </div>
+      {!mechanism.selected && (
+        <div className="mt-3">
+          <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Exclusion justification
+            <textarea
+              className="min-h-[80px] rounded-lg border border-slate-200 px-2 py-2 text-sm text-slate-700"
+              value={mechanism.exclusionJustification ?? ""}
+              onChange={(event) =>
+                onUpdate(mechanism.id, { exclusionJustification: event.target.value })
+              }
+              placeholder="Explain why this mechanism is excluded."
+            />
+          </label>
         </div>
-
-        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4 text-sm">
-          <div className="p-3 bg-white rounded-xl border">
-            <label className="block text-xs text-gray-500">Life target (years)</label>
-            <input type="number" className="w-full border rounded-lg px-2 py-1 mt-1" value={life} onChange={(e) => setLife(clampNum(e.target.value, life, 0.01, 50))} />
-          </div>
-
-          <div className="p-3 bg-white rounded-xl border">
-            <label className="block text-xs text-gray-500">Hours per day</label>
-            <input type="number" className="w-full border rounded-lg px-2 py-1 mt-1" value={hpd} onChange={(e) => setHpd(clampNum(e.target.value, hpd, 0, 24))} />
-          </div>
-
-          <div className="p-3 bg-white rounded-xl border">
-            <label className="block text-xs text-gray-500">Cycles per day</label>
-            <input type="number" className="w-full border rounded-lg px-2 py-1 mt-1" value={cpd} onChange={(e) => setCpd(clampNum(e.target.value, cpd, 0, 100000))} />
-          </div>
-
-          <div className="p-3 bg-white rounded-xl border">
-            <label className="block text-xs text-gray-500">Use Tmin (C)</label>
-            <input type="number" className="w-full border rounded-lg px-2 py-1 mt-1" value={Tmin} onChange={(e) => setTmin(clampNum(e.target.value, Tmin, -100, 200))} />
-          </div>
-
-          <div className="p-3 bg-white rounded-xl border">
-            <label className="block text-xs text-gray-500">Use Tmax (C)</label>
-            <input type="number" className="w-full border rounded-lg px-2 py-1 mt-1" value={Tmax} onChange={(e) => setTmax(clampNum(e.target.value, Tmax, -100, 200))} />
-          </div>
-
-          <div className="p-3 bg-white rounded-xl border">
-            <label className="block text-xs text-gray-500">Use RH (%)</label>
-            <input type="number" className="w-full border rounded-lg px-2 py-1 mt-1" value={RH} onChange={(e) => setRH(clampNum(e.target.value, RH, 0, 100))} />
-          </div>
-
-          <div className="p-3 bg-white rounded-xl border col-span-2">
-            <label className="block text-xs text-gray-500">Effective life</label>
-            <div className="mt-1 text-sm space-y-1">
-              <div>Hours-based life ~ <span className="font-semibold">{Math.round(lifeHours).toLocaleString()} h</span></div>
-              <div>Cycles-based life ~ <span className="font-semibold">{Math.round(lifeCycles).toLocaleString()} cycles</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button disabled={!productName} onClick={() => setStep(2)} className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-40">Next -&gt;</button>
-        </div>
-      </section>
-
-      {/* Step 2 */}
-      {step >= 2 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <h2 className="text-xl font-semibold mb-4">2) Reliability Target & Sample Planning</h2>
-          <div className="grid md:grid-cols-4 gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium mb-1">Reliability (R)</label>
-              <input type="number" min={0.5} max={0.999} step={0.01} className="w-full border rounded-xl px-3 py-2" value={R} onChange={(e) => setR(clampNum(e.target.value, R, 0.5, 0.999))} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Confidence (C)</label>
-              <input type="number" min={0.5} max={0.999} step={0.01} className="w-full border rounded-xl px-3 py-2" value={Cc} onChange={(e) => setCc(clampNum(e.target.value, Cc, 0.5, 0.999))} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Parallel streams</label>
-              <input type="number" min={1} className="w-full border rounded-xl px-3 py-2" value={streams} onChange={(e) => setStreams(Math.max(1, clampNum(e.target.value, streams, 1, 100)))} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Spares (%)</label>
-              <input type="number" min={0} className="w-full border rounded-xl px-3 py-2" value={sparesPct} onChange={(e) => setSparesPct(Math.max(0, clampNum(e.target.value, sparesPct, 0, 1000)))} />
-            </div>
-          </div>
-          <div className="mt-3 grid md:grid-cols-3 gap-4 text-sm">
-            <div className="p-3 bg-white rounded-xl border">Suggested n (zero-failure): <span className="font-bold">{nSuggested}</span></div>
-            <div className="p-3 bg-white rounded-xl border">Total with spares: <span className="font-bold">{totalWithSpares}</span></div>
-            <div className="p-3 bg-white rounded-xl border">Per stream: <span className="font-bold">{perStream}</span></div>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <button onClick={() => setStep(3)} className="px-4 py-2 rounded-xl bg-black text-white">Next -&gt;</button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 3 */}
-      {step >= 3 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <h2 className="text-xl font-semibold mb-4">3) Acceleration Knobs</h2>
-
-          <div className="mt-1">
-            <label className="block text-sm font-medium mb-2">Stress Domains</label>
-            <div className="grid md:grid-cols-3 gap-2">
-              {STRESS_DOMAINS.map((d) => (
-                <label key={d} className="flex items-center gap-2 bg-white border rounded-xl px-3 py-2 text-sm">
-                  <input type="checkbox" checked={domains.includes(d)} onChange={(e) => setDomains((p) => e.target.checked ? [...p, d] : p.filter((x) => x !== d))} />
-                  {d}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {domains.includes("Thermal") && (
-            <div className="grid md:grid-cols-3 gap-4 mt-4">
-              {/* Arrhenius */}
-              <div className="bg-white border rounded-xl p-4">
-                <h3 className="font-semibold">Arrhenius - Thermal Ageing</h3>
-                <label className="block text-xs text-gray-500">T_use (C)</label>
-                <input type="number" className="border rounded px-2 py-1 mt-1 w-full" value={Tuse} onChange={(e) => setTuse(clampNum(e.target.value, Tuse, -100, 200))} />
-                <label className="block text-xs text-gray-500 mt-3">Accelerated Test Temperature (C)</label>
-                <input type="number" className="border rounded px-2 py-1 mt-1 w-full" value={Ttest} onChange={(e) => setTtest(clampNum(e.target.value, Ttest, -100, 250))} />
-                <label className="block text-xs text-gray-500 mt-3">Ea (eV)</label>
-                <input type="number" step={0.05} className="border rounded px-2 py-1 mt-1 w-full" value={Ea} onChange={(e) => setEa(clampNum(e.target.value, Ea, 0.1, 3))} />
-                <div className="text-sm mt-3">AF ~ <span className="font-semibold">{AF_arr.toFixed(2)}</span></div>
-                <div className="text-sm">Test duration ~ <span className="font-semibold">{Math.round(durArr).toLocaleString()} h</span></div>
-              </div>
-
-              {/* Coffin-Manson */}
-              <div className="bg-white border rounded-xl p-4">
-                <h3 className="font-semibold">Thermal Cycling - Coffin-Manson</h3>
-                <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                  <label className="flex flex-col">dT_use (C)
-                    <input type="number" className="border rounded px-2 py-1" value={dUse} onChange={(e) => setDUse(clampNum(e.target.value, dUse, 1, 200))} />
-                  </label>
-                  <label className="flex flex-col">dT_stress (C)
-                    <input type="number" className="border rounded px-2 py-1" value={dStress} onChange={(e) => setDStress(clampNum(e.target.value, dStress, 1, 300))} />
-                  </label>
-                  <label className="flex items-center gap-2 col-span-2 text-xs">
-                    <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} />
-                    Keep dT_stress = dT_use + 20 C
-                  </label>
-                  <label className="flex flex-col">M (2-6 typical)
-                    <input type="number" step={0.1} className="border rounded px-2 py-1" value={M} onChange={(e) => setM(clampNum(e.target.value, M, 1, 10))} />
-                  </label>
-                  <label className="flex flex-col">Ramp (C/min)
-                    <input type="number" className="border rounded px-2 py-1" value={ramp} onChange={(e) => setRamp(clampNum(e.target.value, ramp, 0.1, 100))} />
-                  </label>
-                  <label className="flex flex-col">Dwell hot (min)
-                    <input type="number" className="border rounded px-2 py-1" value={dHot} onChange={(e) => setDHot(clampNum(e.target.value, dHot, 0, 240))} />
-                  </label>
-                  <label className="flex flex-col">Dwell cold (min)
-                    <input type="number" className="border rounded px-2 py-1" value={dCold} onChange={(e) => setDCold(clampNum(e.target.value, dCold, 0, 240))} />
-                  </label>
-                  <div className="col-span-2">Cycle time ~ <span className="font-semibold">{cycleMin.toFixed(1)} min</span></div>
-                </div>
-                <div className="text-sm mt-3">AF_CM = (dT_stress/dT_use)^{M.toFixed(1)} ~ <span className="font-semibold">{AF_cm.toFixed(3)}</span></div>
-                <div className="text-sm">N_use ~ <span className="font-semibold">{Nuse.toLocaleString()}</span> -&gt; N_acc ~ <span className="font-semibold">{Nacc.toLocaleString()}</span></div>
-                <div className="text-sm">Estimated test time ~ <span className="font-semibold">{Math.round(cmHours).toLocaleString()}</span> h</div>
-              </div>
-
-              {/* Peck */}
-              <div className="bg-white border rounded-xl p-4">
-                <h3 className="font-semibold">Arrhenius-Peck (Humidity)</h3>
-                <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                  <label className="flex flex-col">T_use (C)
-                    <input type="number" className="border rounded px-2 py-1" value={Tuse} onChange={(e) => setTuse(clampNum(e.target.value, Tuse, -100, 200))} />
-                  </label>
-                  <label className="flex flex-col">T_test (C)
-                    <input type="number" className="border rounded px-2 py-1" value={Tpeck} onChange={(e) => setTpeck(clampNum(e.target.value, Tpeck, -100, 200))} />
-                  </label>
-                  <label className="flex flex-col">RH_use (%)
-                    <input type="number" className="border rounded px-2 py-1" value={RHuse} onChange={(e) => setRHuse(clampNum(e.target.value, RHuse, 0, 100))} />
-                  </label>
-                  <label className="flex flex-col">RH_test (%)
-                    <input type="number" className="border rounded px-2 py-1" value={RHtest} onChange={(e) => setRHtest(clampNum(e.target.value, RHtest, 0, 100))} />
-                  </label>
-                  <label className="flex flex-col">Ea (eV)
-                    <input type="number" step={0.05} className="border rounded px-2 py-1" value={Ea} onChange={(e) => setEa(clampNum(e.target.value, Ea, 0.1, 3))} />
-                  </label>
-                  <label className="flex flex-col">Peck n
-                    <input type="number" step={0.1} className="border rounded px-2 py-1" value={nPeck} onChange={(e) => setNPeck(clampNum(e.target.value, nPeck, 0.1, 10))} />
-                  </label>
-                </div>
-                <div className="text-sm mt-3">AF (Peck) ~ <span className="font-semibold">{AF_pe.toFixed(2)}</span></div>
-                <div className="text-sm">Test duration ~ <span className="font-semibold">{Math.round(durPe).toLocaleString()} h</span></div>
-              </div>
-            </div>
-          )}
-
-          {domains.includes("Mechanical Vibration") && (
-            <div className="grid md:grid-cols-3 gap-4 mt-4">
-              <div className="bg-white border rounded-xl p-4">
-                <h3 className="font-semibold">Mechanical Vibration - AF</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <label className="flex flex-col">Grms (use)
-                    <input type="number" className="border rounded px-2 py-1" value={grmsUse} onChange={(e) => setGrmsUse(clampNum(e.target.value, grmsUse, 0.01, 50))} />
-                  </label>
-                  <label className="flex flex-col">Grms (test)
-                    <input type="number" className="border rounded px-2 py-1" value={grmsTest} onChange={(e) => setGrmsTest(clampNum(e.target.value, grmsTest, 0.01, 100))} />
-                  </label>
-                  <label className="flex flex-col">Exponent b
-                    <input type="number" step={0.1} className="border rounded px-2 py-1" value={vibExpB} onChange={(e) => setVibExpB(clampNum(e.target.value, vibExpB, 0.1, 10))} />
-                  </label>
-                </div>
-                <div className="text-sm mt-3">AF_vib ~ <span className="font-semibold">{AF_vib.toFixed(2)}</span></div>
-                <div className="text-sm">Suggested vibration duration ~ <span className="font-semibold">{Math.round(durVib).toLocaleString()}</span> h</div>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 flex justify-end">
-            <button onClick={() => setStep(4)} className="px-4 py-2 rounded-xl bg-black text-white">Next -&gt;</button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 4 */}
-      {step >= 4 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <h2 className="text-xl font-semibold mb-4">4) Materials & Failure Modes</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Materials (multi-select)</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1">
-                {mats.map((m) => (
-                  <label key={m} className="flex items-center gap-2 bg-white border rounded-xl px-3 py-2 text-sm">
-                    <input type="checkbox" checked={selM.includes(m)} onChange={(e) => setSelM((p) => e.target.checked ? Array.from(new Set([...p, m])) : p.filter((x) => x !== m))} />
-                    {m}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Suggested Modes</label>
-              <div className="text-sm bg-white border rounded-xl p-3 min-h-[3rem]">{sugModes.join(", ") || "--"}</div>
-              <label className="block text-sm font-medium mt-3">Add custom modes (comma-separated)</label>
-              <input className="w-full border rounded-xl px-3 py-2" placeholder="e.g., dielectric breakdown" value={custom} onChange={(e) => setCustom(e.target.value)} />
-              <div className="text-sm mt-2">All modes: <span className="font-semibold">{modes.join(", ") || "--"}</span></div>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <button onClick={() => setStep(5)} className="px-4 py-2 rounded-xl bg-black text-white">Next -&gt;</button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 5 - Previews */}
-      {step >= 5 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <h2 className="text-xl font-semibold mb-4">Summary</h2>
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div className="p-3 bg-white rounded-xl border">
-              <div className="text-xs text-gray-500">Product</div>
-              <div className="font-semibold">{productName || "N/A"}</div>
-              <div className="text-xs text-gray-500 mt-2">Category</div>
-              <div>{cat} / {loc}</div>
-              <div className="text-xs text-gray-500 mt-2">Preset auto-fill</div>
-              <div>{applyPreset ? "On" : "Off"}</div>
-            </div>
-            <div className="p-3 bg-white rounded-xl border">
-              <div className="text-xs text-gray-500">Life target</div>
-              <div>{life} years; {Math.round(lifeHours).toLocaleString()} h</div>
-              <div className="text-xs text-gray-500 mt-2">Environment</div>
-              <div>Tmin {Tmin}C, Tmax {Tmax}C, RH {RH}%</div>
-              <div className="text-xs text-gray-500 mt-2">Domains</div>
-              <div>{domains.join(", ") || "None"}</div>
-            </div>
-            <div className="p-3 bg-white rounded-xl border">
-              <div className="text-xs text-gray-500">Sample plan</div>
-              <div>n={nSuggested}, total={totalWithSpares}, per stream={perStream}</div>
-              <div className="text-xs text-gray-500 mt-2">Materials</div>
-              <div>{selM.join(", ") || "None"}</div>
-              <div className="text-xs text-gray-500 mt-2">Acceleration snapshot</div>
-              <div>Arr: {Math.round(durArr)}h, Peck: {Math.round(durPe)}h, CM: {Math.round(cmHours)}h, Vib: {Math.round(durVib)}h</div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {step >= 5 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold mb-4">Preview - DVP&R</h2>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={editDvp} onChange={(e) => setEditDvp(e.target.checked)} />
-              Edit table
-            </label>
-          </div>
-          <div className="overflow-auto border rounded-xl">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  {["Item", "Failure Mode", "Test", "Conditions", "Duration (h)", "Sample Size", "Acceptance", "Standard"].map((h) => (
-                    <th key={h} className="text-left p-2 border-b">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {dvpWithEdits.map((r, i) => (
-                  <tr key={i} className="odd:bg-white even:bg-gray-50">
-                    <td className="p-2 border-b align-top">{r.Item}</td>
-                    <td className="p-2 border-b align-top">
-                      {editDvp ? (
-                        <input className="w-full border rounded px-2 py-1" value={r.FailureMode} onChange={(e) => updateDvpEdit(r.Item, "FailureMode", e.target.value)} />
-                      ) : (
-                        r.FailureMode
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editDvp ? (
-                        <input className="w-full border rounded px-2 py-1" value={r.Test} onChange={(e) => updateDvpEdit(r.Item, "Test", e.target.value)} />
-                      ) : (
-                        r.Test
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top whitespace-pre-wrap">
-                      {editDvp ? (
-                        <textarea rows={2} className="w-full border rounded px-2 py-1" value={r.Conditions} onChange={(e) => updateDvpEdit(r.Item, "Conditions", e.target.value)} />
-                      ) : (
-                        r.Conditions
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editDvp ? (
-                        <input type="number" className="w-full border rounded px-2 py-1" value={r.Duration_h} onChange={(e) => updateDvpEdit(r.Item, "Duration_h", clampNum(e.target.value, r.Duration_h, 0, 100000))} />
-                      ) : (
-                        r.Duration_h
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editDvp ? (
-                        <input type="number" className="w-full border rounded px-2 py-1" value={r.SampleSize} onChange={(e) => updateDvpEdit(r.Item, "SampleSize", clampNum(e.target.value, r.SampleSize, 0, 100000))} />
-                      ) : (
-                        r.SampleSize
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editDvp ? (
-                        <textarea rows={2} className="w-full border rounded px-2 py-1" value={r.Acceptance} onChange={(e) => updateDvpEdit(r.Item, "Acceptance", e.target.value)} />
-                      ) : (
-                        r.Acceptance
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editDvp ? (
-                        <input className="w-full border rounded px-2 py-1" value={r.StandardRef} onChange={(e) => updateDvpEdit(r.Item, "StandardRef", e.target.value)} />
-                      ) : (
-                        r.StandardRef
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {step >= 5 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold mb-4">Preview - Test Sequence</h2>
-            <div className="flex items-center gap-2 text-sm">
-              <label>Start date</label>
-              <input type="date" className="border rounded-lg px-3 py-2" value={start} onChange={(e) => setStart(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="overflow-auto border rounded-xl">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    {["Test", "Duration (h)", "Offset (h)", "Start", "End"].map((h) => (
-                      <th key={h} className="text-left p-2 border-b">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {seq.map((r, i) => (
-                    <tr key={i} className="odd:bg-white even:bg-gray-50">
-                      <td className="p-2 border-b align-top">{r.Test}</td>
-                      <td className="p-2 border-b align-top">{r.Duration_h}</td>
-                      <td className="p-2 border-b align-top">{r.Offset_h}</td>
-                      <td className="p-2 border-b align-top">{r.StartISO.replace("T", " ").slice(0, 16)}</td>
-                      <td className="p-2 border-b align-top">{r.EndISO.replace("T", " ").slice(0, 16)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={seq.map((r) => ({ name: r.Test, offset: r.Offset_h, duration: r.Duration_h }))} layout="vertical" margin={{ left: 80, right: 20, top: 10, bottom: 10 }}>
-                  <XAxis type="number" hide domain={[0, "dataMax + 8"]} />
-                  <YAxis type="category" dataKey="name" width={200} />
-                  <Tooltip formatter={(v: any, n: string) => [v, n === "duration" ? "Duration (h)" : "Offset (h)"]} />
-                  <Bar dataKey="offset" stackId="a" fill="rgba(0,0,0,0)" />
-                  <Bar dataKey="duration" stackId="a" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {step >= 5 && (
-        <section className="bg-gray-50 rounded-2xl p-6 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold mb-4">Preview - FMEA (RPN)</h2>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={editFmea} onChange={(e) => setEditFmea(e.target.checked)} />
-              Edit table
-            </label>
-          </div>
-          <div className="overflow-auto border rounded-xl">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  {["Item/Subcomponent", "Function", "Potential Failure Mode", "Potential Effects", "S", "O", "D", "RPN", "Current Controls", "Recommended Actions"].map((h) => (
-                    <th key={h} className="text-left p-2 border-b">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {fmeaRows.map((r, i) => (
-                  <tr key={i} className="odd:bg-white even:bg-gray-50">
-                    <td className="p-2 border-b align-top">{r.Item}</td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <input className="w-full border rounded px-2 py-1" value={r.Function} onChange={(e) => updateFmeaEdit(r.Item, "Function", e.target.value)} />
-                      ) : (
-                        r.Function
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">{r.FailureMode}</td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <input className="w-full border rounded px-2 py-1" value={r.Effects} onChange={(e) => updateFmeaEdit(r.Item, "Effects", e.target.value)} />
-                      ) : (
-                        r.Effects
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <input type="number" className="w-full border rounded px-2 py-1" value={r.S} onChange={(e) => updateFmeaEdit(r.Item, "S", clampNum(e.target.value, r.S, 1, 10))} />
-                      ) : (
-                        r.S
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <input type="number" className="w-full border rounded px-2 py-1" value={r.O} onChange={(e) => updateFmeaEdit(r.Item, "O", clampNum(e.target.value, r.O, 1, 10))} />
-                      ) : (
-                        r.O
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <input type="number" className="w-full border rounded px-2 py-1" value={r.D} onChange={(e) => updateFmeaEdit(r.Item, "D", clampNum(e.target.value, r.D, 1, 10))} />
-                      ) : (
-                        r.D
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top font-semibold">{r.RPN}</td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <textarea rows={2} className="w-full border rounded px-2 py-1" value={r.Controls} onChange={(e) => updateFmeaEdit(r.Item, "Controls", e.target.value)} />
-                      ) : (
-                        <span className="whitespace-pre-wrap">{r.Controls}</span>
-                      )}
-                    </td>
-                    <td className="p-2 border-b align-top">
-                      {editFmea ? (
-                        <textarea rows={2} className="w-full border rounded px-2 py-1" value={r.Actions} onChange={(e) => updateFmeaEdit(r.Item, "Actions", e.target.value)} />
-                      ) : (
-                        r.Actions
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button onClick={exportCsvs} className="px-4 py-2 rounded-xl bg-black text-white shadow hover:opacity-90">Download CSVs</button>
-            <span className="text-xs text-gray-500">3 files: DVP, Test_Sequence, FMEA. Durations come from your acceleration knobs & selections.</span>
-          </div>
-        </section>
       )}
     </div>
   );
 }
+
+function TestRow({
+  test,
+  onUpdate,
+  onOpenSpecs,
+}: {
+  test: SelectedTest;
+  onUpdate: (id: string, updates: Partial<SelectedTest>) => void;
+  onOpenSpecs: (title: string, refs: Array<{ standard: string; clause?: string; note?: string }>) => void;
+}) {
+  const needsJustification = test.status === "remove" && !test.removalJustification?.trim();
+  const definition = TESTS.find((item) => item.id === test.id);
+  const refs = definition?.references ?? [];
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">{test.name}</div>
+          <div className="text-xs text-slate-500">
+            Coverage: {test.coverage} · {test.durationWeeks} weeks · Cost level {test.costLevel}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          {(["keep", "downgrade", "remove"] as const).map((status) => (
+            <button
+              key={status}
+              className={`rounded-full border px-3 py-1 uppercase tracking-wide ${
+                test.status === status ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-500"
+              }`}
+              onClick={() => onUpdate(test.id, { status })}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+        {test.mechanismIds.length > 0
+          ? test.mechanismIds.map((id) => (
+              <span key={id} className="rounded-full border border-slate-200 bg-white px-2 py-1">
+                {MECHANISMS.find((mech) => mech.id === id)?.name || id}
+              </span>
+            ))
+          : "Change-triggered test"}
+      </div>
+      {refs.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          {refs.map((ref) => (
+            <button
+              key={`${test.id}-${ref.standard}`}
+              className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600 hover:border-slate-300"
+              onClick={() => onOpenSpecs(test.name, refs)}
+            >
+              {ref.standard}
+            </button>
+          ))}
+        </div>
+      )}
+      {test.status === "remove" && (
+        <div className="mt-3">
+          <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Removal justification
+            <textarea
+              className={`min-h-[70px] rounded-lg border px-2 py-2 text-sm text-slate-700 ${
+                needsJustification ? "border-amber-400 bg-amber-50" : "border-slate-200"
+              }`}
+              value={test.removalJustification ?? ""}
+              onChange={(event) => onUpdate(test.id, { removalJustification: event.target.value })}
+              placeholder="Why is this test removed?"
+            />
+          </label>
+          {needsJustification && (
+            <div className="mt-2 text-xs font-semibold text-amber-700">Justification required.</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RightPanelSummary({
+  productName,
+  serviceLife,
+  selectedMechanisms,
+  keptTests,
+  totalTests,
+  warnings,
+  coverageScore,
+}: {
+  productName: string;
+  serviceLife: number;
+  selectedMechanisms: number;
+  keptTests: number;
+  totalTests: number;
+  warnings: string[];
+  coverageScore: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-slate-400">Context</div>
+      <div className="mt-2 text-sm font-semibold">{productName}</div>
+      <div className="text-xs text-slate-500">Service life: {serviceLife || "--"} years</div>
+      <div className="mt-4 grid gap-2 text-sm">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+          Mechanisms selected: {selectedMechanisms}
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+          Tests kept: {keptTests} / {totalTests}
+        </div>
+      </div>
+      <div className="mt-4">
+        <div className="text-xs uppercase tracking-wide text-slate-400">Warnings</div>
+        {warnings.length === 0 && <div className="text-xs text-slate-500">No warnings flagged.</div>}
+        {warnings.length > 0 && (
+          <ul className="mt-2 space-y-1 text-xs text-amber-700">
+            {warnings.slice(0, 6).map((warn) => (
+              <li key={warn}>• {warn}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="mt-4">
+        <div className="text-xs uppercase tracking-wide text-slate-400">Coverage Score</div>
+        <div className="mt-2 h-2 w-full rounded-full bg-slate-200">
+          <div
+            className="h-2 rounded-full bg-slate-900"
+            style={{ width: `${coverageScore}%` }}
+          />
+        </div>
+        <div className="mt-1 text-xs text-slate-500">{coverageScore}% coverage</div>
+      </div>
+    </div>
+  );
+}
+
+function ExportCard({
+  title,
+  description,
+  actionLabel,
+  onClick,
+  disabled,
+}: {
+  title: string;
+  description: string;
+  actionLabel: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="text-sm font-semibold">{title}</div>
+      <div className="mt-1 text-xs text-slate-500">{description}</div>
+      <button
+        className="mt-4 w-full rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300"
+        onClick={onClick}
+        disabled={disabled}
+        title={disabled ? "Coming soon" : undefined}
+      >
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
+
+function mergeDvprRows(defaultRows: WizardState["dvpr"]["rows"], existingRows: WizardState["dvpr"]["rows"]) {
+  if (!existingRows.length) return defaultRows;
+  const byId = new Map(existingRows.map((row) => [row.id, row]));
+  return defaultRows.map((row) => {
+    const existing = byId.get(row.id);
+    if (!existing) return row;
+    const duration =
+      typeof (existing as any).duration === "string"
+        ? {
+            value: Math.max(1, Math.round(parseFloat((existing as any).duration) || row.duration.value)),
+            unit: "weeks" as const,
+          }
+        : existing.duration ?? row.duration;
+    return { ...row, ...existing, duration, risk: row.risk };
+  });
+}
+
