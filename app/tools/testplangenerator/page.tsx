@@ -1199,11 +1199,11 @@ export default function Page() {
                           </label>
                         </div>
                         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                          {[
+                          {([
                             { key: "severity", label: "S" },
                             { key: "occurrence", label: "O" },
                             { key: "detection", label: "D" },
-                          ].map((item) => (
+                          ] as const).map((item) => (
                             <label key={item.key} className="flex flex-col gap-1">
                               <span className="font-semibold text-slate-500">{item.label}</span>
                               <input
@@ -1211,7 +1211,7 @@ export default function Page() {
                                 min={1}
                                 max={5}
                                 className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
-                                value={selection?.[item.key as keyof typeof selection] ?? 3}
+                                value={selection?.[item.key] ?? 3}
                                 onChange={(event) =>
                                   updateFailureMode(mode.id, {
                                     [item.key]: clampInt(event.target.value, 3, 1, 5),
