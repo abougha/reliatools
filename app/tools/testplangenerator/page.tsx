@@ -509,11 +509,11 @@ export default function Page() {
       priorEvidence: {
         ...prev.priorEvidence,
         [testId]: {
-          nPrev: null,
-          fPrev: null,
-          similarityPct: 100,
-          priorType: "jeffreys",
           ...prev.priorEvidence[testId],
+          nPrev: prev.priorEvidence[testId]?.nPrev ?? null,
+          fPrev: prev.priorEvidence[testId]?.fPrev ?? null,
+          similarityPct: prev.priorEvidence[testId]?.similarityPct ?? 100,
+          priorType: prev.priorEvidence[testId]?.priorType ?? "jeffreys",
           ...updates,
         },
       },
