@@ -188,7 +188,7 @@ export default function Page() {
   );
 
   const humidityComplete =
-    state.missionProfile.humidityPct !== null || state.missionProfile.humidity !== "";
+    state.missionProfile.humidityPct !== null || Boolean(state.missionProfile.humidity);
   const missionComplete =
     state.missionProfile.tempMinC !== null &&
     state.missionProfile.tempMaxC !== null &&
