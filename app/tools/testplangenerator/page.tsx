@@ -1574,7 +1574,7 @@ export default function Page() {
                           </label>
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                          {[
+                          {([
                             { key: "TuseK", label: "Tuse (K)", min: 200, max: 600 },
                             { key: "TstressK", label: "Tstress (K)", min: 200, max: 700 },
                             { key: "deltaTuse", label: "Delta Tuse", min: 1, max: 200 },
@@ -1584,14 +1584,14 @@ export default function Page() {
                             { key: "Ea", label: "Ea (eV)", min: 0.1, max: 2.5 },
                             { key: "n", label: "n", min: 0.1, max: 6 },
                             { key: "m", label: "m", min: 0.1, max: 6 },
-                          ].map((field) => (
+                          ] as const).map((field) => (
                             <label key={field.key} className="flex flex-col gap-1">
                               {field.label}
                               <input
                                 type="number"
                                 className="rounded-lg border border-slate-200 px-2 py-1 text-sm disabled:bg-slate-100"
                                 disabled={!test.acceleration.userOverrides.enabled}
-                                value={test.acceleration.userOverrides[field.key as keyof typeof test.acceleration.userOverrides] ?? ""}
+                                value={test.acceleration.userOverrides[field.key] ?? ""}
                                 onChange={(event) =>
                                   updateAcceleration(
                                     test.id,
