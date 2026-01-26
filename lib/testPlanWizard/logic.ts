@@ -1,5 +1,6 @@
 import {
   FAILURE_MODE_LIBRARY,
+  getEaSuggestion,
   MATERIAL_LIBRARY,
   MECHANISMS,
   PRODUCT_TYPES,
@@ -230,8 +231,14 @@ function defaultFailureModes(): Record<string, FailureModeSelection> {
 function materialEaMidpoint(materialId?: string) {
   if (!materialId) return null;
   const material = MATERIAL_LIBRARY.find((entry) => entry.id === materialId);
-  if (!material?.eaRange) return null;
-  return (material.eaRange.min + material.eaRange.max) / 2;
+  const suggestion = getEaSuggestion(material);
+  if (suggestion.kind === "range") {
+    return (suggestion.min + suggestion.max) / 2;
+  }
+  if (suggestion.kind === "default") {
+    return suggestion.value;
+  }
+  return null;
 }
 
 export function createDefaultWizardState(): WizardState {

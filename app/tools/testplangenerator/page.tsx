@@ -22,6 +22,7 @@ import {
   syncMechanisms,
 } from "@/lib/testPlanWizard/logic";
 import {
+  getEaSuggestion,
   industryOptions,
   FAILURE_MODE_LIBRARY,
   MATERIAL_LIBRARY,
@@ -1626,32 +1627,45 @@ export default function Page() {
                               const material = MATERIAL_LIBRARY.find(
                                 (entry) => entry.id === state.materials.housingMaterialId
                               );
-                              if (!material?.eaRange) return null;
-                              const midpoint = (material.eaRange.min + material.eaRange.max) / 2;
-                              return (
-                                <>
+                              const suggestion = getEaSuggestion(material);
+                              if (suggestion.kind === "range") {
+                                const midpoint = (suggestion.min + suggestion.max) / 2;
+                                return (
+                                  <>
+                                    <button
+                                      className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
+                                      onClick={() => updateAcceleration(test.id, {}, { Ea: suggestion.min, enabled: true })}
+                                    >
+                                      Use Ea min ({suggestion.min})
+                                    </button>
+                                    <button
+                                      className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
+                                      onClick={() => updateAcceleration(test.id, {}, { Ea: suggestion.max, enabled: true })}
+                                    >
+                                      Use Ea max ({suggestion.max})
+                                    </button>
+                                    <button
+                                      className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
+                                      onClick={() =>
+                                        updateAcceleration(test.id, {}, { Ea: Number(midpoint.toFixed(2)), enabled: true })
+                                      }
+                                    >
+                                      Use Ea midpoint ({midpoint.toFixed(2)})
+                                    </button>
+                                  </>
+                                );
+                              }
+                              if (suggestion.kind === "default") {
+                                return (
                                   <button
                                     className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
-                                    onClick={() => updateAcceleration(test.id, {}, { Ea: material.eaRange.min, enabled: true })}
+                                    onClick={() => updateAcceleration(test.id, {}, { Ea: suggestion.value, enabled: true })}
                                   >
-                                    Use Ea min ({material.eaRange.min})
+                                    Use Ea default ({suggestion.value})
                                   </button>
-                                  <button
-                                    className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
-                                    onClick={() => updateAcceleration(test.id, {}, { Ea: material.eaRange.max, enabled: true })}
-                                  >
-                                    Use Ea max ({material.eaRange.max})
-                                  </button>
-                                  <button
-                                    className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600"
-                                    onClick={() =>
-                                      updateAcceleration(test.id, {}, { Ea: Number(midpoint.toFixed(2)), enabled: true })
-                                    }
-                                  >
-                                    Use Ea midpoint ({midpoint.toFixed(2)})
-                                  </button>
-                                </>
-                              );
+                                );
+                              }
+                              return <span className="text-slate-400">No Ea suggestion available</span>;
                             })()}
                           </div>
                         )}

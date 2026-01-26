@@ -7,6 +7,7 @@ import type {
   ChemicalExposure,
   HumidityLevel,
   IndustryId,
+  MaterialEntry,
   ShockLevel,
   TestCategory,
   TestCoverage,
@@ -19,6 +20,7 @@ export type {
   ChemicalExposure,
   HumidityLevel,
   IndustryId,
+  MaterialEntry,
   ShockLevel,
   TestCategory,
   TestCoverage,
@@ -114,15 +116,6 @@ export type AccelModelDefinition = {
     unit?: string;
     tooltip?: string;
   }>;
-};
-
-export type MaterialEntry = {
-  id: string;
-  name: string;
-  category: "housing" | "seal" | "contact" | "plating" | "pcb" | "solder";
-  tags: string[];
-  eaRange?: { min: number; max: number };
-  notes?: string[];
 };
 
 export type FailureModeEntry = {
@@ -258,7 +251,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "PBT-GF",
     category: "housing",
     tags: ["polymer", "housing"],
-    eaRange: { min: 0.5, max: 0.85 },
+    eaRange: { min: 0.6, max: 0.85 },
     notes: ["Good dimensional stability; verify chemical compatibility."],
   },
   {
@@ -290,6 +283,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "CuSn",
     category: "contact",
     tags: ["contact", "copper-alloy"],
+    eaDefault: 0.8,
     notes: ["Tin bronze; common for contacts."],
   },
   {
@@ -297,6 +291,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "CuNiSi",
     category: "contact",
     tags: ["contact", "copper-alloy", "high-strength"],
+    eaDefault: 0.85,
     notes: ["Higher strength contact alloy; watch plating adhesion."],
   },
   {
@@ -304,6 +299,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "Tin",
     category: "plating",
     tags: ["plating", "connector"],
+    eaDefault: 0.7,
     notes: ["Cost effective; prone to fretting corrosion in vibration."],
   },
   {
@@ -311,6 +307,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "Silver",
     category: "plating",
     tags: ["plating", "connector"],
+    eaDefault: 0.75,
     notes: ["Low contact resistance; watch sulfur tarnish."],
   },
   {
@@ -318,6 +315,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "Gold",
     category: "plating",
     tags: ["plating", "connector", "high-reliability"],
+    eaDefault: 0.8,
     notes: ["High reliability; thicker plating reduces wear risk."],
   },
   {
@@ -333,9 +331,32 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     name: "SAC305",
     category: "solder",
     tags: ["solder", "pb-free"],
+    eaDefault: 0.9,
     notes: ["Common Pb-free solder; thermal fatigue sensitivity."],
   },
 ];
+
+export type EaSuggestion =
+  | { kind: "range"; min: number; max: number }
+  | { kind: "default"; value: number }
+  | { kind: "none" };
+
+export function getEaSuggestion(material?: MaterialEntry | null): EaSuggestion {
+  if (!material) return { kind: "none" };
+  const range = material.eaRange;
+  if (range && Number.isFinite(range.min) && Number.isFinite(range.max)) {
+    const min = range.min;
+    const max = range.max;
+    if (min <= max) {
+      return { kind: "range", min, max };
+    }
+  }
+  const eaDefault = material.eaDefault;
+  if (typeof eaDefault === "number" && Number.isFinite(eaDefault)) {
+    return { kind: "default", value: eaDefault };
+  }
+  return { kind: "none" };
+}
 
 //
 // 2c) Failure Mode Library (~10)

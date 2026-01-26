@@ -68,6 +68,16 @@ export interface MaterialsSelection {
   notes?: string;
 }
 
+export interface MaterialEntry {
+  id: string;
+  name: string;
+  category: "housing" | "seal" | "contact" | "plating" | "pcb" | "solder";
+  tags: string[];
+  eaRange?: { min: number; max: number };
+  eaDefault?: number; // eV
+  notes?: string[];
+}
+
 export interface FailureModeSelection {
   selected: boolean;
   severity: 1 | 2 | 3 | 4 | 5;
