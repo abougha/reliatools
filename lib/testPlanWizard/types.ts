@@ -18,6 +18,7 @@ export type ProductTypeId = string;
 export type MechanismConfidence = "high" | "medium" | "assumed";
 
 export type RiskTier = 1 | 2 | 3;
+export type RiskBadge = "None" | "Low" | "Med" | "High";
 
 export interface ProductContext {
   productType: ProductTypeId | "";
@@ -195,7 +196,7 @@ export interface DvprRow {
     priorN?: number;
     priorF?: number;
     similarityPct?: number;
-    badge?: "Low" | "Med" | "High" | "None";
+    badge?: RiskBadge;
   };
   acceptanceCriteria: string;
   owner: string;

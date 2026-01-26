@@ -18,6 +18,7 @@ import type {
   PrioritizationState,
   PriorEvidenceEntry,
   ProductContext,
+  RiskBadge,
   ResidualRiskState,
   SelectedTest,
   TestScore,
@@ -129,14 +130,24 @@ function betaInvCDF(q: number, a: number, b: number): number {
   return result;
 }
 
-export function computePriorEvidence(entry?: PriorEvidenceEntry) {
+export function computePriorEvidence(entry?: PriorEvidenceEntry): {
+  nPrev: number | null;
+  fPrev: number | null;
+  similarityPct: number;
+  priorType: "jeffreys" | "uniform";
+  alpha?: number;
+  beta?: number;
+  meanFailProb?: number;
+  upperFailProb95?: number;
+  badge: RiskBadge;
+} {
   if (!entry || entry.nPrev === null || entry.nPrev <= 0) {
     return {
       nPrev: entry?.nPrev ?? null,
       fPrev: entry?.fPrev ?? null,
       similarityPct: entry?.similarityPct ?? 100,
       priorType: entry?.priorType ?? "jeffreys",
-      badge: "None" as const,
+      badge: "None",
     };
   }
   const similarity = clamp(entry.similarityPct ?? 100, 0, 100);
@@ -151,7 +162,7 @@ export function computePriorEvidence(entry?: PriorEvidenceEntry) {
   const beta = beta0 + (nEff - fEff);
   const meanFailProb = alpha / (alpha + beta);
   const upperFailProb95 = betaInvCDF(0.95, alpha, beta);
-  const badge =
+  const badge: RiskBadge =
     upperFailProb95 <= 0.01 ? "Low" : upperFailProb95 <= 0.05 ? "Med" : "High";
   return {
     nPrev,
