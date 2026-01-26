@@ -35,9 +35,9 @@ const EYRING_M_DEFAULT = 1.6;
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const toK = (c: number) => c + 273.15;
 
-const betaInvCache = new Map<string, number>();
+const betaInvCache: Map<string, number> = new Map();
 
-function logGamma(z: number) {
+function logGamma(z: number): number {
   const p = [
     0.99999999999980993,
     676.5203681218851,
@@ -62,7 +62,7 @@ function logGamma(z: number) {
   return 0.5 * Math.log(2 * Math.PI) + (zMinus + 0.5) * Math.log(t) - t + Math.log(x);
 }
 
-function betacf(a: number, b: number, x: number) {
+function betacf(a: number, b: number, x: number): number {
   const maxIter = 200;
   const eps = 3e-7;
   const fpmin = 1e-30;
@@ -96,7 +96,7 @@ function betacf(a: number, b: number, x: number) {
   return h;
 }
 
-function regularizedBeta(x: number, a: number, b: number) {
+function regularizedBeta(x: number, a: number, b: number): number {
   if (x <= 0) return 0;
   if (x >= 1) return 1;
   const lnBeta = logGamma(a + b) - logGamma(a) - logGamma(b);
@@ -107,7 +107,7 @@ function regularizedBeta(x: number, a: number, b: number) {
   return 1 - (bt * betacf(b, a, 1 - x)) / b;
 }
 
-function betaInvCDF(q: number, a: number, b: number) {
+function betaInvCDF(q: number, a: number, b: number): number {
   if (q <= 0) return 0;
   if (q >= 1) return 1;
   const key = `${q.toFixed(4)}|${a.toFixed(4)}|${b.toFixed(4)}`;
@@ -228,7 +228,7 @@ function defaultFailureModes(): Record<string, FailureModeSelection> {
   return Object.fromEntries(entries);
 }
 
-function materialEaMidpoint(materialId?: string) {
+function materialEaMidpoint(materialId?: string): number | null {
   if (!materialId) return null;
   const material = MATERIAL_LIBRARY.find((entry) => entry.id === materialId);
   const suggestion = getEaSuggestion(material);
@@ -918,7 +918,7 @@ export function computeScheduleStats(tasks: ScheduleTask[]) {
 }
 
 const logFactorialCache: number[] = [0];
-function logFactorial(n: number) {
+function logFactorial(n: number): number {
   if (logFactorialCache[n] !== undefined) return logFactorialCache[n];
   let value = logFactorialCache[logFactorialCache.length - 1];
   for (let i = logFactorialCache.length; i <= n; i += 1) {
@@ -928,12 +928,12 @@ function logFactorial(n: number) {
   return logFactorialCache[n];
 }
 
-function logChoose(n: number, k: number) {
+function logChoose(n: number, k: number): number {
   if (k < 0 || k > n) return -Infinity;
   return logFactorial(n) - logFactorial(k) - logFactorial(n - k);
 }
 
-function logSumExp(values: number[]) {
+function logSumExp(values: number[]): number {
   const max = Math.max(...values);
   if (!Number.isFinite(max)) return -Infinity;
   const sum = values.reduce((acc, val) => acc + Math.exp(val - max), 0);
