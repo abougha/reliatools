@@ -1,79 +1,79 @@
 [
   {
-    "id": "p-diagram",
-    "title": "P Diagram Generator",
-    "route": "/tools/p-diagram",
-    "description": "Build signal/control/noise/outputs P-Diagrams with inline editing, presets, and SVG/PNG/PDF export.",
-    "formulaLatex": "\\boxed{\\text{P-Diagram}}"
-  },
-  {
-    "id": "rbd-generator",
-    "title": "Reliability Block Diagram (RBD) Generator",
-    "route": "/tools/rbd",
-    "description": "Build reliability block diagrams from a table, compute Series/Parallel reliability, and export SVG/CSV diagrams.",
-    "formulaLatex": "R_{sys} = 1 - \\nabla (1 - R_i)"
-  },
-  {
-    "id": "arrhenius",
-    "title": "Arrhenius Calculator",
-    "route": "/tools/Arrhenius",
-    "description": "Calculate acceleration factor (AF) using the Arrhenius equation.",
-    "formulaLatex": "AF = e^{\\left(\\frac{E_a}{k} \\left(\\frac{1}{T_{\\text{use}}} - \\frac{1}{T_{\\text{stress}}} \\right)\\right)}"
-  },
-  {
-    "id": "coffin-manson",
-    "title": "Coffin-Manson Calculator",
-    "route": "/tools/CoffinManson",
-    "description": "Estimate fatigue life under cyclic thermal loading.",
-    "formulaLatex": "N_f = A \\cdot \\Delta\\varepsilon^{-c}"
-  },
-  {
-    "id": "Samplesize",
-    "title": "Sample Size Calculator",
-    "route": "/tools/Samplesize",
-    "description": "Determine required sample size or reliability/confidence using the binomial distribution.",
-    "formulaLatex": "1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i} \\geq CL"
-  },
-  {
-    "id": "electromigration",
-    "title": "Electromigration Lifetime Calculator",
-    "route": "/tools/Electromigration",
-    "description": "Estimate the Mean Time to Failure (MTTF) of microelectronics using Black's equation.",
-    "formulaLatex": "MTTF = A \\cdot j^{-n} \\cdot e^{\\frac{E_a}{kT}}"
+    "id": "test-plan",
+    "title": "Test Plan Generator",
+    "route": "/tools/testplangenerator",
+    "description": "Physics-based test plans from mission profile to DVP&R.",
+    "whenToUse": "When you need a defensible validation plan tied to mechanisms, stressors, and reliability targets."
   },
   {
     "id": "burnin",
     "title": "Burn-In Test Wizard",
     "route": "/tools/BurnInWizard",
-    "description": "Interactive wizard to recommend optimal Burn-In test conditions and duration for early-life failure detection in semiconductors.",
-    "formulaLatex": "AF = e^{\\frac{E_a}{k} \\left( \\frac{1}{T_{use}} - \\frac{1}{T_{stress}} \\right)}"
-  },
-  {
-    "id": "test-plan",
-    "title": "Test Plan Generator",
-    "route": "/tools/testplangenerator",
-    "description": "Generate test plan",
-    "formulaLatex": "\\boxed{\\text{Test Plan Generator}}"
-  },
-  {
-    "id": "bayesian-prediction",
-    "title": "Bayesian Reliability Predictor (Software)",
-    "route": "/tools/SoftwareBRP",
-    "description": "Software Reliability",
-    "formulaLatex": "\\boxed{\\text{Bayesian Prediction}}"
-  },
-  {
-    "id": "Psychrometric calculator",
-    "title": "Psychrometric calculator",
-    "route": "/tools/Psychrometrics",
-    "description": "Psychrometric calculator",
-    "formulaLatex": "\\boxed{\\text{Psychrometric calculator}}"
+    "description": "Optimize burn-in and ESS using life-stress relationships.",
+    "whenToUse": "When screening early-life failures or accelerating infant mortality detection."
   },
   {
     "id": "derating",
     "title": "Derating Navigator",
     "route": "/tools/Derating",
-    "description": "Apply MIL-style derating rules to electronic and mechanical components, compute derated DM/FOS, thermal margins, and generate compliance summaries and exports.",
-    "formulaLatex": "\\boxed{DM = 1 - \\frac{\\text{Applied}}{\\text{Rated}}}"
+    "description": "Apply derating rules and quantify design margin.",
+    "whenToUse": "When preventing overstress failures before hardware is built or tested."
+  },
+  {
+    "id": "arrhenius",
+    "title": "Arrhenius Calculator",
+    "route": "/tools/Arrhenius",
+    "description": "Compute thermal acceleration and equivalent life.",
+    "whenToUse": "When temperature-driven aging dominates failure risk."
+  },
+  {
+    "id": "coffin-manson",
+    "title": "Coffin-Manson Calculator",
+    "route": "/tools/CoffinManson",
+    "description": "Predict fatigue life under thermal cycling.",
+    "whenToUse": "When ΔT and cyclic strain drive mechanical or solder fatigue."
+  },
+  {
+    "id": "electromigration",
+    "title": "Electromigration Lifetime Calculator",
+    "route": "/tools/Electromigration",
+    "description": "Estimate interconnect lifetime from current density and temperature.",
+    "whenToUse": "When electromigration limits IC or metallization reliability."
+  },
+  {
+    "id": "Samplesize",
+    "title": "Sample Size Calculator",
+    "route": "/tools/Samplesize",
+    "description": "Translate reliability and confidence into test quantity.",
+    "whenToUse": "When planning reliability demonstration or pass/fail validation."
+  },
+  {
+    "id": "Psychrometric",
+    "title": "Psychrometric Calculator",
+    "route": "/tools/Psychrometrics",
+    "description": "Visualize humidity, wet-bulb, and environmental conditions.",
+    "whenToUse": "When chamber settings or moisture exposure affect reliability outcomes."
+  },
+  {
+    "id": "p-diagram",
+    "title": "P Diagram Generator",
+    "route": "/tools/p-diagram",
+    "description": "Structure signals, noise factors, and design intent.",
+    "whenToUse": "When defining validation scope early in the design cycle."
+  },
+  {
+    "id": "rbd-generator",
+    "title": "Reliability Block Diagram (RBD) Generator",
+    "route": "/tools/rbd",
+    "description": "Model system reliability from architecture and redundancy.",
+    "whenToUse": "When system-level reliability depends on configuration, not parts alone."
+  },
+  {
+    "id": "bayesian-prediction",
+    "title": "Bayesian Reliability Predictor (Software)",
+    "route": "/tools/SoftwareBRP",
+    "description": "Update reliability predictions as data accumulates.",
+    "whenToUse": "When incorporating test or field failures into decision-making."
   }
 ]
