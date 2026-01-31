@@ -189,80 +189,86 @@ export function MissionProfileTable({
                       <div className="text-[11px] text-gray-400">default 35; typical 20-85</div>
                     </div>
                   ) : (
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-                      <label className="text-gray-500">
-                        Tmin (C)
-                        <input
-                          type="number"
-                          className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
-                          value={state.thermal.Tmin_C}
-                          onChange={(e) =>
-                            updateThermal(state.id, {
-                              ...state.thermal,
-                              Tmin_C: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="text-gray-500">
-                        Tmax (C)
-                        <input
-                          type="number"
-                          className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
-                          value={state.thermal.Tmax_C}
-                          onChange={(e) =>
-                            updateThermal(state.id, {
-                              ...state.thermal,
-                              Tmax_C: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="text-gray-500">
-                        Ramp (C/min)
-                        <input
-                          type="number"
-                          step={0.1}
-                          className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
-                          value={state.thermal.ramp_C_per_min}
-                          onChange={(e) =>
-                            updateThermal(state.id, {
-                              ...state.thermal,
-                              ramp_C_per_min: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="text-gray-500">
-                        Soak (min)
-                        <input
-                          type="number"
-                          className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
-                          value={state.thermal.soak_min}
-                          onChange={(e) =>
-                            updateThermal(state.id, {
-                              ...state.thermal,
-                              soak_min: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="text-gray-500">
-                        Cycles/hr
-                        <input
-                          type="number"
-                          step={0.1}
-                          className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
-                          value={state.thermal.cycles_per_hour}
-                          onChange={(e) =>
-                            updateThermal(state.id, {
-                              ...state.thermal,
-                              cycles_per_hour: Number(e.target.value),
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
+                    (() => {
+                      const cycle = state.thermal;
+                      if (cycle.kind !== "Cycle") return null;
+                      return (
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                          <label className="text-gray-500">
+                            Tmin (C)
+                            <input
+                              type="number"
+                              className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
+                              value={cycle.Tmin_C}
+                              onChange={(e) =>
+                                updateThermal(state.id, {
+                                  ...cycle,
+                                  Tmin_C: Number(e.target.value),
+                                })
+                              }
+                            />
+                          </label>
+                          <label className="text-gray-500">
+                            Tmax (C)
+                            <input
+                              type="number"
+                              className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
+                              value={cycle.Tmax_C}
+                              onChange={(e) =>
+                                updateThermal(state.id, {
+                                  ...cycle,
+                                  Tmax_C: Number(e.target.value),
+                                })
+                              }
+                            />
+                          </label>
+                          <label className="text-gray-500">
+                            Ramp (C/min)
+                            <input
+                              type="number"
+                              step={0.1}
+                              className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
+                              value={cycle.ramp_C_per_min}
+                              onChange={(e) =>
+                                updateThermal(state.id, {
+                                  ...cycle,
+                                  ramp_C_per_min: Number(e.target.value),
+                                })
+                              }
+                            />
+                          </label>
+                          <label className="text-gray-500">
+                            Soak (min)
+                            <input
+                              type="number"
+                              className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
+                              value={cycle.soak_min}
+                              onChange={(e) =>
+                                updateThermal(state.id, {
+                                  ...cycle,
+                                  soak_min: Number(e.target.value),
+                                })
+                              }
+                            />
+                          </label>
+                          <label className="text-gray-500">
+                            Cycles/hr
+                            <input
+                              type="number"
+                              step={0.1}
+                              className="mt-1 w-full rounded-lg border px-2 py-1 text-sm"
+                              value={cycle.cycles_per_hour}
+                              onChange={(e) =>
+                                updateThermal(state.id, {
+                                  ...cycle,
+                                  cycles_per_hour: Number(e.target.value),
+                                })
+                              }
+                            />
+                          </label>
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
                 {onRemoveState && (

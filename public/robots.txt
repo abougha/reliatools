@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://www.reliatools.com
+
+# Sitemaps
+Sitemap: https://www.reliatools.com/sitemap.xml

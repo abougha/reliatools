@@ -1,23 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://www.reliatools.com/</loc>
-    <lastmod>2025-05-24</lastmod>
-  </url>
-  <url>
-    <loc>https://www.reliatools.com/tools/arrhenius</loc>
-    <lastmod>2025-05-24</lastmod>
-  </url>
-  <url>
-    <loc>https://www.reliatools.com/tools/coffin-manson</loc>
-    <lastmod>2025-05-24</lastmod>
-  </url>
-  <url>
-    <loc>https://www.reliatools.com/tools/sample-size</loc>
-    <lastmod>2025-05-24</lastmod>
-  </url>
-  <url>
-    <loc>https://www.reliatools.com/about</loc>
-    <lastmod>2025-05-24</lastmod>
-  </url>
-</urlset>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>https://www.reliatools.com/sitemap-0.xml</loc></sitemap>
+<sitemap><loc>https://www.reliatools.com/sitemap.xml</loc></sitemap>
+</sitemapindex>
