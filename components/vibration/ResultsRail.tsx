@@ -17,9 +17,9 @@ const levelStyles: Record<FixtureWarning["level"], string> = {
 };
 
 const levelIcons: Record<FixtureWarning["level"], string> = {
-  Info: "✅",
-  Caution: "⚠️",
-  Critical: "❌",
+  Info: "OK",
+  Caution: "!",
+  Critical: "X",
 };
 
 export function ResultsRail({ title, badge, stats, warnings }: ResultsRailProps) {

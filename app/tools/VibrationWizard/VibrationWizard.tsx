@@ -31,7 +31,7 @@ import { FixtureAdvisor } from "@/components/vibration/FixtureAdvisor";
 import { ExportPanel } from "@/components/vibration/ExportPanel";
 
 const steps = [
-  { id: 1, label: "Template" },
+  { id: 1, label: "Product" },
   { id: 2, label: "Mission" },
   { id: 3, label: "Acceleration" },
   { id: 4, label: "Reliability" },
@@ -73,11 +73,12 @@ function createState(templateId: string): MissionState {
 export default function VibrationWizard() {
   const [step, setStep] = useState(1);
   const [industry, setIndustry] = useState<Industry>("Automotive");
-  const [templateId, setTemplateId] = useState(() => getDefaultTemplate("Automotive").id);
+  const [productId, setProductId] = useState(() => getDefaultTemplate("Automotive").id);
   const [profile, setProfile] = useState<MissionProfile>(() => cloneProfile(getDefaultTemplate("Automotive").profile));
   const [activeStateId, setActiveStateId] = useState<string | undefined>(profile.states[0]?.id);
   const [fixtureChecked, setFixtureChecked] = useState(false);
   const [ack, setAck] = useState({ acknowledged: false, reason: "" });
+  const [octaveN, setOctaveN] = useState(3);
 
   const [accel, setAccel] = useState<AccelSettings>({
     method: "Hybrid",
@@ -107,14 +108,21 @@ export default function VibrationWizard() {
     material: "Al6061",
   });
 
-  const templatesForIndustry = useMemo(() => getTemplatesForIndustry(industry), [industry]);
+  const productsForIndustry = useMemo(() => getTemplatesForIndustry(industry), [industry]);
 
   useEffect(() => {
-    if (industry === "Custom") return;
-    if (!templatesForIndustry.some((t) => t.id === templateId)) {
-      setTemplateId(getDefaultTemplate(industry).id);
+    if (industry === "Custom") {
+      const custom = createCustomProfile();
+      setProductId("custom");
+      setProfile(custom);
+      setActiveStateId(custom.states[0]?.id);
+      setAccel((prev) => ({ ...prev, selectedStateId: custom.states[0]?.id }));
+      return;
     }
-  }, [templatesForIndustry, industry, templateId]);
+    if (!productsForIndustry.some((p) => p.id === productId)) {
+      setProductId(productsForIndustry[0]?.id ?? "");
+    }
+  }, [productsForIndustry, industry, productId]);
 
   useEffect(() => {
     setProfile((prev) => {
@@ -134,17 +142,17 @@ export default function VibrationWizard() {
     });
   }, [profile.intendedLife_h]);
 
-  function loadTemplateById(tmplId: string) {
-    if (industry === "Custom" || tmplId === "custom") {
+  function loadProductById(nextProductId: string) {
+    if (industry === "Custom" || nextProductId === "custom") {
       const custom = createCustomProfile();
       setProfile(custom);
       setActiveStateId(custom.states[0]?.id);
       setAccel((prev) => ({ ...prev, selectedStateId: custom.states[0]?.id }));
       return;
     }
-    const tmpl = getMissionTemplateById(tmplId);
-    if (!tmpl) return;
-    const next = cloneProfile(tmpl.profile);
+    const product = getMissionTemplateById(nextProductId);
+    if (!product) return;
+    const next = structuredClone(product.profile);
     setProfile(next);
     setActiveStateId(next.states[0]?.id);
     setAccel((prev) => ({ ...prev, selectedStateId: next.states[0]?.id }));
@@ -209,7 +217,7 @@ export default function VibrationWizard() {
         <div className="space-y-6">
           {step === 1 && (
             <div className="rounded-xl border bg-white p-4">
-              <div className="text-sm font-semibold">Template Selection</div>
+              <div className="text-sm font-semibold">Product Selection</div>
               <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div>
                   <label className="text-xs text-gray-500">Industry</label>
@@ -219,15 +227,6 @@ export default function VibrationWizard() {
                     onChange={(e) => {
                       const nextIndustry = e.target.value as Industry;
                       setIndustry(nextIndustry);
-                      if (nextIndustry === "Custom") {
-                        setTemplateId("custom");
-                        loadTemplateById("custom");
-                        return;
-                      }
-                      const nextTemplate = getDefaultTemplate(nextIndustry);
-                      if (nextTemplate) {
-                        setTemplateId(nextTemplate.id);
-                      }
                     }}
                   >
                     {["Automotive", "DataCenterAI", "Industrial", "Consumer", "Healthcare", "Custom"].map((value) => (
@@ -238,29 +237,31 @@ export default function VibrationWizard() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Template</label>
+                  <label className="text-xs text-gray-500">Product</label>
                   <select
                     className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-                    value={templateId}
-                    onChange={(e) => {
-                      const nextTemplateId = e.target.value;
-                      setTemplateId(nextTemplateId);
-                    }}
+                    disabled={!industry || productsForIndustry.length === 0}
+                    value={productId}
+                    onChange={(e) => setProductId(e.target.value)}
                   >
-                    {templatesForIndustry.map((tmpl) => (
-                      <option key={tmpl.id} value={tmpl.id}>
-                        {tmpl.name}
+                    {productsForIndustry.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
                       </option>
                     ))}
-                    {templatesForIndustry.length === 0 && <option value="custom">Custom</option>}
                   </select>
                   <button
                     type="button"
-                    onClick={() => loadTemplateById(templateId)}
+                    onClick={() => loadProductById(productId)}
                     className="mt-2 w-full rounded-lg bg-black px-3 py-2 text-xs font-medium text-white"
+                    disabled={!productId || productsForIndustry.length === 0}
                   >
-                    Load template
+                    Load Product Profile
                   </button>
+                  <div className="mt-2 text-[11px] text-gray-500">
+                    {productsForIndustry.find((product) => product.id === productId)?.description ??
+                      "Product profile ready for edits."}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500">Intended life (h)</label>
@@ -273,9 +274,6 @@ export default function VibrationWizard() {
                   />
                   <div className="mt-1 text-[11px] text-gray-400">default 50000; typical 10000-100000</div>
                 </div>
-              </div>
-              <div className="mt-4 rounded-lg border bg-gray-50 p-3 text-xs text-gray-600">
-                {templatesForIndustry.find((tmpl) => tmpl.id === templateId)?.description ?? "Template ready for edits."}
               </div>
             </div>
           )}
@@ -535,6 +533,22 @@ export default function VibrationWizard() {
                 <div>
                   <div className="text-sm font-semibold">PSD vs Frequency</div>
                 </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <label htmlFor="octave-format" className="text-xs text-gray-500">
+                    Octave format
+                  </label>
+                  <select
+                    id="octave-format"
+                    className="rounded-lg border px-2 py-1 text-xs"
+                    value={octaveN}
+                    onChange={(e) => setOctaveN(Number(e.target.value))}
+                  >
+                    <option value={1}>1/1 octave</option>
+                    <option value={3}>1/3 octave</option>
+                    <option value={6}>1/6 octave</option>
+                    <option value={12}>1/12 octave</option>
+                  </select>
+                </div>
               </div>
               <PsdFrequencyChart
                 series={
@@ -545,6 +559,8 @@ export default function VibrationWizard() {
                       ]
                     : [{ id: "field", label: "Field PSD", color: "#111827", points: fieldPsd }]
                 }
+                octaveN={octaveN}
+                octaveLabel={`1/${octaveN}`}
               />
             </div>
           </div>
@@ -553,7 +569,7 @@ export default function VibrationWizard() {
         <ResultsRail
           title="Run Summary"
           stats={[
-            { label: "Mission hours", value: profile.states.reduce((sum, state) => sum + state.duration_h, 0).toFixed(0) },
+            { label: "Mission hours", value: totalFieldHours.toFixed(0) },
             { label: "Test duration (h)", value: equivalency.t_test_h.toFixed(1) },
             { label: "k scale", value: equivalency.k_scale.toFixed(2) },
             { label: "Sample size", value: String(sampleSize) },

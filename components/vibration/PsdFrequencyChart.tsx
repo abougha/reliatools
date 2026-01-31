@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { PsdPoint } from "@/lib/vibration/types";
+import { getOctaveCenters, integratePsdOverBand, octaveBandEdges } from "@/lib/vibration/octave";
 
 type PsdSeries = {
   id: string;
@@ -20,35 +21,89 @@ type PsdSeries = {
 type PsdFrequencyChartProps = {
   series: PsdSeries[];
   title?: string;
+  octaveN?: number;
+  octaveLabel?: string;
 };
 
-export function PsdFrequencyChart({ series, title }: PsdFrequencyChartProps) {
-  const data = useMemo(() => {
-    const map = new Map<number, Record<string, number>>();
+type SeriesMetric = {
+  id: string;
+  label: string;
+  rawGrms: number;
+  octaveGrms: number;
+  deviationPct: number;
+};
+
+function getSeriesRange(points: PsdPoint[]): { minF: number; maxF: number } | null {
+  let minF = Infinity;
+  let maxF = -Infinity;
+  points.forEach((point) => {
+    if (point.f_hz > 0) {
+      minF = Math.min(minF, point.f_hz);
+      maxF = Math.max(maxF, point.f_hz);
+    }
+  });
+  if (!Number.isFinite(minF) || !Number.isFinite(maxF) || maxF <= 0) return null;
+  return { minF, maxF };
+}
+
+export function PsdFrequencyChart({ series, title, octaveN = 3, octaveLabel }: PsdFrequencyChartProps) {
+  const octaveFormat = octaveLabel ?? `1/${octaveN}`;
+
+  const { data, metrics, minF, maxF } = useMemo(() => {
+    let globalMinF = Infinity;
+    let globalMaxF = -Infinity;
     series.forEach((entry) => {
       entry.points.forEach((point) => {
-        if (point.f_hz <= 0) return;
-        const existing = map.get(point.f_hz) ?? { f_hz: point.f_hz };
-        existing[entry.id] = point.g2_per_hz;
-        map.set(point.f_hz, existing);
+        if (point.f_hz > 0) {
+          globalMinF = Math.min(globalMinF, point.f_hz);
+          globalMaxF = Math.max(globalMaxF, point.f_hz);
+        }
       });
     });
-    return Array.from(map.values()).sort((a, b) => (a.f_hz ?? 0) - (b.f_hz ?? 0));
-  }, [series]);
+
+    if (!Number.isFinite(globalMinF) || !Number.isFinite(globalMaxF) || globalMaxF <= 0) {
+      return { data: [], metrics: [], minF: 1, maxF: 10 };
+    }
+
+    const centers = getOctaveCenters(globalMinF, globalMaxF, octaveN, 1);
+    const octAreaById = new Map<string, number>();
+    series.forEach((entry) => {
+      octAreaById.set(entry.id, 0);
+    });
+
+    const data = centers.map((fc) => {
+      const row: Record<string, number> = { f_hz: fc };
+      series.forEach((entry) => {
+        const { f1, f2 } = octaveBandEdges(fc, octaveN);
+        const bandArea = integratePsdOverBand(entry.points, f1, f2);
+        const width = f2 - f1;
+        row[entry.id] = width > 0 ? bandArea / width : 0;
+        octAreaById.set(entry.id, (octAreaById.get(entry.id) ?? 0) + bandArea);
+      });
+      return row;
+    });
+
+    const metrics: SeriesMetric[] = series.map((entry) => {
+      const range = getSeriesRange(entry.points);
+      const rawArea = range ? integratePsdOverBand(entry.points, range.minF, range.maxF) : 0;
+      const rawGrms = Math.sqrt(rawArea);
+      const octaveArea = octAreaById.get(entry.id) ?? 0;
+      const octaveGrms = Math.sqrt(octaveArea);
+      const deviationPct = rawGrms > 0 ? (Math.abs(octaveGrms - rawGrms) / rawGrms) * 100 : 0;
+      return { id: entry.id, label: entry.label, rawGrms, octaveGrms, deviationPct };
+    });
+
+    const minF = centers[0] ?? globalMinF;
+    const maxF = centers[centers.length - 1] ?? globalMaxF;
+    return { data, metrics, minF, maxF };
+  }, [series, octaveN]);
 
   const hasData = data.length > 0;
 
-  const { minF, maxF, minG, maxG } = useMemo(() => {
-    let minFreq = Infinity;
-    let maxFreq = -Infinity;
+  const { minG, maxG } = useMemo(() => {
     let minVal = Infinity;
     let maxVal = -Infinity;
     data.forEach((row) => {
-      const f = row.f_hz ?? 0;
-      if (f > 0) {
-        minFreq = Math.min(minFreq, f);
-        maxFreq = Math.max(maxFreq, f);
-      }
       series.forEach((entry) => {
         const v = row[entry.id];
         if (typeof v === "number" && v > 0) {
@@ -58,8 +113,6 @@ export function PsdFrequencyChart({ series, title }: PsdFrequencyChartProps) {
       });
     });
     return {
-      minF: Number.isFinite(minFreq) ? minFreq : 1,
-      maxF: Number.isFinite(maxFreq) ? maxFreq : 10,
       minG: Number.isFinite(minVal) ? minVal : 1e-6,
       maxG: Number.isFinite(maxVal) ? maxVal : 1,
     };
@@ -107,7 +160,20 @@ export function PsdFrequencyChart({ series, title }: PsdFrequencyChartProps) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-2 text-[11px] text-gray-500">ASD (g^2/Hz) vs frequency (Hz), log-log scale.</div>
+      <div className="mt-2 text-[11px] text-gray-500">
+        Frequency (Hz) - {octaveFormat} octave centers; PSD (g^2/Hz), log-log scale.
+      </div>
+      <div className="mt-1 space-y-1 text-[11px] text-gray-500">
+        {metrics.map((metric) => (
+          <div key={metric.id}>
+            {metric.label}: gRMS (raw) = {metric.rawGrms.toFixed(3)}, gRMS (octave) ={" "}
+            {metric.octaveGrms.toFixed(3)}
+            {metric.deviationPct > 5 && (
+              <span className="ml-2 text-amber-600">octave conversion smoothing changed area; check PSD range.</span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
