@@ -4,55 +4,71 @@
     "title": "Test Plan Generator",
     "route": "/tools/testplangenerator",
     "description": "Physics-based test plans from mission profile to DVP&R.",
+    "formulaLatex": "\\boxed{\\text{Test Plan}}",
     "whenToUse": "When you need a defensible validation plan tied to mechanisms, stressors, and reliability targets."
   },
   {
     "id": "burnin",
     "title": "Burn-In Test Wizard",
     "route": "/tools/BurnInWizard",
-    "description": "Optimize burn-in and ESS using life-stress relationships.",
+    "description": "Design physics-based burn-in strategies to screen early-life failures. Recommends stress conditions, duration, and acceleration factors tied to intended life and failure mechanisms.",
+    "formulaLatex": "AF = e^{\\frac{E_a}{k}\\left(\\frac{1}{T_{\\text{use}}}-\\frac{1}{T_{\\text{stress}}}\\right)}",
     "whenToUse": "When screening early-life failures or accelerating infant mortality detection."
+  },
+  {
+    "id": "vibration-wizard",
+    "title": "Vibration + Thermal Cycling Wizard",
+    "route": "/tools/VibrationWizard",
+    "description": "Build a vibration mission profile, generate accelerated PSD test profiles, and derive fixture requirements with reliability demonstration sizing.",
+    "formulaLatex": "S_{test}(f)=k\\cdot S_0(f)",
+    "whenToUse": "When translating mission vibration and thermal profiles into accelerated qualification tests."
   },
   {
     "id": "derating",
     "title": "Derating Navigator",
     "route": "/tools/Derating",
-    "description": "Apply derating rules and quantify design margin.",
+    "description": "Apply MIL-style derating principles to electronic and mechanical components. Quantify derated margins, factors of safety, and thermal headroom, and generate compliance-ready summaries.",
+    "formulaLatex": "\\boxed{DM = 1 - \\frac{\\text{Applied}}{\\text{Rated}}}",
     "whenToUse": "When preventing overstress failures before hardware is built or tested."
   },
   {
     "id": "arrhenius",
     "title": "Arrhenius Calculator",
     "route": "/tools/Arrhenius",
-    "description": "Compute thermal acceleration and equivalent life.",
+    "description": "Quantify thermal acceleration using the Arrhenius model. Calculate acceleration factors, equivalent life, and test durations for accelerated life testing (ALT) and design margin assessment.",
+    "formulaLatex": "AF = e^{\\frac{E_a}{k}\\left(\\frac{1}{T_{\\text{use}}}-\\frac{1}{T_{\\text{stress}}}\\right)}",
     "whenToUse": "When temperature-driven aging dominates failure risk."
   },
   {
     "id": "coffin-manson",
     "title": "Coffin-Manson Calculator",
     "route": "/tools/CoffinManson",
-    "description": "Predict fatigue life under thermal cycling.",
-    "whenToUse": "When ΔT and cyclic strain drive mechanical or solder fatigue."
+    "description": "Estimate fatigue life driven by thermal cycling using the Coffin-Manson model. Ideal for solder joints, interconnects, and mechanically constrained assemblies exposed to cyclic strain.",
+    "formulaLatex": "N_f = A\\,\\Delta\\varepsilon^{-c}",
+    "whenToUse": "When cyclic strain drive mechanical or solder fatigue."
   },
   {
     "id": "electromigration",
     "title": "Electromigration Lifetime Calculator",
     "route": "/tools/Electromigration",
-    "description": "Estimate interconnect lifetime from current density and temperature.",
+    "description": "Predict microelectronics lifetime using Black's equation. Evaluate current density, temperature sensitivity, activation energy, and MTTF for design trade-offs and technology comparisons.",
+    "formulaLatex": "MTTF = A\\,j^{-n}\\,e^{\\frac{E_a}{kT}}",
     "whenToUse": "When electromigration limits IC or metallization reliability."
   },
   {
     "id": "Samplesize",
     "title": "Sample Size Calculator",
     "route": "/tools/Samplesize",
-    "description": "Translate reliability and confidence into test quantity.",
+    "description": "Determine required sample size, allowable failures, or achieved reliability and confidence using binomial reliability-demonstration theory—aligned with common qualification and DV requirements.",
+    "formulaLatex": "1-\\sum_{i=0}^{f}\\binom{n}{i}(1-R)^iR^{n-i}\\ge\\mathrm{CL}",
     "whenToUse": "When planning reliability demonstration or pass/fail validation."
   },
   {
     "id": "Psychrometric",
     "title": "Psychrometric Calculator",
     "route": "/tools/Psychrometrics",
-    "description": "Visualize humidity, wet-bulb, and environmental conditions.",
+    "description": "Analyze air-moisture properties including relative humidity, wet-bulb temperature, and enthalpy. Useful for environmental testing, humidity stress analysis, and lab condition validation.",
+    "formulaLatex": "\\boxed{\\text{Psychrometrics}}",
     "whenToUse": "When chamber settings or moisture exposure affect reliability outcomes."
   },
   {
@@ -60,20 +76,23 @@
     "title": "P Diagram Generator",
     "route": "/tools/p-diagram",
     "description": "Structure signals, noise factors, and design intent.",
+    "formulaLatex": "\\boxed{\\text{P-Diagram}}",
     "whenToUse": "When defining validation scope early in the design cycle."
   },
   {
     "id": "rbd-generator",
     "title": "Reliability Block Diagram (RBD) Generator",
     "route": "/tools/rbd",
-    "description": "Model system reliability from architecture and redundancy.",
+    "description": "Build system-level Reliability Block Diagrams from a simple table, analyze Series/Parallel/Hybrid architectures, compute system reliability, and export diagrams and data for design reviews.",
+    "formulaLatex": "R_{\\text{sys}}=1-\\prod_i(1-R_i)",
     "whenToUse": "When system-level reliability depends on configuration, not parts alone."
   },
   {
     "id": "bayesian-prediction",
     "title": "Bayesian Reliability Predictor (Software)",
     "route": "/tools/SoftwareBRP",
-    "description": "Update reliability predictions as data accumulates.",
+    "description": "Estimate and update software reliability using Bayesian methods. Convert test results and failure data into predictive reliability metrics, MTTF, and release readiness insight.",
+    "formulaLatex": "\\boxed{\\text{Bayesian Prediction}}",
     "whenToUse": "When incorporating test or field failures into decision-making."
   }
 ]
