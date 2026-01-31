@@ -76,6 +76,7 @@ export function MissionProfileTable({
       <div className="space-y-3">
         {states.map((state) => {
           const isActive = state.id === activeStateId;
+          const templateId = state.psd.kind === "Template" ? state.psd.templateId : "";
           return (
             <div
               key={state.id}
@@ -133,7 +134,7 @@ export function MissionProfileTable({
                           onChange={(e) =>
                             updatePsd(state.id, {
                               kind: "Template",
-                              templateId: state.psd.templateId,
+                              templateId,
                               scale: Number(e.target.value),
                             })
                           }
