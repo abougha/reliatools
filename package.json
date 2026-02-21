@@ -13,8 +13,11 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.12.2",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "katex": "^0.16.22",
     "lucide-react": "^0.511.0",
     "next": "^16.1.3",

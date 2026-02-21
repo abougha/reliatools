@@ -8,6 +8,14 @@
     "whenToUse": "When you need a defensible validation plan tied to mechanisms, stressors, and reliability targets."
   },
   {
+    "id": "mission-profile-builder",
+    "title": "Mission Profile Builder",
+    "route": "/tools/MissionProfile",
+    "description": "Build duty cycle and stress distributions by lifecycle phase. Clickable matrix + exports.",
+    "formulaLatex": "\\boxed{\\text{Stress} \\times \\text{Phase Matrix}}",
+    "whenToUse": "Early design + DFMEA + validation planning."
+  },
+  {
     "id": "burnin",
     "title": "Burn-In Test Wizard",
     "route": "/tools/BurnInWizard",
