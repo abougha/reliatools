@@ -1,229 +1,299 @@
 "use client";
 
-import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
-import 'katex/dist/katex.min.css';
-import { BlockMath } from 'react-katex';
-import { Calculator, CheckCircle } from 'lucide-react';
+import { useMemo, useState } from "react";
+import { Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import "katex/dist/katex.min.css";
+import { BlockMath } from "react-katex";
+import { Calculator, CheckCircle } from "lucide-react";
+import {
+  binomialAcceptanceProbability,
+  confidenceFromAcceptance,
+  solveReliabilityFromBinomial,
+  solveSampleSizeForConfidence,
+} from "@/lib/reliabilityMath";
 
-function binomialCoefficient(n: number, k: number): number {
-  if (k > n) return 0;
-  if (k === 0 || k === n) return 1;
-  let res = 1;
-  for (let i = 1; i <= k; ++i) {
-    res *= (n - i + 1);
-    res /= i;
-  }
-  return res;
-}
+type SolveTarget = "n" | "R" | "CL";
 
-function cumulativeBinomial(f: number, n: number, R: number): number {
-  let sum = 0;
-  for (let i = 0; i <= f; i++) {
-    sum += binomialCoefficient(n, i) * Math.pow(1 - R, i) * Math.pow(R, n - i);
-  }
-  return 1 - sum;
-}
-
-function newtonRaphsonSolve(f: number, n: number, targetCL: number): number | null {
-  let R = 0.9; // initial guess
-  let maxIter = 100;
-  let tol = 1e-6;
-
-  for (let iter = 0; iter < maxIter; iter++) {
-    let fx = cumulativeBinomial(f, n, R) - targetCL;
-
-    let delta = 1e-6;
-    let dfx = (cumulativeBinomial(f, n, R + delta) - cumulativeBinomial(f, n, R - delta)) / (2 * delta);
-
-    if (Math.abs(dfx) < 1e-10) return null;
-
-    let Rnext = R - fx / dfx;
-    if (Rnext < 0) Rnext = 0.001;
-    if (Rnext > 1) Rnext = 0.999;
-
-    if (Math.abs(Rnext - R) < tol) return Rnext;
-    R = Rnext;
-  }
-  return null;
-}
+const DEFAULTS = {
+  failures: "0",
+  confidence: "95",
+  reliability: "90",
+  sampleSize: "30",
+  solveFor: "n" as SolveTarget,
+};
 
 export default function SampleSizeCalculator() {
-  const [failures, setFailures] = useState("0");
-  const [confidence, setConfidence] = useState("95");
-  const [reliability, setReliability] = useState("90");
-  const [sampleSize, setSampleSize] = useState("30");
-  const [solveFor, setSolveFor] = useState("n");
+  const [failures, setFailures] = useState(DEFAULTS.failures);
+  const [confidence, setConfidence] = useState(DEFAULTS.confidence);
+  const [reliability, setReliability] = useState(DEFAULTS.reliability);
+  const [sampleSize, setSampleSize] = useState(DEFAULTS.sampleSize);
+  const [solveFor, setSolveFor] = useState<SolveTarget>(DEFAULTS.solveFor);
   const [result, setResult] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<Array<{ n: number; cl: number }>>([]);
+  const [warning, setWarning] = useState("");
 
-  const handleCalculate = () => {
-    let f = parseInt(failures);
-    let n = solveFor === "n" ? undefined : parseInt(sampleSize);
-    let R = solveFor === "R" ? undefined : parseFloat(reliability) / 100;
-    let CL = solveFor === "CL" ? undefined : parseFloat(confidence) / 100;
+  const parsed = useMemo(() => {
+    return {
+      f: Number(failures),
+      clPct: Number(confidence),
+      rPct: Number(reliability),
+      n: Number(sampleSize),
+    };
+  }, [failures, confidence, reliability, sampleSize]);
 
-    if (solveFor === "n" && f !== undefined && R !== undefined && CL !== undefined) {
-      for (let nTest = 1; nTest < 1000; nTest++) {
-        if (cumulativeBinomial(f, nTest, R) >= CL) {
-          setSampleSize(nTest.toString());
-          setResult(`Required sample size: ${nTest}`);
-          n = nTest;
-          break;
-        }
-      }
-    } else if (solveFor === "R" && n !== undefined && CL !== undefined && f !== undefined) {
-      let Rcalc = null;
-      if (f === 0) {
-        Rcalc = Math.pow(1 - CL, 1 / n);
-      } else {
-        Rcalc = newtonRaphsonSolve(f, n, CL);
-      }
+  const fieldErrors = useMemo(() => {
+    const errors: Partial<Record<"f" | "CL" | "R" | "n", string>> = {};
 
-      if (Rcalc !== null) {
-        setReliability((Rcalc * 100).toFixed(2));
-        setResult(`Minimum reliability: ${(Rcalc * 100).toFixed(2)}%`);
-        R = Rcalc;
-      } else {
-        setResult("No solution found for reliability.");
-      }
-    } else if (solveFor === "CL" && f !== undefined && n !== undefined && R !== undefined) {
-      const CL_calc = cumulativeBinomial(f, n, R);
-      setConfidence((CL_calc * 100).toFixed(2));
-      setResult(`Achieved confidence level: ${(CL_calc * 100).toFixed(2)}%`);
-      CL = CL_calc;
-    } else {
-      setResult("Please provide valid inputs for calculation.");
+    if (!Number.isInteger(parsed.f) || parsed.f < 0) {
+      errors.f = "Failures must be a non-negative integer.";
+    }
+    if (!Number.isFinite(parsed.clPct) || parsed.clPct <= 0 || parsed.clPct >= 100) {
+      errors.CL = "Confidence must be between 0 and 100 (exclusive).";
+    }
+    if (!Number.isFinite(parsed.rPct) || parsed.rPct <= 0 || parsed.rPct >= 100) {
+      errors.R = "Reliability must be between 0 and 100 (exclusive).";
+    }
+    if (!Number.isInteger(parsed.n) || parsed.n <= 0) {
+      errors.n = "Sample size must be a positive integer.";
+    }
+    if (Number.isInteger(parsed.f) && Number.isInteger(parsed.n) && parsed.f >= parsed.n && solveFor !== "n") {
+      errors.n = "Sample size n must be greater than failures f.";
     }
 
-    if (f !== undefined && n !== undefined && R !== undefined) {
-      const data = [];
-      for (let nTest = Math.max(1, Math.floor(n * 0.8)); nTest <= Math.ceil(n * 1.2); nTest++) {
-        const cl = +(cumulativeBinomial(f, nTest, R) * 100).toFixed(2);
-        data.push({ n: nTest, cl });
+    return errors;
+  }, [parsed, solveFor]);
+
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+
+  const handleCalculate = () => {
+    setResult(null);
+    setWarning("");
+
+    if (hasFieldErrors) {
+      setResult("Please fix input validation errors.");
+      setChartData([]);
+      return;
+    }
+
+    const f = parsed.f;
+    const inputR = parsed.rPct / 100;
+    const inputCL = parsed.clPct / 100;
+    const inputN = parsed.n;
+
+    try {
+      if (solveFor === "n") {
+        const solved = solveSampleSizeForConfidence(f, inputR, inputCL);
+        setSampleSize(String(solved.n));
+        setResult(`Required sample size: ${solved.n} (ceil from n_real=${solved.nReal.toFixed(4)})`);
+
+        const data: Array<{ n: number; cl: number }> = [];
+        for (let nVal = Math.max(f + 1, solved.n - 10); nVal <= solved.n + 10; nVal += 1) {
+          const acceptance = binomialAcceptanceProbability(nVal, f, inputR);
+          const cl = confidenceFromAcceptance(acceptance) * 100;
+          data.push({ n: nVal, cl: Number(cl.toFixed(3)) });
+        }
+        setChartData(data);
+        return;
+      }
+
+      if (solveFor === "R") {
+        if (f >= inputN) {
+          setResult("No solution: n must be greater than f.");
+          setChartData([]);
+          return;
+        }
+
+        const solvedR = solveReliabilityFromBinomial(inputN, f, inputCL);
+        setReliability((solvedR * 100).toFixed(4));
+        setResult(`Minimum reliability: ${(solvedR * 100).toFixed(4)}%`);
+
+        const acceptanceAtRoot = binomialAcceptanceProbability(inputN, f, solvedR);
+        const residual = Math.abs(acceptanceAtRoot - (1 - inputCL));
+        if (residual > 1e-6) {
+          setWarning("Solver residual is above 1e-6; verify assumptions.");
+        }
+
+        const data: Array<{ n: number; cl: number }> = [];
+        for (let nVal = Math.max(f + 1, inputN - 10); nVal <= inputN + 10; nVal += 1) {
+          const acceptance = binomialAcceptanceProbability(nVal, f, solvedR);
+          const cl = confidenceFromAcceptance(acceptance) * 100;
+          data.push({ n: nVal, cl: Number(cl.toFixed(3)) });
+        }
+        setChartData(data);
+        return;
+      }
+
+      if (f >= inputN) {
+        setResult("No solution: n must be greater than f.");
+        setChartData([]);
+        return;
+      }
+
+      const acceptance = binomialAcceptanceProbability(inputN, f, inputR);
+      const solvedCl = confidenceFromAcceptance(acceptance);
+      setConfidence((solvedCl * 100).toFixed(4));
+      setResult(`Achieved confidence level: ${(solvedCl * 100).toFixed(4)}%`);
+
+      const data: Array<{ n: number; cl: number }> = [];
+      for (let nVal = Math.max(f + 1, inputN - 10); nVal <= inputN + 10; nVal += 1) {
+        const acceptanceAtN = binomialAcceptanceProbability(nVal, f, inputR);
+        const cl = confidenceFromAcceptance(acceptanceAtN) * 100;
+        data.push({ n: nVal, cl: Number(cl.toFixed(3)) });
       }
       setChartData(data);
-    } else {
+    } catch (error) {
+      setResult(error instanceof Error ? error.message : "Calculation failed.");
       setChartData([]);
     }
   };
 
+  const resetInputs = () => {
+    setFailures(DEFAULTS.failures);
+    setConfidence(DEFAULTS.confidence);
+    setReliability(DEFAULTS.reliability);
+    setSampleSize(DEFAULTS.sampleSize);
+    setSolveFor(DEFAULTS.solveFor);
+    setResult(null);
+    setChartData([]);
+    setWarning("");
+  };
+
   const downloadCSV = () => {
-    const csvRows = ["Sample Size,Confidence Level (%)"];
-    chartData.forEach(row => {
-      csvRows.push(`${row.n},${row.cl}`);
-    });
-    const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' });
+    const rows = ["Sample Size,Confidence Level (%)"];
+    chartData.forEach((row) => rows.push(`${row.n},${row.cl}`));
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'confidence_vs_sample_size.csv');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const anchor = document.createElement("a");
+    anchor.setAttribute("hidden", "");
+    anchor.setAttribute("href", url);
+    anchor.setAttribute("download", "confidence_vs_sample_size.csv");
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        <Calculator className="w-6 h-6 text-blue-600" />
-        Sample Size Calculator (Binomial Distribution)
-      </h1>
+    <div className="mx-auto max-w-2xl p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <Calculator className="h-6 w-6 text-blue-600" />
+          Sample Size Calculator (Binomial)
+        </h1>
+        <button
+          type="button"
+          onClick={resetInputs}
+          className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >
+          Reset
+        </button>
+      </div>
 
-      <section className="bg-gray-100 p-4 rounded mb-6 text-sm text-gray-800 border border-gray-200">
-        <h2 className="font-semibold text-base mb-2 text-blue-700">Binomial Distribution Formula</h2>
-        <div className="text-center text-base mb-2">
-          <BlockMath math={'CL = 1 - \\sum_{i=0}^{f} \\binom{n}{i} (1 - R)^i R^{n - i}'} />
+      <section className="mb-6 rounded border border-gray-200 bg-gray-100 p-4 text-sm text-gray-800">
+        <h2 className="mb-2 text-base font-semibold text-blue-700">Binomial Acceptance Equation</h2>
+        <div className="mb-2 text-center text-base">
+          <BlockMath math={"\\sum_{i=0}^{f} \\binom{n}{i}(1-R)^i R^{n-i} = 1-CL"} />
         </div>
-        <p className="mt-2">
-          <strong>Where:</strong><br />
-          <strong>n</strong> = Sample size<br />
-          <strong>f</strong> = Allowed number of failures<br />
-          <strong>R</strong> = Reliability (probability of success)<br />
-          <strong>CL</strong> = Confidence level (target probability)
+        <p>
+          <strong>n</strong> = sample size, <strong>f</strong> = allowed failures, <strong>R</strong> = reliability,
+          <strong> CL</strong> = confidence level.
         </p>
       </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        {[{
-          label: "Failures",
-          value: failures,
-          onChange: setFailures,
-          id: "f",
-        }, {
-          label: "Confidence Level (%)",
-          value: confidence,
-          onChange: setConfidence,
-          id: "CL",
-        }, {
-          label: "Reliability (%)",
-          value: reliability,
-          onChange: setReliability,
-          id: "R",
-        }, {
-          label: "Sample Size",
-          value: sampleSize,
-          onChange: setSampleSize,
-          id: "n",
-        }].map(field => (
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {[
+          {
+            label: "Failures (f)",
+            value: failures,
+            onChange: setFailures,
+            id: "f" as const,
+            error: fieldErrors.f,
+            solvable: false,
+            solveValue: null,
+          },
+          {
+            label: "Confidence Level (%)",
+            value: confidence,
+            onChange: setConfidence,
+            id: "CL" as const,
+            error: fieldErrors.CL,
+            solvable: true,
+            solveValue: "CL" as const,
+          },
+          {
+            label: "Reliability (%)",
+            value: reliability,
+            onChange: setReliability,
+            id: "R" as const,
+            error: fieldErrors.R,
+            solvable: true,
+            solveValue: "R" as const,
+          },
+          {
+            label: "Sample Size (n)",
+            value: sampleSize,
+            onChange: setSampleSize,
+            id: "n" as const,
+            error: fieldErrors.n,
+            solvable: true,
+            solveValue: "n" as const,
+          },
+        ].map((field) => (
           <div key={field.id}>
             <label className="flex items-center gap-2 text-sm font-medium">
-              {field.id !== "f" && (
+              {field.solvable ? (
                 <input
                   type="radio"
                   name="solveFor"
-                  value={field.id}
-                  checked={solveFor === field.id}
-                  onChange={() => setSolveFor(field.id)}
+                  value={field.solveValue ?? ""}
+                  checked={field.solveValue !== null && solveFor === field.solveValue}
+                  onChange={() => field.solveValue && setSolveFor(field.solveValue)}
                 />
-              )}
+              ) : null}
               {field.label}
             </label>
             <input
-              className="w-full border rounded p-2 mt-1"
+              className={`mt-1 w-full rounded border p-2 ${field.error ? "border-red-500" : ""}`}
               value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
-              disabled={solveFor === field.id}
+              onChange={(event) => field.onChange(event.target.value)}
+              disabled={field.solveValue !== null && solveFor === field.solveValue}
             />
+            {field.error ? <p className="mt-1 text-xs text-red-700">{field.error}</p> : null}
           </div>
         ))}
       </div>
 
-      <button
-        onClick={handleCalculate}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
+      <button onClick={handleCalculate} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
         Calculate
       </button>
 
-      {result && (
-        <div className="mt-6 border rounded p-4 text-center text-lg font-semibold bg-gray-50 text-green-700 flex items-center justify-center gap-2">
-          <CheckCircle className="w-5 h-5" />
+      {result ? (
+        <div className="mt-6 flex items-center justify-center gap-2 rounded border bg-gray-50 p-4 text-center text-lg font-semibold text-green-700">
+          <CheckCircle className="h-5 w-5" />
           {result}
         </div>
-      )}
+      ) : null}
 
-      {chartData.length > 0 && (
+      {warning ? (
+        <div className="mt-4 rounded border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">{warning}</div>
+      ) : null}
+
+      {chartData.length > 0 ? (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-2 text-blue-700">Confidence vs. Sample Size</h2>
+          <h2 className="mb-2 text-lg font-semibold text-blue-700">Confidence vs Sample Size</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="n" label={{ value: 'Sample Size (n)', position: 'insideBottom', offset: -5 }} />
-              <YAxis label={{ value: 'Confidence (%)', angle: -90, position: 'insideLeft' }} />
+              <XAxis dataKey="n" label={{ value: "Sample Size (n)", position: "insideBottom", offset: -5 }} />
+              <YAxis label={{ value: "Confidence (%)", angle: -90, position: "insideLeft" }} />
               <Tooltip />
               <Line type="monotone" dataKey="cl" stroke="#000" dot={{ r: 2 }} />
             </LineChart>
           </ResponsiveContainer>
-          <button
-            onClick={downloadCSV}
-            className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
+          <button onClick={downloadCSV} className="mt-4 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">
             Download CSV
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

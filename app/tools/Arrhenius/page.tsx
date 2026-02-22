@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import { kB_eV } from "@/lib/constants";
+import { toKelvinFromCelsius } from "@/lib/units";
 import {
   CartesianGrid,
   Line,
@@ -15,6 +17,15 @@ import {
   YAxis,
 } from "recharts";
 import "react-tooltip/dist/react-tooltip.css";
+
+const DEFAULTS = {
+  Ea: "0.7",
+  Tuse: "50",
+  Tstress: "100",
+  useHours: "8000",
+  testHours: "500",
+  solveFor: "Tstress" as SolveTarget,
+};
 
 const EaTable = () => (
   <table className="ml-4 w-auto border text-left text-xs">
@@ -47,15 +58,13 @@ const EaTable = () => (
 
 type SolveTarget = "Ea" | "Tuse" | "Tstress" | "useHours" | "testHours";
 
-const k = 8.617e-5; // eV/K
-
 export default function ArrheniusCalculator() {
-  const [Ea, setEa] = useState("0.7");
-  const [Tuse, setTuse] = useState("50");
-  const [Tstress, setTstress] = useState("100");
-  const [useHours, setUseHours] = useState("8000");
-  const [testHours, setTestHours] = useState("500");
-  const [solveFor, setSolveFor] = useState<SolveTarget>("Tstress");
+  const [Ea, setEa] = useState(DEFAULTS.Ea);
+  const [Tuse, setTuse] = useState(DEFAULTS.Tuse);
+  const [Tstress, setTstress] = useState(DEFAULTS.Tstress);
+  const [useHours, setUseHours] = useState(DEFAULTS.useHours);
+  const [testHours, setTestHours] = useState(DEFAULTS.testHours);
+  const [solveFor, setSolveFor] = useState<SolveTarget>(DEFAULTS.solveFor);
   const [solverError, setSolverError] = useState("");
 
   const formatNum = (value: number) => {
@@ -69,13 +78,46 @@ export default function ArrheniusCalculator() {
   const useHoursNum = parseFloat(useHours);
   const testHoursNum = parseFloat(testHours);
 
-  const TuseK = TuseCNum + 273.15;
-  const TstressK = TstressCNum + 273.15;
+  const TuseK = toKelvinFromCelsius(TuseCNum);
+  const TstressK = toKelvinFromCelsius(TstressCNum);
+
+  const fieldErrors = useMemo(() => {
+    const errors: Partial<Record<SolveTarget, string>> = {};
+    if (!Number.isFinite(EaNum)) {
+      errors.Ea = "Activation energy is required.";
+    } else if (EaNum < 0.1 || EaNum > 2.5) {
+      errors.Ea = "Activation energy must be in 0.1-2.5 eV.";
+    }
+
+    if (!Number.isFinite(TuseCNum)) {
+      errors.Tuse = "Use temperature is required.";
+    } else if (TuseCNum < -80 || TuseCNum > 250) {
+      errors.Tuse = "Use temperature must be between -80 and 250 C.";
+    }
+
+    if (!Number.isFinite(TstressCNum)) {
+      errors.Tstress = "Stress temperature is required.";
+    } else if (TstressCNum < -80 || TstressCNum > 250) {
+      errors.Tstress = "Stress temperature must be between -80 and 250 C.";
+    }
+
+    if (!Number.isFinite(useHoursNum) || useHoursNum <= 0) {
+      errors.useHours = "Use life must be > 0.";
+    }
+
+    if (!Number.isFinite(testHoursNum) || testHoursNum <= 0) {
+      errors.testHours = "Test duration must be > 0.";
+    }
+
+    return errors;
+  }, [EaNum, TuseCNum, TstressCNum, useHoursNum, testHoursNum]);
+
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
 
   const arrheniusAF = useMemo(() => {
     if (!Number.isFinite(EaNum) || EaNum <= 0) return NaN;
     if (!Number.isFinite(TuseK) || !Number.isFinite(TstressK) || TuseK <= 0 || TstressK <= 0) return NaN;
-    return Math.exp((EaNum / k) * (1 / TuseK - 1 / TstressK));
+    return Math.exp((EaNum / kB_eV) * (1 / TuseK - 1 / TstressK));
   }, [EaNum, TuseK, TstressK]);
 
   const timeRatioAF = useMemo(() => {
@@ -83,15 +125,16 @@ export default function ArrheniusCalculator() {
     return useHoursNum / testHoursNum;
   }, [useHoursNum, testHoursNum]);
 
+  const afMismatchRatio = useMemo(() => {
+    if (!Number.isFinite(arrheniusAF) || !Number.isFinite(timeRatioAF) || timeRatioAF <= 0) return NaN;
+    return Math.abs(arrheniusAF - timeRatioAF) / timeRatioAF;
+  }, [arrheniusAF, timeRatioAF]);
+
   useEffect(() => {
     setSolverError("");
 
-    if (!Number.isFinite(useHoursNum) || !Number.isFinite(testHoursNum) || useHoursNum <= 0 || testHoursNum <= 0) {
-      setSolverError("Use Life and Test Duration must be positive.");
-      return;
-    }
-    if (!Number.isFinite(TuseK) || !Number.isFinite(TstressK) || TuseK <= 0 || TstressK <= 0) {
-      setSolverError("Use Temp and Stress Temp must be valid Celsius values.");
+    if (hasFieldErrors) {
+      setSolverError("Please fix input validation errors.");
       return;
     }
 
@@ -107,7 +150,7 @@ export default function ArrheniusCalculator() {
         return;
       }
 
-      const nextTstressK = 1 / ((1 / TuseK) - (k / EaNum) * Math.log(AF));
+      const nextTstressK = 1 / ((1 / TuseK) - (kB_eV / EaNum) * Math.log(AF));
       if (!Number.isFinite(nextTstressK)) {
         setSolverError("Unable to solve Stress Temp with current inputs.");
         return;
@@ -151,7 +194,7 @@ export default function ArrheniusCalculator() {
         return;
       }
 
-      const nextTuseK = 1 / ((1 / TstressK) + (k / EaNum) * Math.log(AF));
+      const nextTuseK = 1 / ((1 / TstressK) + (kB_eV / EaNum) * Math.log(AF));
       if (!Number.isFinite(nextTuseK) || nextTuseK <= 0) {
         setSolverError("Unable to solve Use Temp with current inputs.");
         return;
@@ -169,7 +212,7 @@ export default function ArrheniusCalculator() {
         return;
       }
 
-      const nextEa = (k * Math.log(AF)) / denominator;
+      const nextEa = (kB_eV * Math.log(AF)) / denominator;
       if (!Number.isFinite(nextEa) || nextEa <= 0) {
         setSolverError("Computed Activation Energy is not physically valid.");
         return;
@@ -177,7 +220,7 @@ export default function ArrheniusCalculator() {
 
       setEa(formatNum(nextEa));
     }
-  }, [EaNum, TuseK, TstressK, useHoursNum, testHoursNum, solveFor, arrheniusAF]);
+  }, [EaNum, TuseK, TstressK, useHoursNum, testHoursNum, solveFor, arrheniusAF, hasFieldErrors]);
 
   const afGraphData = useMemo(() => {
     if (!Number.isFinite(EaNum) || EaNum <= 0 || !Number.isFinite(TuseK) || TuseK <= 0) return [];
@@ -188,8 +231,8 @@ export default function ArrheniusCalculator() {
     const points: Array<{ stressTemp: number; AF: number }> = [];
 
     for (let stressTempC = start; stressTempC <= end; stressTempC += 5) {
-      const stressTempK = stressTempC + 273.15;
-      const af = Math.exp((EaNum / k) * (1 / TuseK - 1 / stressTempK));
+      const stressTempK = toKelvinFromCelsius(stressTempC);
+      const af = Math.exp((EaNum / kB_eV) * (1 / TuseK - 1 / stressTempK));
       points.push({ stressTemp: stressTempC, AF: parseFloat(af.toFixed(2)) });
     }
 
@@ -198,10 +241,31 @@ export default function ArrheniusCalculator() {
 
   const markerX = Number.isFinite(TstressCNum) ? TstressCNum : undefined;
   const markerY = Number.isFinite(arrheniusAF) ? arrheniusAF : undefined;
+  const showNonAcceleratingWarning = Number.isFinite(arrheniusAF) && arrheniusAF <= 1;
+  const showAfMismatchWarning = Number.isFinite(afMismatchRatio) && afMismatchRatio > 0.1;
+
+  const resetInputs = () => {
+    setEa(DEFAULTS.Ea);
+    setTuse(DEFAULTS.Tuse);
+    setTstress(DEFAULTS.Tstress);
+    setUseHours(DEFAULTS.useHours);
+    setTestHours(DEFAULTS.testHours);
+    setSolveFor(DEFAULTS.solveFor);
+    setSolverError("");
+  };
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-4 text-3xl font-bold">Arrhenius Calculator</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Arrhenius Calculator</h1>
+        <button
+          type="button"
+          onClick={resetInputs}
+          className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >
+          Reset
+        </button>
+      </div>
 
       <div className="mb-6 rounded border bg-gray-50 p-4">
         <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
@@ -212,7 +276,7 @@ export default function ArrheniusCalculator() {
                 <strong>E<sub>a</sub></strong> = Activation energy (eV)
               </li>
               <li>
-                <strong>k</strong> = Boltzmann constant = 8.617e-5 eV/K
+                <strong>k</strong> = Boltzmann constant = 8.617333262145e-5 eV/K
               </li>
               <li>
                 <strong>T<sub>use</sub></strong> = Use temperature (K)
@@ -239,12 +303,18 @@ export default function ArrheniusCalculator() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[
-          { label: "Activation Energy (eV)", value: Ea, setter: setEa, id: "Ea" as const },
+          {
+            label: "Activation Energy (eV)",
+            value: Ea,
+            setter: setEa,
+            id: "Ea" as const,
+            tooltip: "Typical 0.4-1.2 for polymers.",
+          },
           { label: "Use Temp (\u00B0C)", value: Tuse, setter: setTuse, id: "Tuse" as const },
           { label: "Stress Temp (\u00B0C)", value: Tstress, setter: setTstress, id: "Tstress" as const },
           { label: "Use Life (hrs)", value: useHours, setter: setUseHours, id: "useHours" as const },
           { label: "Test Duration (hrs)", value: testHours, setter: setTestHours, id: "testHours" as const },
-        ].map(({ label, value, setter, id }) => (
+        ].map(({ label, value, setter, id, tooltip }) => (
           <label
             key={id}
             className={`block rounded text-sm ${solveFor === id ? "rounded border-l-4 border-yellow-400 bg-yellow-50 p-2" : ""}`}
@@ -257,30 +327,41 @@ export default function ArrheniusCalculator() {
               onChange={(e) => setSolveFor(e.target.value as SolveTarget)}
               className="mr-2"
             />
-            {label}
+            <span title={tooltip}>{label}</span>
             <input
               type="number"
               value={value}
               onChange={(e) => setter(e.target.value)}
               disabled={solveFor === id}
-              className="mt-1 w-full rounded border p-2"
+              className={`mt-1 w-full rounded border p-2 ${fieldErrors[id] ? "border-red-500" : ""}`}
             />
+            {fieldErrors[id] ? <p className="mt-1 text-xs text-red-700">{fieldErrors[id]}</p> : null}
           </label>
         ))}
       </div>
 
       <div className="mt-6 rounded border-l-4 border-blue-500 bg-blue-50 p-4 text-blue-800">
         <p className="text-lg font-semibold">
-          Acceleration Factor (Use Life / Test Duration): {Number.isFinite(timeRatioAF) ? formatNum(timeRatioAF) : "N/A"}
+          AF from durations (Use Life / Test Duration): {Number.isFinite(timeRatioAF) ? formatNum(timeRatioAF) : "N/A"}
         </p>
         <p className="mt-1 text-sm">
-          Acceleration Factor (from Ea and temperatures): {Number.isFinite(arrheniusAF) ? formatNum(arrheniusAF) : "N/A"}
+          AF from Arrhenius equation (Ea + temperatures): {Number.isFinite(arrheniusAF) ? formatNum(arrheniusAF) : "N/A"}
         </p>
         <p className="mt-1 text-sm">
           To simulate {useHours} hours of use at {Tuse}&deg;C, test for {testHours} hours at {Tstress}&deg;C.
         </p>
         {solverError ? <p className="mt-2 text-sm text-red-700">{solverError}</p> : null}
       </div>
+      {showNonAcceleratingWarning ? (
+        <div className="mt-4 rounded border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">
+          AF is {formatNum(arrheniusAF)} (&lt;= 1). This condition is not accelerating.
+        </div>
+      ) : null}
+      {showAfMismatchWarning ? (
+        <div className="mt-4 rounded border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">
+          AF from durations and AF from Arrhenius differ by more than 10%. Check units, temperatures, and assumed Ea.
+        </div>
+      ) : null}
 
       <div className="mt-8 h-80 rounded border bg-white p-4 shadow">
         <ResponsiveContainer width="100%" height="100%">

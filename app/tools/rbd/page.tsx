@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { computeRbdNodeReliability } from "@/lib/reliabilityMath";
 
 /**
  * RBD Generator — Single-file page component
@@ -47,11 +48,6 @@ const EXAMPLE_ROWS: Row[] = [
   { name: "Component C", type: "Block", parent: "Subsystem2", reliability: "0.85" },
   { name: "Component D", type: "Block", parent: "Subsystem2", reliability: "0.75" },
 ];
-
-function clamp01(x: number): number {
-  if (Number.isNaN(x)) return x;
-  return Math.max(0, Math.min(1, x));
-}
 
 function csvEscape(v: string) {
   if (v.includes(",") || v.includes("\n") || v.includes("\"")) {
@@ -161,7 +157,7 @@ function buildTree(rows: Row[]): { root?: Node; nodes: Record<string, Node>; err
       name: r.name,
       type: (r.type as RbdType) || "Series",
       parent: (r.parent ?? "") || undefined,
-      reliability: r.type === "Block" ? clamp01(Number(r.reliability)) : undefined,
+      reliability: r.type === "Block" ? Number(r.reliability) : undefined,
       children: [],
     };
   }
@@ -205,15 +201,11 @@ function buildTree(rows: Row[]): { root?: Node; nodes: Record<string, Node>; err
 }
 
 function computeReliability(node: Node): number {
-  if (node.type === "Block") return node.reliability ?? 0;
-  if (node.children.length === 0) return node.type === "Series" ? 1 : 0;
   const childRs = node.children.map((c) => {
     c.computed = computeReliability(c);
     return c.computed!;
   });
-  if (node.type === "Series") return childRs.reduce((acc, r) => acc * r, 1);
-  const prod = childRs.reduce((acc, r) => acc * (1 - r), 1);
-  return 1 - prod;
+  return computeRbdNodeReliability(node.type, node.reliability, childRs);
 }
 
 // Simple tree layout
@@ -387,20 +379,27 @@ export default function RbdGeneratorPage() {
     setRoot(root);
 
     if (errors.length === 0 && root) {
-      const r = computeReliability(root);
-      root.computed = r;
-      setOverall(r);
+      try {
+        const r = computeReliability(root);
+        root.computed = r;
+        setOverall(r);
 
-      // Reachable set for greying out orphans
-      const set = new Set<string>();
-      const stack: Node[] = [root];
-      while (stack.length) {
-        const n = stack.pop()!;
-        if (set.has(n.name)) continue;
-        set.add(n.name);
-        n.children.forEach((c) => stack.push(c));
+        // Reachable set for greying out orphans
+        const set = new Set<string>();
+        const stack: Node[] = [root];
+        while (stack.length) {
+          const n = stack.pop()!;
+          if (set.has(n.name)) continue;
+          set.add(n.name);
+          n.children.forEach((c) => stack.push(c));
+        }
+        setReachable(set);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Failed to compute reliability.";
+        setErrors((prev) => [...prev, msg]);
+        setOverall(undefined);
+        setReachable(new Set());
       }
-      setReachable(set);
     } else {
       setOverall(undefined);
       setReachable(new Set());
@@ -439,13 +438,21 @@ export default function RbdGeneratorPage() {
 
   const exportSummaryCSV = () => {
     if (!generated) return;
-    const list = Object.values(nodes).map((n) => ({
-      name: n.name,
-      type: n.type,
-      parent: n.parent ?? "",
-      reliability_input: n.type === "Block" ? String(n.reliability ?? "") : "",
-      reliability_computed: n.computed ?? computeReliability(n),
-    }));
+    const list = Object.values(nodes)
+      .map((n) => {
+        try {
+          return {
+            name: n.name,
+            type: n.type,
+            parent: n.parent ?? "",
+            reliability_input: n.type === "Block" ? String(n.reliability ?? "") : "",
+            reliability_computed: n.computed ?? computeReliability(n),
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
     const header = [
       "Component Name",
       "Type",
@@ -502,7 +509,7 @@ export default function RbdGeneratorPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={loadExample} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200">Load Example</button>
-          <button onClick={clearAll} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200">Clear</button>
+          <button onClick={clearAll} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200">Reset</button>
           <button onClick={exportCSV} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200">Export Input CSV</button>
           <button onClick={exportSummaryCSV} disabled={!generated} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200 disabled:opacity-50">Export Summary CSV</button>
           <button onClick={downloadPng} disabled={!generated} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200 disabled:opacity-50">Download Diagram PNG</button>
