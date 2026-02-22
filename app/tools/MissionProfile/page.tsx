@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   applyTemplate,
   buildEmptyMatrix,
@@ -24,6 +25,7 @@ import {
   type TargetLife,
 } from "@/lib/missionProfile/schema";
 import { MISSION_PROFILE_TEMPLATES } from "@/lib/missionProfile/templates";
+import { DUTY_CYCLE_EXPORT_KEY, HALT_HASS_ROUTE, type DutyCycleExportPayload } from "@/lib/haltHass/types";
 
 const LIKELIHOOD_ORDER: Likelihood[] = ["not_likely", "possible", "likely"];
 const LIKELIHOOD_LABEL: Record<Likelihood, string> = {
@@ -167,9 +169,45 @@ function buildLifetimeSummaryData(matrix: MissionMatrix, lifeHours: number | nul
     .sort((a, b) => b.totalExposureHours - a.totalExposureHours || b.totalEvents - a.totalEvents);
 }
 
+function collectStressParamValues(matrix: MissionMatrix, stressKey: StressKey, paramKey: string): number[] {
+  const values: number[] = [];
+  for (const phase of PHASES) {
+    const cell = matrix[stressKey][phase.key];
+    if (cell.likelihood === "not_likely") continue;
+    const value = asNumber(cell.params[paramKey] ?? "");
+    if (value !== null) values.push(value);
+  }
+  return values;
+}
+
+function buildDutyCycleExportPayload(
+  matrix: MissionMatrix,
+  context: { industry: string; product: string; location: string; templateId?: string }
+): DutyCycleExportPayload {
+  const tempMinValues = collectStressParamValues(matrix, "temperature_extremes", "minC");
+  const tempMaxValues = collectStressParamValues(matrix, "temperature_extremes", "maxC");
+  const vibValues = collectStressParamValues(matrix, "vibration", "grms");
+  const humidityValues = collectStressParamValues(matrix, "humidity", "rhPct");
+  const powerCycleValues = collectStressParamValues(matrix, "thermal_cycles", "cyclesPerDay");
+
+  return {
+    tempUseMinC: tempMinValues.length > 0 ? Math.min(...tempMinValues) : null,
+    tempUseMaxC: tempMaxValues.length > 0 ? Math.max(...tempMaxValues) : null,
+    vibUseGrms: vibValues.length > 0 ? Math.max(...vibValues) : null,
+    humidityUseRH: humidityValues.length > 0 ? Math.max(...humidityValues) : null,
+    voltageUseMin: null,
+    voltageUseMax: null,
+    powerCyclesPerDay: powerCycleValues.length > 0 ? Math.max(...powerCycleValues) : null,
+    source: "mission-profile",
+    generatedAt: new Date().toISOString(),
+    context,
+  };
+}
+
 const defaultTemplate = MISSION_PROFILE_TEMPLATES[0];
 
 export default function MissionProfilePage() {
+  const router = useRouter();
   const [industry, setIndustry] = useState(defaultTemplate.industry);
   const [product, setProduct] = useState(defaultTemplate.product);
   const [location, setLocation] = useState(defaultTemplate.location);
@@ -345,6 +383,19 @@ export default function MissionProfilePage() {
     setNotes("");
     setFieldErrors({});
     setImportMessage("Profile reset.");
+  }
+
+  function exportToHaltWizard() {
+    if (typeof window === "undefined") return;
+    const payload = buildDutyCycleExportPayload(matrix, {
+      industry,
+      product,
+      location,
+      templateId: selectedTemplate?.id,
+    });
+    window.localStorage.setItem(DUTY_CYCLE_EXPORT_KEY, JSON.stringify(payload));
+    setImportMessage("Duty-cycle ranges exported to HALT/HASS wizard.");
+    router.push(HALT_HASS_ROUTE);
   }
 
   async function downloadProfileCardPdf() {
@@ -591,6 +642,7 @@ export default function MissionProfilePage() {
           <div className="mt-2 flex flex-wrap gap-2">
             <button type="button" onClick={exportProfile} className="rounded-lg border px-3 py-1.5 text-xs font-medium">Export JSON</button>
             <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-3 py-1.5 text-xs font-medium">Import JSON</button>
+            <button type="button" onClick={exportToHaltWizard} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700">Export to HALT Wizard</button>
             <button type="button" onClick={downloadProfileCardPdf} className="rounded-lg border px-3 py-1.5 text-xs font-medium">Download Profile Card (PDF)</button>
             <button type="button" onClick={downloadExcelWorkbook} className="rounded-lg border px-3 py-1.5 text-xs font-medium">Download Excel Workbook</button>
             <button type="button" onClick={resetAll} className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700">Reset</button>

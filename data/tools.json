@@ -16,6 +16,14 @@
     "whenToUse": "Early design + DFMEA + validation planning."
   },
   {
+    "id": "halt-hass",
+    "title": "HALT/HASS Planning Wizard",
+    "route": "/tools/HALTHASSWizard",
+    "description": "Build step-stress profiles for HALT and derive HASS screens. Detection-first or duty-cycle driven.",
+    "formulaLatex": "\\boxed{\\text{Step-stress profile builder}}",
+    "whenToUse": "When you need to discover design margins fast and translate learnings into production screening."
+  },
+  {
     "id": "burnin",
     "title": "Burn-In Test Wizard",
     "route": "/tools/BurnInWizard",
