@@ -11,6 +11,8 @@ interface Resource {
   description: string;
   date: string;
   content: string;
+  image?: string;
+  link?: string;
 }
 
 export default function ResourcesPage() {

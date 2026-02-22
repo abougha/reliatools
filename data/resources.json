@@ -1,56 +1,65 @@
 [
-  {
-    "slug": "derating",
-    "title": "Reliability by Design: A Technical Guide to Component Derating",
-    "category": "Knowledge",
-    "description": "A physics-of-failure-based guide to component derating, covering thermal and electrical stress models, design margin, and why derating is critical for modern high-power systems including AI data centers.",
-    "date": "2026-01-17",
-    "content": "",
-    "link": "/resources/derating"
-  },
-  {
-    "slug": "arrhenius-article",
-    "title": "Understanding Arrhenius for Reliability",
-    "category": "Article",
-    "description": "A deep dive into thermal aging models and their application in reliability engineering.",
-    "date": "2025-05-27",
-    "content": "",
-    "link": "/resources/arrhenius-article"
-  },
-  {
-    "slug": "thermal-shock-article",
-    "title": "Thermal Shock & Coffin-Manson in Microelectronics",
-    "category": "Article",
-    "description": "Learn how thermal cycling affects solder joint fatigue using the Coffin-Manson model. Ideal for consumer electronics.",
-    "date": "2025-06-08",
-    "content": "",
-    "link": "/resources/thermal-shock-article"
-  },
-  {
-    "slug": "halt",
-    "title": "Highly Accelerated Life Testing (HALT)",
-    "category": "Knowledge",
-    "description": "Understanding Highly Accelerated Life Testing (HALT): Principles, History, and Applications",
-    "date": "2025-04-15",
-    "content": "### Case Study Highlights\n\n- Failure rates increased 15% at elevated humidity.\n- Common modes: electromigration, dielectric breakdown.\n- Mitigation strategies include design rule adjustments and protective coatings.\n\n[Download the full case study PDF](/downloads/microelectronics-case-study.pdf)",
-    "link": "/resources/halt"
-  },
-  {
-    "slug": "softwarebrp-article",
-    "title": "Bayesian Reliability Predictor (Software)",
-    "category": "Knowledge",
-    "description": "How to estimate software reliability early using Bayesian evidence fusion.",
-    "date": "2025-10-19",
-    "content": "",
-    "link": "/resources/softwarebrp-article"
-  },
-  {
-    "slug": "taguchi-bayesian-article",
-    "title": "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
-    "category": "DfR 2.0 / Advanced Validation",
-    "description": "A practical guide to combining Taguchi DOE with in-situ Bayesian updating and Monte Carlo reasoning to create adaptive, confidence-driven validation plans.",
-    "date": "2025-12-24",
-    "content": "",
-    "link": "/resources/taguchi-bayesian-article"
-  }
+    {
+        "slug":  "mission-profile-builder",
+        "title":  "Stop Guessing Environmental Loads",
+        "category":  "Knowledge",
+        "description":  "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress x phase matrix.",
+        "date":  "2026-02-22",
+        "content":  "",
+        "link":  "/resources/mission-profile-builder"
+    },
+    {
+        "slug":  "derating",
+        "title":  "Reliability by Design: A Technical Guide to Component Derating",
+        "category":  "Knowledge",
+        "description":  "A physics-of-failure-based guide to component derating, covering thermal and electrical stress models, design margin, and why derating is critical for modern high-power systems including AI data centers.",
+        "date":  "2026-01-17",
+        "content":  "",
+        "link":  "/resources/derating"
+    },
+    {
+        "slug":  "arrhenius-article",
+        "title":  "Understanding Arrhenius for Reliability",
+        "category":  "Article",
+        "description":  "A deep dive into thermal aging models and their application in reliability engineering.",
+        "date":  "2025-05-27",
+        "content":  "",
+        "link":  "/resources/arrhenius-article"
+    },
+    {
+        "slug":  "thermal-shock-article",
+        "title":  "Thermal Shock \u0026 Coffin-Manson in Microelectronics",
+        "category":  "Article",
+        "description":  "Learn how thermal cycling affects solder joint fatigue using the Coffin-Manson model. Ideal for consumer electronics.",
+        "date":  "2025-06-08",
+        "content":  "",
+        "link":  "/resources/thermal-shock-article"
+    },
+    {
+        "slug":  "halt",
+        "title":  "Highly Accelerated Life Testing (HALT)",
+        "category":  "Knowledge",
+        "description":  "Understanding Highly Accelerated Life Testing (HALT): Principles, History, and Applications",
+        "date":  "2025-04-15",
+        "content":  "### Case Study Highlights\n\n- Failure rates increased 15% at elevated humidity.\n- Common modes: electromigration, dielectric breakdown.\n- Mitigation strategies include design rule adjustments and protective coatings.\n\n[Download the full case study PDF](/downloads/microelectronics-case-study.pdf)",
+        "link":  "/resources/halt"
+    },
+    {
+        "slug":  "softwarebrp-article",
+        "title":  "Bayesian Reliability Predictor (Software)",
+        "category":  "Knowledge",
+        "description":  "How to estimate software reliability early using Bayesian evidence fusion.",
+        "date":  "2025-10-19",
+        "content":  "",
+        "link":  "/resources/softwarebrp-article"
+    },
+    {
+        "slug":  "taguchi-bayesian-article",
+        "title":  "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
+        "category":  "DfR 2.0 / Advanced Validation",
+        "description":  "A practical guide to combining Taguchi DOE with in-situ Bayesian updating and Monte Carlo reasoning to create adaptive, confidence-driven validation plans.",
+        "date":  "2025-12-24",
+        "content":  "",
+        "link":  "/resources/taguchi-bayesian-article"
+    }
 ]
