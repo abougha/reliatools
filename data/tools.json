@@ -56,6 +56,14 @@
     "whenToUse": "When temperature-driven aging dominates failure risk."
   },
   {
+    "id": "weibull",
+    "title": "Weibull Probability Plot",
+    "route": "/tools/Weibull",
+    "description": "Fit 2-parameter Weibull models with FAIL and right-censored SUSP data. Overlay multiple datasets on Weibull probability paper and export beta, eta, B-life, and mission reliability metrics.",
+    "formulaLatex": "F(t)=1-e^{-\\left(\\frac{t}{\\eta}\\right)^{\\beta}}",
+    "whenToUse": "When estimating life distributions, B10 targets, and mission reliability from life test data."
+  },
+  {
     "id": "coffin-manson",
     "title": "Coffin-Manson Calculator",
     "route": "/tools/CoffinManson",
