@@ -18,13 +18,13 @@ interface PDState {
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 const PRESETS: Record<string, PDState> = {
-  "ECU Connector": {
-    title: "ECU Connector – P Diagram",
-    signals: [ { id: uid(), text: "Commanded bus load (%)" }, { id: uid(), text: "Amplitude (Vpp)" } ],
-    controls: [ { id: uid(), text: "Contact normal force" }, { id: uid(), text: "Plating" } ],
-    noises:   [ { id: uid(), text: "Temp cycling" }, { id: uid(), text: "Vibration" } ],
-    ideal:    [ { id: uid(), text: "Contact R stable" } ],
-    errors:   [ { id: uid(), text: "Intermittent opens" } ],
+  "Industrial Motor Controller": {
+    title: "Industrial Motor Controller – P Diagram",
+    signals: [ { id: uid(), text: "Motor speed command" }, { id: uid(), text: "Load torque" } ],
+    controls: [ { id: uid(), text: "PID tuning" }, { id: uid(), text: "Thermal protection threshold" } ],
+    noises:   [ { id: uid(), text: "Ambient temperature" }, { id: uid(), text: "Supply voltage variation" }, { id: uid(), text: "Vibration" } ],
+    ideal:    [ { id: uid(), text: "Shaft speed accuracy" }, { id: uid(), text: "Thermal stability" } ],
+    errors:   [ { id: uid(), text: "Speed deviation" } ],
   }
 };
 
@@ -32,9 +32,9 @@ type PDKeys = keyof PDState;
 type EditKey = PDKeys | 'diagramTitle';
 
 const Page: React.FC = () => {
-  const [presetKey, setPresetKey] = useState<string>('ECU Connector');
+  const [presetKey, setPresetKey] = useState<string>('Industrial Motor Controller');
   const [zoom, setZoom] = useState<number>(1);
-  const [data, setData] = useState<PDState>(PRESETS['ECU Connector']);
+  const [data, setData] = useState<PDState>(PRESETS['Industrial Motor Controller']);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ const Page: React.FC = () => {
   const addItem = (key: Exclude<PDKeys,'title'>, id?: string) => setData((d)=>({...d,[key]:[...(d[key] as PDItem[]),{id:id??uid(),text:''}]}));
   const removeItem = (key: Exclude<PDKeys,'title'>, id: string) => setData((d)=>({...d,[key]:(d[key] as PDItem[]).filter(it=>it.id!==id)}));
   const applyPreset = () => setData(PRESETS[presetKey]);
-  const resetAll = () => setData(PRESETS['ECU Connector']);
+  const resetAll = () => setData(PRESETS['Industrial Motor Controller']);
 
   const downloadSVG = () => { if (!svgRef.current) return; const src=new XMLSerializer().serializeToString(svgRef.current); const url=URL.createObjectURL(new Blob([src],{type:'image/svg+xml;charset=utf-8'})); const a=document.createElement('a'); a.href=url; a.download='p-diagram.svg'; a.click(); URL.revokeObjectURL(url); };
   const downloadPNG = () => { if (!svgRef.current) return; const src=new XMLSerializer().serializeToString(svgRef.current); const url=URL.createObjectURL(new Blob([src],{type:'image/svg+xml;charset=utf-8'})); const img=new Image(); img.onload=()=>{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');if(!ctx)return;ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0);c.toBlob(b=>{if(!b)return;const u2=URL.createObjectURL(b);const a=document.createElement('a');a.href=u2;a.download='p-diagram.png';a.click();URL.revokeObjectURL(u2);URL.revokeObjectURL(url);});};img.src=url;};

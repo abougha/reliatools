@@ -1,5 +1,8 @@
 name = "reliatools"
-pages_build_output_dir = ".vercel/output/static"
+main = ".open-next/worker.js"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
 
-compatibility_date   = "2025-05-01"
-compatibility_flags  = ["nodejs_compat"]   # ← single plain flag
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"

@@ -193,9 +193,9 @@ export const MISSION_PRESETS: MissionProfilePreset[] = [
 //
 export const PRODUCT_TYPES: ProductType[] = [
   {
-    id: "connector-lv",
-    name: "Low-voltage Connector",
-    domainTags: ["connector", "automotive", "electromechanical", "polymer"],
+    id: "sensor-module",
+    name: "Industrial Sensor Module",
+    domainTags: ["sensor", "industrial", "electronics", "polymer"],
     defaultMechanismIds: ["fretting-corrosion", "thermal-aging", "creep-relaxation", "vibration-fatigue", "seal-degradation"],
     defaultTestProfileId: "auto-underhood",
   },
@@ -244,7 +244,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     category: "housing",
     tags: ["polymer", "housing", "automotive"],
     eaRange: { min: 0.6, max: 0.9 },
-    notes: ["Common automotive connector housing material; watch moisture uptake."],
+    notes: ["Common automotive housing material (PA66-GF30); watch moisture uptake."],
   },
   {
     id: "pbt-gf",
@@ -298,7 +298,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     id: "tin",
     name: "Tin",
     category: "plating",
-    tags: ["plating", "connector"],
+    tags: ["plating", "electronics"],
     eaDefault: 0.7,
     notes: ["Cost effective; prone to fretting corrosion in vibration."],
   },
@@ -306,7 +306,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     id: "silver",
     name: "Silver",
     category: "plating",
-    tags: ["plating", "connector"],
+    tags: ["plating", "electronics"],
     eaDefault: 0.75,
     notes: ["Low contact resistance; watch sulfur tarnish."],
   },
@@ -314,7 +314,7 @@ export const MATERIAL_LIBRARY: MaterialEntry[] = [
     id: "gold",
     name: "Gold",
     category: "plating",
-    tags: ["plating", "connector", "high-reliability"],
+    tags: ["plating", "electronics", "high-reliability"],
     eaDefault: 0.8,
     notes: ["High reliability; thicker plating reduces wear risk."],
   },
@@ -489,7 +489,7 @@ export const MECHANISMS: FailureMechanism[] = [
     typicalSymptoms: ["Brittle plastics", "Oxidized contacts", "Drift in parameters"],
     stressorIds: ["temperature"],
     recommendedModels: ["arrhenius"],
-    applicableProductTags: ["polymer", "connector", "electronics"],
+    applicableProductTags: ["polymer", "electronics"],
   },
   {
     id: "creep-relaxation",
@@ -498,7 +498,7 @@ export const MECHANISMS: FailureMechanism[] = [
     typicalSymptoms: ["Loss of retention", "Increased contact resistance", "Seal leakage over time"],
     stressorIds: ["temperature"],
     recommendedModels: ["arrhenius"],
-    applicableProductTags: ["connector", "polymer", "mechatronic"],
+    applicableProductTags: ["polymer", "mechatronic", "electronics"],
   },
   {
     id: "fretting-corrosion",
@@ -507,7 +507,7 @@ export const MECHANISMS: FailureMechanism[] = [
     typicalSymptoms: ["Intermittent signal", "Black debris", "Resistance spikes"],
     stressorIds: ["vibration", "contact-motion", "humidity"],
     recommendedModels: ["none"],
-    applicableProductTags: ["connector", "automotive"],
+    applicableProductTags: ["automotive", "electronics"],
   },
   {
     id: "humidity-corrosion",
@@ -516,7 +516,7 @@ export const MECHANISMS: FailureMechanism[] = [
     typicalSymptoms: ["Green corrosion", "Leakage current", "Dendrites"],
     stressorIds: ["humidity", "temperature"],
     recommendedModels: ["peck", "eyring"],
-    applicableProductTags: ["pcb", "electronics", "connector"],
+    applicableProductTags: ["pcb", "electronics"],
   },
   {
     id: "chemical-attack",
@@ -525,7 +525,7 @@ export const MECHANISMS: FailureMechanism[] = [
     typicalSymptoms: ["Swelling", "Cracking", "Softening", "Seal deformation"],
     stressorIds: ["chemical", "temperature"],
     recommendedModels: ["eyring"],
-    applicableProductTags: ["polymer", "connector", "automotive"],
+    applicableProductTags: ["polymer", "automotive"],
   },
   {
     id: "vibration-fatigue",
@@ -543,7 +543,7 @@ export const MECHANISMS: FailureMechanism[] = [
     typicalSymptoms: ["Ingress", "Corrosion inside housing", "Shorts"],
     stressorIds: ["humidity", "chemical", "particles-dust"],
     recommendedModels: ["none"],
-    applicableProductTags: ["connector", "sensor", "automotive"],
+    applicableProductTags: ["sensor", "automotive", "electronics"],
   },
   {
     id: "electromigration",
@@ -773,7 +773,7 @@ export const TESTS: TestDefinition[] = [
     id: "random-vibration",
     name: "Random Vibration",
     category: "mechanical",
-    description: "Random vibration to reveal fatigue weaknesses, intermittency, and connector fretting risks.",
+    description: "Random vibration to reveal fatigue weaknesses, intermittency, and fretting at contact interfaces.",
     mechanismIds: ["vibration-fatigue", "fretting-corrosion"],
     stressorIds: ["vibration"],
     defaults: { coverage: "high", durationWeeks: 2, costLevel: 2, sampleSizeHint: "Monitor intermittency during vibe if possible." },
@@ -800,7 +800,7 @@ export const TESTS: TestDefinition[] = [
     stressorIds: ["contact-motion", "particles-dust"],
     defaults: { coverage: "medium", durationWeeks: 2, costLevel: 1 },
     acceleration: { model: "none" },
-    references: [{ standard: "USCAR-2", note: "Connector durability cycles (example)." }],
+    references: [],
   },
   {
     id: "retention-force",
@@ -811,7 +811,7 @@ export const TESTS: TestDefinition[] = [
     stressorIds: ["temperature"],
     defaults: { coverage: "medium", durationWeeks: 1, costLevel: 1 },
     acceleration: { model: "none" },
-    references: [{ standard: "USCAR-2", note: "Connector retention tests (example)." }],
+    references: [],
   },
 
   // ELECTRICAL

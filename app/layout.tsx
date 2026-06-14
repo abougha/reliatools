@@ -3,8 +3,7 @@ import "../styles/globals.css";
 import "katex/dist/katex.min.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
-import Navbar from "../components/Navbar";
-import Script from "next/script";
+import PublicSiteChrome from "../components/PublicSiteChrome";
 
 // Import Geist font family
 const geistSans = Geist({
@@ -17,7 +16,7 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
-// 🎯 Global Metadata: Add Here
+// Global Metadata: Add Here
 export const metadata: Metadata = {
   title: {
     default: "Reliatools | Reliability Engineering Tools for Testing & Analysis",
@@ -32,7 +31,7 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL("https://www.reliatools.com"),
   other: {
-    "google-adsense-account": "ca-pub-9300099645509490", // ✅ Added AdSense meta tag here
+    "google-adsense-account": "ca-pub-9300099645509490", // Added AdSense meta tag here
   },
 };
 
@@ -62,25 +61,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white transition-colors duration-300">
-        {/* Global Navbar */}
-        <Navbar />
-
-        {/* Google AdSense Script */}
-        <Script
-          id="adsense-script"
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9300099645509490"
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-        />
-
-        {/* Page content */}
-        {children}
-
-        <footer className="mt-10 text-center text-sm text-gray-500 py-6 border-t border-gray-200">
-          © 2025 Reliatools. All rights reserved. The tools and content on this site are provided “as is” without warranties of any kind. Reliatools assumes no liability for the accuracy or use of results. Use at your own risk.
-        </footer>
+        <PublicSiteChrome>{children}</PublicSiteChrome>
       </body>
     </html>
   );
 }
+
