@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   CheckCircle2,
   ClipboardList,
   FileText,

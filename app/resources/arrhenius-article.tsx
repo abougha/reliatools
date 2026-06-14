@@ -63,7 +63,7 @@ export default function ArrheniusArticle() {
 
       <p>For example, an automotive control module might undergo a 1000-hour test at 125°C. Using Arrhenius, engineers can estimate that this is equivalent to 10 years at 55°C in the field. This capability is essential for industries like:</p>
       <ul className="list-disc list-inside">
-        <li><strong>Automotive:</strong> Validating ECUs, sensors, and connectors to withstand years of harsh thermal exposure.</li>
+        <li><strong>Automotive:</strong> Validating ECUs and sensors to withstand years of harsh thermal exposure.</li>
         <li><strong>Microelectronics:</strong> Testing chips and packages under accelerated thermal and voltage stresses to predict long-term reliability.</li>
       </ul>
 

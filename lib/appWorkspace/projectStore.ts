@@ -25,6 +25,7 @@ export type StoredProject = {
   isDemo?: boolean;
   riskLevel?: "Low" | "Medium" | "High";
   progress?: number;
+  completedSteps?: string[];
 };
 
 export const demoWorkspaceProject: StoredProject = {
@@ -50,10 +51,11 @@ export const demoWorkspaceProject: StoredProject = {
   isDemo: true,
   riskLevel: "High",
   progress: 34,
+  completedSteps: [],
 };
 
 export const demoProjectCards: StoredProject[] = demoProjects.map((project) => ({
-  id: "demo-project",
+  id: project.id,
   name: project.name,
   industry: project.industry,
   productType: project.productCategory,
@@ -98,14 +100,22 @@ export function writeStoredProject(project: StoredProject) {
 export function getProjectFromStorage(projectId: string): StoredProject {
   if (projectId === "demo-project") return demoWorkspaceProject;
 
-  return (
-    readStoredProjects().find((project) => project.id === projectId) ?? {
-      ...demoWorkspaceProject,
-      id: projectId,
-      name: "New Reliability Project",
-      isDemo: false,
-    }
-  );
+  // localStorage first (user-created projects)
+  const fromStorage = readStoredProjects().find((p) => p.id === projectId);
+  if (fromStorage) return fromStorage;
+
+  // demo project cards: clone workspace with matching card fields
+  const demoCard = demoProjectCards.find((c) => c.id === projectId);
+  if (demoCard) {
+    return { ...demoWorkspaceProject, ...demoCard };
+  }
+
+  return {
+    ...demoWorkspaceProject,
+    id: projectId,
+    name: "New Reliability Project",
+    isDemo: false,
+  };
 }
 
 export function createProjectId(name: string) {

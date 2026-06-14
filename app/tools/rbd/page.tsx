@@ -19,13 +19,14 @@ import { computeRbdNodeReliability } from "@/lib/reliabilityMath";
  * - CSV Import/Export (input), CSV Export (summary), PNG export (diagram)
  */
 
-type RbdType = "Block" | "Series" | "Parallel";
+type RbdType = "Block" | "Series" | "Parallel" | "KofN";
 
 interface Row {
   name: string;
   type: RbdType | "";
   parent: string;           // blank for root
   reliability?: string;     // string for input; parsed later
+  kRequired?: string;       // for KofN only; min successes needed
 }
 
 interface Node {
@@ -33,11 +34,12 @@ interface Node {
   type: RbdType;
   parent?: string;          // blank/undefined for root
   reliability?: number;     // for Block only
+  kRequired?: number;       // for KofN only
   children: Node[];
   computed?: number;        // computed reliability
 }
 
-const ALLOWED_TYPES: RbdType[] = ["Block", "Series", "Parallel"];
+const ALLOWED_TYPES: RbdType[] = ["Block", "Series", "Parallel", "KofN"];
 
 const EXAMPLE_ROWS: Row[] = [
   { name: "System", type: "Series", parent: "", reliability: "" },
@@ -57,9 +59,9 @@ function csvEscape(v: string) {
 }
 
 function toCSV(rows: Row[]): string {
-  const header = ["Component Name", "Type", "Parent", "Reliability"].join(",");
+  const header = ["Component Name", "Type", "Parent", "Reliability", "k (KofN)"].join(",");
   const lines = rows.map((r) =>
-    [r.name, r.type, r.parent, r.reliability ?? ""]
+    [r.name, r.type, r.parent, r.reliability ?? "", r.type === "KofN" ? (r.kRequired ?? "") : ""]
       .map((v) => csvEscape(String(v ?? "")))
       .join(",")
   );
@@ -99,8 +101,8 @@ function fromCSV(text: string): Row[] {
 
   const rows: Row[] = body.map((line) => {
     const cols = parseLine(line);
-    const [name = "", type = "", parent = "", reliability = ""] = cols;
-    return { name, type: type as Row["type"], parent, reliability };
+    const [name = "", type = "", parent = "", reliability = "", kRequired = ""] = cols;
+    return { name, type: type as Row["type"], parent, reliability, kRequired };
   });
   return rows;
 }
@@ -126,6 +128,17 @@ function buildTree(rows: Row[]): { root?: Node; nodes: Record<string, Node>; err
       if (val === "") errors.push(`Row ${i + 1}: Reliability is required for Block.`);
       const num = Number(val);
       if (Number.isNaN(num) || num < 0 || num > 1) errors.push(`Row ${i + 1}: Reliability must be a number between 0 and 1.`);
+    } else if (r.type === "KofN") {
+      const kVal = (r.kRequired ?? "").trim();
+      if (kVal === "") {
+        errors.push(`Row ${i + 1}: k is required for KofN (minimum successes needed).`);
+      } else {
+        const kNum = Number(kVal);
+        if (!Number.isInteger(kNum) || kNum < 1) errors.push(`Row ${i + 1}: k must be a positive integer for KofN.`);
+      }
+      if ((r.reliability ?? "").trim() !== "" && Number(r.reliability) !== 0) {
+        errors.push(`Row ${i + 1}: Reliability should be blank (or 0) for KofN rows.`);
+      }
     } else {
       if ((r.reliability ?? "").trim() !== "" && Number(r.reliability) !== 0) {
         errors.push(`Row ${i + 1}: Reliability should be blank (or 0) for Series/Parallel rows.`);
@@ -158,6 +171,7 @@ function buildTree(rows: Row[]): { root?: Node; nodes: Record<string, Node>; err
       type: (r.type as RbdType) || "Series",
       parent: (r.parent ?? "") || undefined,
       reliability: r.type === "Block" ? Number(r.reliability) : undefined,
+      kRequired: r.type === "KofN" ? Number(r.kRequired) : undefined,
       children: [],
     };
   }
@@ -205,7 +219,7 @@ function computeReliability(node: Node): number {
     c.computed = computeReliability(c);
     return c.computed!;
   });
-  return computeRbdNodeReliability(node.type, node.reliability, childRs);
+  return computeRbdNodeReliability(node.type, node.reliability, childRs, node.kRequired);
 }
 
 // Simple tree layout
@@ -445,6 +459,7 @@ export default function RbdGeneratorPage() {
             name: n.name,
             type: n.type,
             parent: n.parent ?? "",
+            kn: n.type === "KofN" ? `${n.kRequired ?? "?"}-of-${n.children.length}` : "",
             reliability_input: n.type === "Block" ? String(n.reliability ?? "") : "",
             reliability_computed: n.computed ?? computeReliability(n),
           };
@@ -457,13 +472,14 @@ export default function RbdGeneratorPage() {
       "Component Name",
       "Type",
       "Parent",
+      "k / n",
       "Reliability (input)",
       "Reliability (computed)",
     ].join(",");
     const lines = list
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((r) =>
-        [r.name, r.type, r.parent, r.reliability_input, r.reliability_computed.toString()]
+        [r.name, r.type, r.parent, r.kn, r.reliability_input, r.reliability_computed.toString()]
           .map((v) => csvEscape(String(v ?? "")))
           .join(",")
       );
@@ -523,8 +539,9 @@ export default function RbdGeneratorPage() {
       <section className="rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold">1) Input Table</h2>
         <p className="mb-4 text-sm text-gray-600">
-          Columns (in order): <strong>Component Name</strong>, <strong>Type</strong> (Block, Series, Parallel),
-          <strong> Parent</strong> (blank for root), <strong>Reliability</strong> (0–1, only for Block).
+          Columns (in order): <strong>Component Name</strong>, <strong>Type</strong> (Block, Series, Parallel, KofN),
+          <strong> Parent</strong> (blank for root), <strong>Reliability</strong> (0–1, only for Block),
+          <strong> k</strong> (required for KofN — minimum successes; children must be equal-reliability Blocks).
         </p>
 
         <div className="overflow-x-auto">
@@ -535,6 +552,7 @@ export default function RbdGeneratorPage() {
                 <th className="border-b px-3 py-2 text-left w-40">Type</th>
                 <th className="border-b px-3 py-2 text-left w-[18rem]">Parent</th>
                 <th className="border-b px-3 py-2 text-left w-40">Reliability (0–1)</th>
+                <th className="border-b px-3 py-2 text-left w-24">k (KofN)</th>
                 <th className="border-b px-3 py-2 w-16"></th>
               </tr>
             </thead>
@@ -594,8 +612,22 @@ export default function RbdGeneratorPage() {
                       className="w-full rounded-md border px-2 py-1"
                       value={r.reliability ?? ""}
                       onChange={(e) => handleChange(i, "reliability", e.target.value)}
-                      placeholder={r.type === "Block" ? "0.95" : "(blank for Series/Parallel)"}
+                      placeholder={r.type === "Block" ? "0.95" : "(blank)"}
                     />
+                  </td>
+                  <td className="border-b px-3 py-2">
+                    {r.type === "KofN" ? (
+                      <input
+                        className="w-full rounded-md border px-2 py-1"
+                        value={r.kRequired ?? ""}
+                        onChange={(e) => handleChange(i, "kRequired", e.target.value)}
+                        placeholder="e.g. 2"
+                        type="number"
+                        min={1}
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="border-b px-3 py-2 text-right">
                     <button onClick={() => removeRow(i)} className="text-sm text-red-600 hover:underline">
@@ -642,7 +674,7 @@ export default function RbdGeneratorPage() {
             </span>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Computed from the root node (blank Parent). Series: product of children. Parallel: 1 − Π(1 − rᵢ).
+            Computed from the root node (blank Parent). Series: product of children. Parallel: 1 − Π(1 − rᵢ). KofN: binomial tail sum (all children must have equal Block r).
           </p>
 
           {generated && root ? (
@@ -653,6 +685,7 @@ export default function RbdGeneratorPage() {
                     <th className="border-b px-3 py-2 text-left">Name</th>
                     <th className="border-b px-3 py-2 text-left">Type</th>
                     <th className="border-b px-3 py-2 text-left">Parent</th>
+                    <th className="border-b px-3 py-2 text-left">k / n</th>
                     <th className="border-b px-3 py-2 text-right">Input r</th>
                     <th className="border-b px-3 py-2 text-right">Computed r</th>
                   </tr>
@@ -667,6 +700,9 @@ export default function RbdGeneratorPage() {
                           <td className="border-b px-3 py-1">{n.name}</td>
                           <td className="border-b px-3 py-1">{n.type}</td>
                           <td className="border-b px-3 py-1">{n.parent ?? ""}</td>
+                          <td className="border-b px-3 py-1">
+                            {n.type === "KofN" ? `${n.kRequired ?? "?"}-of-${n.children.length}` : ""}
+                          </td>
                           <td className="border-b px-3 py-1 text-right tabular-nums">
                             {n.type === "Block" ? numberFmtDec(n.reliability, decimals) : ""}
                           </td>
@@ -742,7 +778,9 @@ export default function RbdGeneratorPage() {
                             {n.name}
                           </text>
                           <text x={pos.x} y={pos.y + 14} textAnchor="middle" fontSize={11} fill="#334155">
-                            {n.type}
+                            {n.type === "KofN"
+                              ? `${n.kRequired ?? "?"}-of-${n.children.length}`
+                              : n.type}
                             {n.type === "Block" && n.reliability !== undefined
                               ? ` • r=${numberFmtDec(n.reliability, decimals)}`
                               : ""}
@@ -785,7 +823,7 @@ export default function RbdGeneratorPage() {
         <h2 className="mb-3 text-lg font-semibold">Rules Recap</h2>
         <ul className="list-disc pl-6 text-sm text-gray-700 space-y-1">
           <li><strong>Component Name</strong> is case-sensitive and must be unique.</li>
-          <li><strong>Type</strong> must be exactly one of: Block, Series, Parallel.</li>
+          <li><strong>Type</strong> must be exactly one of: Block, Series, Parallel, KofN.</li>
           <li><strong>Parent</strong> is blank for the top-level system (root); otherwise, it must exactly match an existing name.</li>
           <li><strong>Reliability</strong> is required only for <em>Block</em> (0–1). Leave blank (or 0) for Series/Parallel; those are computed from children.</li>
           <li>Exactly one row must have a blank <strong>Parent</strong> (the root). All nodes must be reachable from the root. No cycles allowed.</li>

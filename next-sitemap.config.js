@@ -11,8 +11,5 @@ module.exports = {
         allow: '/',
       },
     ],
-    additionalSitemaps: [
-      'https://www.reliatools.com/sitemap.xml',
-    ],
   },
 };

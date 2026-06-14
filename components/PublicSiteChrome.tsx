@@ -26,6 +26,17 @@ export default function PublicSiteChrome({
         strategy="afterInteractive"
         crossOrigin="anonymous"
       />
+      <Script
+        id="gtag-js"
+        src="https://www.googletagmanager.com/gtag/js?id=G-9TMY964ETQ"
+        strategy="afterInteractive"
+      />
+      <Script id="gtag-init" strategy="afterInteractive">{`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-9TMY964ETQ');
+      `}</Script>
       {children}
       <footer className="mt-10 border-t border-gray-200 py-6 text-center text-sm text-gray-500">
         &copy; 2025 Reliatools. All rights reserved. The tools and content on this site

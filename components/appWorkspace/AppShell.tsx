@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Bell,
   Bot,
@@ -14,6 +15,7 @@ import {
   Settings,
   Shapes,
   Sparkles,
+  X,
 } from "lucide-react";
 import { demoUser } from "@/lib/appWorkspace/mockData";
 import { useProject } from "./useProjects";
@@ -29,6 +31,7 @@ const appNav = [
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const projectRouteMatch = pathname.match(/^\/app\/projects\/([^/]+)/);
   const activeProjectId =
     projectRouteMatch && projectRouteMatch[1] !== "new" ? projectRouteMatch[1] : null;
@@ -39,9 +42,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 overflow-hidden border-r border-white/10 bg-[#020617] lg:flex lg:flex-col">
+      {/* Mobile backdrop */}
+      <div
+        className={[
+          "fixed inset-0 z-30 bg-black/50 transition-opacity lg:hidden",
+          sidebarOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+        ].join(" ")}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className={[
+        "fixed inset-y-0 left-0 z-40 w-72 overflow-hidden border-r border-white/10 bg-[#020617] flex flex-col transition-transform duration-300",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+      ].join(" ")}>
         <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_20%_0%,rgba(37,99,235,0.35),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(6,182,212,0.22),transparent_35%)]" />
-        <Link href="/app" className="relative flex h-20 items-center gap-3 px-5">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(false)}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:text-white lg:hidden"
+          aria-label="Close navigation"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <Link href="/app" className="relative flex h-20 items-center gap-3 px-5" onClick={() => setSidebarOpen(false)}>
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 text-base font-black text-white shadow-lg shadow-blue-900/40">
             R
           </div>
@@ -56,6 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={href}
               href={href}
+              onClick={() => setSidebarOpen(false)}
               className={[
                 "group flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition",
                 isActive(href)
@@ -93,6 +117,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
+                onClick={() => setSidebarOpen(true)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 lg:hidden"
                 aria-label="Open navigation"
                 title="Open navigation"

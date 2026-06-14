@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { workflowSteps } from "@/lib/appWorkspace/mockData";
+import { useProject } from "./useProjects";
 
 export default function WorkflowNav() {
   const pathname = usePathname();
@@ -13,6 +14,8 @@ export default function WorkflowNav() {
     workflowSteps.findIndex((step) => step.id === currentStepId),
     0,
   );
+  const project = useProject(projectId);
+  const completedSteps = project.completedSteps ?? [];
 
   return (
     <nav
@@ -26,7 +29,7 @@ export default function WorkflowNav() {
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
         {workflowSteps.map((step, index) => {
           const active = currentStepId === step.id;
-          const complete = index < currentIndex;
+          const complete = completedSteps.includes(step.id);
 
           return (
             <Link

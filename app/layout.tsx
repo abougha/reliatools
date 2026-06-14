@@ -46,20 +46,6 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        {/* Google Analytics GA4 Script */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-9TMY964ETQ"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-9TMY964ETQ');
-            `,
-          }}
-        />
-      </head>
       <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white transition-colors duration-300">
         <PublicSiteChrome>{children}</PublicSiteChrome>
       </body>

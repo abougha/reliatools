@@ -199,10 +199,15 @@ export function solveReliabilityFromBinomial(
   return (low + high) / 2;
 }
 
+function binomialCoeff(n: number, k: number): number {
+  return Math.round(Math.exp(logChoose(n, k)));
+}
+
 export function computeRbdNodeReliability(
-  type: "Block" | "Series" | "Parallel",
+  type: "Block" | "Series" | "Parallel" | "KofN",
   reliability: number | undefined,
-  childReliabilities: number[]
+  childReliabilities: number[],
+  kRequired?: number
 ): number {
   if (type === "Block") {
     if (reliability === undefined || !Number.isFinite(reliability)) {
@@ -216,6 +221,20 @@ export function computeRbdNodeReliability(
     }
     return childReliabilities.reduce((product, item) => product * item, 1);
   }
+  if (type === "KofN") {
+    const n = childReliabilities.length;
+    if (kRequired === undefined || kRequired <= 0 || kRequired > n) throw new Error("k must be between 1 and n.");
+    if (childReliabilities.some((cr) => Math.abs(cr - childReliabilities[0]) > 1e-10)) {
+      throw new Error("KofN requires children with equal Block reliability.");
+    }
+    const r = childReliabilities[0];
+    let sum = 0;
+    for (let i = kRequired; i <= n; i++) {
+      sum += binomialCoeff(n, i) * Math.pow(r, i) * Math.pow(1 - r, n - i);
+    }
+    return sum;
+  }
+  // Parallel
   if (childReliabilities.length === 0) {
     return 0;
   }

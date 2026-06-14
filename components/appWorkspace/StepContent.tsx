@@ -64,7 +64,9 @@ export default function StepContent({ projectId, stepId }: StepContentProps) {
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-white"
+            disabled
+            title="Available once this step has editable fields."
+            className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-400"
           >
             Save Draft
           </button>
@@ -78,7 +80,9 @@ export default function StepContent({ projectId, stepId }: StepContentProps) {
           ) : (
             <button
               type="button"
-              className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700"
+              disabled
+              title="Export available once the report step is complete."
+              className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-bold text-white opacity-50"
             >
               Finalize Report
             </button>
@@ -381,11 +385,22 @@ function ReportStep() {
           </article>
         ))}
       </div>
+      {/* TODO: wire jspdf/exceljs export when report content is finalized */}
       <div className="flex flex-col gap-3 sm:flex-row">
-        <button className="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-600">
+        <button
+          type="button"
+          disabled
+          title="Export available once the report step is complete."
+          className="cursor-not-allowed rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white opacity-50"
+        >
           Export PDF
         </button>
-        <button className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:text-blue-600">
+        <button
+          type="button"
+          disabled
+          title="Export available once the report step is complete."
+          className="cursor-not-allowed rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-400"
+        >
           Export Excel
         </button>
       </div>

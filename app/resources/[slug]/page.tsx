@@ -25,12 +25,12 @@ const resourceData = resourceDataRaw as Resource[];
 export const runtime = "edge";
 
 // (Optional) per-page SEO
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
+  const { slug } = await params;
   const safeSlug = decodeURIComponent(slug).toLowerCase();
   const res = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
   return {
@@ -39,12 +39,12 @@ export function generateMetadata({
   };
 }
 
-export default function ResourceDetailPage({
+export default async function ResourceDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
+  const { slug } = await params;
   const safeSlug = decodeURIComponent(slug).toLowerCase();
 
   const resource = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
