@@ -22,8 +22,6 @@ type Resource = {
 const resourceData = resourceDataRaw as Resource[];
 
 
-export const runtime = "edge";
-
 // (Optional) per-page SEO
 export async function generateMetadata({
   params,

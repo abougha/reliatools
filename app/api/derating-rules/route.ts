@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import rulesData from "@/data/derating-rules.json";
 
-export const runtime = "edge";
-
 export async function GET() {
   try {
     const rules = Array.isArray(rulesData) ? rulesData : [];

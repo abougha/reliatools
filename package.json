@@ -6,7 +6,7 @@
     "dev": "next dev --webpack",
     "build:rules": "node scripts/build-derating-rules.js",
     "prebuild": "npm run build:rules",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "postbuild": "next-sitemap",
     "test": "vitest run",
