@@ -1,6 +1,8 @@
 # *
 User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /app/*
 
 # Host
 Host: https://www.reliatools.com

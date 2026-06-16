@@ -1,6 +1,21 @@
 // app/about/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
 
+export const metadata: Metadata = {
+  title: "About Reliatools",
+  description:
+    "Reliatools is a free suite of physics-based reliability engineering tools built for validation engineers, test engineers, and reliability professionals who need accurate, workflow-driven calculators.",
+  openGraph: {
+    title: "About Reliatools",
+    description:
+      "Free, physics-based reliability engineering tools built for validation engineers, test engineers, and reliability professionals.",
+    url: "https://www.reliatools.com/about",
+    siteName: "Reliatools",
+    type: "website",
+  },
+  alternates: { canonical: "https://www.reliatools.com/about" },
+};
 
 export default function AboutPage() {
   return (

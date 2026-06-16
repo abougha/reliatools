@@ -31,9 +31,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const safeSlug = decodeURIComponent(slug).toLowerCase();
   const res = resourceData.find((r) => r.slug.toLowerCase() === safeSlug);
+  const title = res?.title ?? "Resource";
+  const description = res?.description ?? "Resource details";
   return {
-    title: res?.title ?? "Resource",
-    description: res?.description ?? "Resource details",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://www.reliatools.com/resources/${slug}`,
+      siteName: "Reliatools",
+      type: "article",
+    },
   };
 }
 
