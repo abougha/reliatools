@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ContactCTA from "@/components/ContactCTA";
 
 export const metadata: Metadata = {
   title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile",
@@ -129,6 +130,7 @@ export default function MissionProfileBuilderArticlePage() {
           Try the Mission Profile Builder
         </Link>
       </section>
+      <ContactCTA variant="article" />
     </main>
   );
 }

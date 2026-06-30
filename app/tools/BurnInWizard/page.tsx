@@ -5,6 +5,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { WizardStepper } from "@/components/WizardStepper";
 import { BurnInWizardSteps } from "@/components/BurnInWizardSteps";
+import ContactCTA from "@/components/ContactCTA";
 
 export default function BurnInWizardPage() {
   const [step, setStep] = useState(1);
@@ -33,6 +34,7 @@ export default function BurnInWizardPage() {
       >
         <BurnInWizardSteps step={step} setStep={setStep} formData={formData} setFormData={setFormData} />
       </motion.div>
+      <ContactCTA variant="tool" />
     </div>
   );
 }

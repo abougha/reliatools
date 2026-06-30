@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import ContactCTA from "@/components/ContactCTA";
 
 export default function HALTArticle() {
   return (
@@ -109,6 +110,7 @@ export default function HALTArticle() {
         <li>Fucinari, A. <i>Evolution of HALT and HASS on Aerospace Programs</i></li>
         <li>IEEE, <i>Ten Things You Should Know About HALT & HASS</i>, DOI: 10.1109/RAMS.2012.6175457</li>
       </ul>
+      <ContactCTA variant="article" />
     </main>
   );
 }

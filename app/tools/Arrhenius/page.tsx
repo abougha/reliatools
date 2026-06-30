@@ -18,6 +18,7 @@ import {
   YAxis,
 } from "recharts";
 import "react-tooltip/dist/react-tooltip.css";
+import ContactCTA from "@/components/ContactCTA";
 
 const DEFAULTS = {
   Ea: "0.7",
@@ -386,6 +387,8 @@ export default function ArrheniusCalculator() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      <ContactCTA variant="tool" />
 
       <section className="mt-12 border-t pt-8 text-sm text-gray-600">
         <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>

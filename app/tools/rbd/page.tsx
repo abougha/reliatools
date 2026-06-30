@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { computeRbdNodeReliability } from "@/lib/reliabilityMath";
+import ContactCTA from "@/components/ContactCTA";
 
 /**
  * RBD Generator — Single-file page component
@@ -829,6 +830,8 @@ export default function RbdGeneratorPage() {
           <li>Exactly one row must have a blank <strong>Parent</strong> (the root). All nodes must be reachable from the root. No cycles allowed.</li>
         </ul>
       </section>
+
+      <ContactCTA variant="tool" />
 
       <footer className="pb-8 text-xs text-gray-500">
         <p>Tip: Use Export/Import CSV to move data between Excel and this tool. The Summary table can be exported for reports.</p>

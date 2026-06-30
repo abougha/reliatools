@@ -26,6 +26,7 @@ import {
 } from "@/lib/missionProfile/schema";
 import { MISSION_PROFILE_TEMPLATES } from "@/lib/missionProfile/templates";
 import { DUTY_CYCLE_EXPORT_KEY, HALT_HASS_ROUTE, type DutyCycleExportPayload } from "@/lib/haltHass/types";
+import ContactCTA from "@/components/ContactCTA";
 
 const LIKELIHOOD_ORDER: Likelihood[] = ["not_likely", "possible", "likely"];
 const LIKELIHOOD_LABEL: Record<Likelihood, string> = {
@@ -831,6 +832,7 @@ export default function MissionProfilePage() {
           </table>
         </div>
       </div>
+      <ContactCTA variant="tool" />
     </div>
   );
 }

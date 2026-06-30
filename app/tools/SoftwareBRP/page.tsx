@@ -16,6 +16,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { Download, RefreshCw, SlidersHorizontal, Wand2 } from "lucide-react";
+import ContactCTA from "@/components/ContactCTA";
 
 /**
  * SOFTWARE BAYESIAN RELIABILITY PREDICTOR (BRP)
@@ -661,6 +662,7 @@ export default function Page() {
           <li>Use this tool to prioritize improvements (coverage, reviews, process), then validate with failure data.</li>
         </ul>
       </div>
+      <ContactCTA variant="tool" />
     </div>
   );
 }

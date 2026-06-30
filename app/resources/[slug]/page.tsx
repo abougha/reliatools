@@ -7,6 +7,7 @@ import HALTArticle from "@/app/resources/halt";
 import SoftwareBRPArticle from "@/app/resources/SoftwareBRP-article";
 import TaguchiBayesianArticle from "@/app/resources/taguchi-bayesian-article";
 import Derating from "@/app/resources/derating";
+import ContactCTA from "@/components/ContactCTA";
 
 
 type Resource = {
@@ -73,6 +74,7 @@ export default async function ResourceDetailPage({
         {resource.category} • {resource.date}
       </p>
       <p className="text-lg text-gray-700 mb-6">{resource.description}</p>
+      <ContactCTA variant="article" />
     </main>
   );
 }

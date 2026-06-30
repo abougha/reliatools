@@ -12,6 +12,7 @@ import {
   solveReliabilityFromBinomial,
   solveSampleSizeForConfidence,
 } from "@/lib/reliabilityMath";
+import ContactCTA from "@/components/ContactCTA";
 
 type SolveTarget = "n" | "R" | "CL";
 
@@ -295,6 +296,8 @@ export default function SampleSizeCalculator() {
           </button>
         </div>
       ) : null}
+
+      <ContactCTA variant="tool" />
 
       <section className="mt-12 border-t pt-8 text-sm text-gray-600">
         <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>

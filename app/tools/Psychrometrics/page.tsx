@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import ContactCTA from "@/components/ContactCTA";
 
 // =============================
 // Psychrometrics (SI internal)
@@ -730,6 +731,7 @@ export default function PsychrometricsCalculator() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      <ContactCTA variant="tool" />
     </div>
   );
 }

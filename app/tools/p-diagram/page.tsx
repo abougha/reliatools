@@ -2,6 +2,7 @@
 import React, { useRef, useState } from "react";
 import { Download, RotateCcw, Wand2, ImageDown, Printer, ZoomIn, ZoomOut } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ContactCTA from "@/components/ContactCTA";
 
 // P Diagram Generator — v3.2 (manual zoom, clean JSX)
 
@@ -185,6 +186,7 @@ const Page: React.FC = () => {
       </Card>
 
       <div className='mt-6 text-center text-xs text-gray-500'>Built for Reliatools · v3.2</div>
+      <ContactCTA variant="tool" />
     </div>
   );
 };

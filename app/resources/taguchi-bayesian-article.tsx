@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import ContactCTA from "@/components/ContactCTA";
 
 function LoopDiagram() {
   // Simple Tailwind-friendly inline SVG (no external deps)
@@ -534,6 +535,7 @@ export default function TaguchiBayesianArticle() {
         </Link>
         .
       </p>
+      <ContactCTA variant="article" />
     </main>
   );
 }

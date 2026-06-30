@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import ContactCTA from "@/components/ContactCTA";
 
 export default function DeratingArticlePage() {
   return (
@@ -286,6 +287,7 @@ export default function DeratingArticlePage() {
         </Link>
         .
       </p>
+      <ContactCTA variant="article" />
     </main>
   );
 }

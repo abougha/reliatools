@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import Image from "next/image";
+import ContactCTA from "@/components/ContactCTA";
 
 export default function ArrheniusArticle() {
   return (
@@ -106,6 +107,7 @@ export default function ArrheniusArticle() {
       <p className="text-center mt-6">
         Ready to try it yourself? Visit our <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> and <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simplify your reliability test planning today.
       </p>
+      <ContactCTA variant="article" />
     </main>
   );
 }

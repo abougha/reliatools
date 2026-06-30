@@ -21,6 +21,7 @@ import {
   type FitMethod,
   type FitResult,
 } from "../_lib/weibullMath";
+import ContactCTA from "@/components/ContactCTA";
 
 type Dataset = {
   id: string;
@@ -390,6 +391,8 @@ export default function WeibullCalculator() {
           <ResultsTable datasets={computedDatasets} unitsLabel={unitsLabel || "units"} />
         </section>
       </div>
+
+      <ContactCTA variant="tool" />
 
       <section className="mt-12 border-t pt-8 text-sm text-gray-600">
         <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>

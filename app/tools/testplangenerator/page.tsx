@@ -36,6 +36,7 @@ import type {
   SelectedTest,
   WizardState,
 } from "@/lib/testPlanWizard/types";
+import ContactCTA from "@/components/ContactCTA";
 
 const STEPS = [
   "Product Context",
@@ -2613,6 +2614,9 @@ export default function Page() {
             </div>
           </section>
         )}
+      </div>
+      <div className="mx-auto max-w-7xl px-6 pb-8">
+        <ContactCTA variant="tool" />
       </div>
     </div>
   );

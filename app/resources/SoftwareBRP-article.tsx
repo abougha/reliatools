@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import ContactCTA from "@/components/ContactCTA";
 
 export default function SoftwareBRPArticle() {
   return (
@@ -106,6 +107,7 @@ export default function SoftwareBRPArticle() {
       <p className="text-center mt-6">
         Try the tool now: <Link href="/tools/SoftwareBRP" className="text-blue-600 hover:underline">Bayesian Reliability Predictor</Link>
       </p>
+      <ContactCTA variant="article" />
     </main>
   );
 }

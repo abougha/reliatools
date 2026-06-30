@@ -6,6 +6,7 @@ import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { computeCoffinMansonCyclesToFailure } from "@/lib/reliabilityMath";
+import ContactCTA from "@/components/ContactCTA";
 
 type SolveTarget = "Nf" | "A" | "deltaEps" | "c";
 
@@ -211,6 +212,8 @@ export default function CoffinMansonCalculator() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      <ContactCTA variant="tool" />
 
       <section className="mt-12 border-t pt-8 text-sm text-gray-600">
         <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>

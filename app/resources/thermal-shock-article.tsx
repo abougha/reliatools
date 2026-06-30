@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import ContactCTA from "@/components/ContactCTA";
 
 export default function ThermalShockArticle() {
   return (
@@ -70,6 +71,7 @@ export default function ThermalShockArticle() {
       <p>
         With predictive tools like our <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link>, engineers can make smarter design decisions and ensure devices remain reliable in everyday use.
       </p>
+      <ContactCTA variant="article" />
     </main>
   );
 }

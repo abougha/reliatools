@@ -18,6 +18,7 @@ import {
 import { computeElectromigrationMTTF } from "@/lib/reliabilityMath";
 import { kB_eV } from "@/lib/constants";
 import { toKelvinFromCelsius } from "@/lib/units";
+import ContactCTA from "@/components/ContactCTA";
 
 type SolveTarget = "MTTF" | "j" | "T";
 type CurrentDensityUnit = "A/cm2" | "A/m2";
@@ -355,6 +356,8 @@ export default function ElectromigrationCalculator() {
           Download CSV
         </button>
       </div>
+
+      <ContactCTA variant="tool" />
 
       <section className="mt-12 border-t pt-8 text-sm text-gray-600">
         <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
