@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import DatasetUploader from "./DatasetUploader";
@@ -389,6 +390,35 @@ export default function WeibullCalculator() {
           <ResultsTable datasets={computedDatasets} unitsLabel={unitsLabel || "units"} />
         </section>
       </div>
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
+        <p className="mb-4">
+          Weibull analysis fits failure data to a distribution defined by a shape parameter <strong>&beta;</strong>{" "}
+          and a characteristic life <strong>&eta;</strong>. The reliability at time <em>t</em> is:
+        </p>
+        <BlockMath math={"R(t) = \\exp\\!\\left[-\\left(\\frac{t}{\\eta}\\right)^{\\beta}\\right]"} />
+        <p className="mb-4">
+          The shape parameter tells you the failure mode: <strong>&beta;&nbsp;&lt;&nbsp;1</strong> is infant
+          mortality (early failures), <strong>&beta;&nbsp;&asymp;&nbsp;1</strong> is random failure, and{" "}
+          <strong>&beta;&nbsp;&gt;&nbsp;1</strong> is wear-out.
+        </p>
+        <p className="mb-4">
+          <strong>Example:</strong> For &eta;&nbsp;=&nbsp;10,000&nbsp;h and &beta;&nbsp;=&nbsp;2, the{" "}
+          <strong>B10 life</strong> (time at which 10% have failed) is about <strong>3,250&nbsp;h</strong>, the{" "}
+          <strong>mean life (MTTF)</strong> is about <strong>8,860&nbsp;h</strong>, and reliability at
+          5,000&nbsp;h is about <strong>0.78</strong>. The calculator reports &beta;, &eta;, B-life, MTTF, and
+          reliability at any time, and supports censored (suspended) data.
+        </p>
+        <p>
+          Use this to turn field or test failure data into quantitative life predictions and to distinguish infant
+          mortality from wear-out. Pair it with the{" "}
+          <Link href="/tools/Samplesize" className="text-blue-600 hover:underline">
+            Sample Size calculator
+          </Link>{" "}
+          when planning the test that generates the data.
+        </p>
+      </section>
     </div>
   );
 }

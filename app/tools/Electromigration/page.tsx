@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import {
@@ -354,6 +355,36 @@ export default function ElectromigrationCalculator() {
           Download CSV
         </button>
       </div>
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
+        <p className="mb-4">
+          Black&apos;s equation models electromigration &mdash; the gradual failure of metal interconnects as
+          current physically displaces atoms over time. Mean time to failure falls as current density rises and as
+          temperature rises:
+        </p>
+        <BlockMath math={"MTTF = A \\cdot J^{-n} \\cdot \\exp\\!\\left(\\frac{E_a}{k T}\\right)"} />
+        <p className="mb-4">
+          where <strong>J</strong> is current density, <strong>n</strong> is the current-density exponent
+          (typically 1&ndash;2), <strong>E<sub>a</sub></strong> is activation energy (eV), <strong>k</strong> is
+          Boltzmann&apos;s constant, and <strong>T</strong> is temperature in kelvin.
+        </p>
+        <p className="mb-4">
+          <strong>Example:</strong> With n&nbsp;=&nbsp;2, doubling current density cuts life to one-quarter
+          (<strong>AF = 2&sup2; = 4</strong>). Separately, raising temperature from 105&nbsp;&deg;C to
+          150&nbsp;&deg;C at E<sub>a</sub>&nbsp;=&nbsp;0.9&nbsp;eV gives a thermal acceleration of about{" "}
+          <strong>19&times;</strong>. The two effects multiply, so current and temperature together drive
+          electromigration life hard.
+        </p>
+        <p>
+          Use this when sizing metal traces, vias, or bond wires for long-term current loading. For thermally
+          activated chemical wear-out, see the{" "}
+          <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+            Arrhenius calculator
+          </Link>
+          .
+        </p>
+      </section>
     </div>
   );
 }

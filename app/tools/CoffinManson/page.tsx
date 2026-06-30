@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -210,6 +211,39 @@ export default function CoffinMansonCalculator() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
+        <p className="mb-4">
+          The Coffin-Manson model predicts fatigue life under thermal cycling &mdash; solder joints, wire bonds,
+          and other structures that crack from repeated expansion and contraction. Larger temperature swings
+          (&Delta;T) mean <strong>fewer</strong> cycles to failure, so the acceleration factor between a harsh
+          test and milder field use is:
+        </p>
+        <BlockMath math={"AF = \\left(\\frac{\\Delta T_{test}}{\\Delta T_{field}}\\right)^{c}"} />
+        <p className="mb-4">
+          where <strong>&Delta;T</strong> is the temperature range of each cycle and <strong>c</strong> is the
+          Coffin-Manson exponent (roughly 2 for solder fatigue, higher for brittle materials).
+        </p>
+        <p className="mb-4">
+          <strong>Example:</strong> Field cycling of &Delta;T&nbsp;=&nbsp;40&nbsp;&deg;C versus an accelerated
+          test at &Delta;T&nbsp;=&nbsp;100&nbsp;&deg;C, with c&nbsp;=&nbsp;2, gives{" "}
+          <strong>AF = (100/40)&sup2; = 6.25</strong>. One test cycle is worth about 6 field cycles, so a
+          500-cycle test represents roughly 3,000 field cycles for that mechanism.
+        </p>
+        <p>
+          Use this for thermal-cycling and thermal-shock fatigue. For diffusion- or reaction-driven wear-out, use
+          the{" "}
+          <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+            Arrhenius calculator
+          </Link>{" "}
+          instead; to define the real-world &Delta;T distribution your product sees, start with the{" "}
+          <Link href="/tools/MissionProfile" className="text-blue-600 hover:underline">
+            Mission Profile tool
+          </Link>
+          .
+        </p>
+      </section>
     </div>
   );
 }

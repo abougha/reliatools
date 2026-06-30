@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { kB_eV } from "@/lib/constants";
@@ -385,6 +386,38 @@ export default function ArrheniusCalculator() {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
+        <p className="mb-4">
+          The Arrhenius acceleration factor (AF) tells you how much faster a thermally activated failure mechanism
+          ages at an elevated test temperature versus normal use:
+        </p>
+        <BlockMath math={"AF = \\exp\\left[\\frac{E_a}{k}\\left(\\frac{1}{T_{use}} - \\frac{1}{T_{stress}}\\right)\\right]"} />
+        <p className="mb-4">
+          where <strong>E<sub>a</sub></strong> is the activation energy (eV), <strong>k</strong> is
+          Boltzmann&apos;s constant (8.617 &times; 10<sup>&minus;5</sup> eV/K), and temperatures are in{" "}
+          <strong>kelvin</strong> (&deg;C + 273.15).
+        </p>
+        <p className="mb-4">
+          <strong>Example:</strong> A part used at 55&nbsp;&deg;C and tested at 125&nbsp;&deg;C, with E
+          <sub>a</sub>&nbsp;=&nbsp;0.7&nbsp;eV, gives <strong>AF &asymp; 78</strong> &mdash; one test hour
+          equals about 78 field hours. Use the radio buttons to solve for any field instead: targeting a
+          175&times; acceleration from a 55&nbsp;&deg;C baseline requires a stress temperature of about{" "}
+          <strong>141&nbsp;&deg;C</strong>.
+        </p>
+        <p>
+          Use this for diffusion- and reaction-driven wear-out. For fatigue or thermal-cycling failures, use the{" "}
+          <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+            Coffin-Manson calculator
+          </Link>
+          ; to turn an AF into a screening plan, see the{" "}
+          <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">
+            Burn-In Wizard
+          </Link>
+          .
+        </p>
+      </section>
     </div>
   );
 }

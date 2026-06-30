@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import "katex/dist/katex.min.css";
 import { BlockMath } from "react-katex";
@@ -294,6 +295,36 @@ export default function SampleSizeCalculator() {
           </button>
         </div>
       ) : null}
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
+        <p className="mb-4">
+          For a reliability demonstration with <strong>zero allowed failures</strong> (a success-run test), the
+          number of units you must test to prove a reliability R at confidence C is:
+        </p>
+        <BlockMath math={"n = \\frac{\\ln(1 - C)}{\\ln(R)}"} />
+        <p className="mb-4">
+          <strong>Example:</strong> To demonstrate <strong>R&nbsp;=&nbsp;90% at 90% confidence (R90C90)</strong>{" "}
+          with no failures, you need <strong>n&nbsp;=&nbsp;ln(0.10)/ln(0.90) &asymp; 22 units</strong>.
+          Demanding R99C90 instead jumps the requirement to <strong>230 units</strong> &mdash; a vivid
+          illustration of how expensive high reliability targets become. The calculator also solves for
+          reliability or confidence when the sample size is fixed, and handles cases that allow one or more
+          failures via the binomial form.
+        </p>
+        <p>
+          Use this early in test planning to trade sample size against confidence and reliability before
+          committing lab resources. To shorten test duration instead of adding units, combine with an acceleration
+          model such as{" "}
+          <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+            Arrhenius
+          </Link>{" "}
+          or{" "}
+          <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+            Coffin-Manson
+          </Link>
+          .
+        </p>
+      </section>
     </div>
   );
 }
