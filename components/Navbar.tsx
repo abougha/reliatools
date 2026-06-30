@@ -270,6 +270,11 @@ export default function Navbar() {
               onNavigate={onNavigate}
             />
           </li>
+
+          {/* Contact */}
+          <li>
+            <LinkItem href="/contact" label="Contact" active={isActive("/contact")} onNavigate={onNavigate} />
+          </li>
         </ul>
       </nav>
     );
