@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 
+export function generateStaticParams() {
+  return [{ projectId: "demo-project" }];
+}
+
 export default async function ProjectPage({
   params,
 }: {

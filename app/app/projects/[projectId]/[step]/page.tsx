@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation";
 import StepContent from "@/components/appWorkspace/StepContent";
-import { getWorkflowStep } from "@/lib/appWorkspace/mockData";
+import { getWorkflowStep, workflowSteps } from "@/lib/appWorkspace/mockData";
+
+export function generateStaticParams() {
+  return workflowSteps.map((step) => ({
+    projectId: "demo-project",
+    step: step.id,
+  }));
+}
 
 export default async function ProjectWorkflowStepPage({
   params,

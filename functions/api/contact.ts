@@ -1,29 +1,34 @@
-import { NextResponse } from "next/server";
-import { validateContactForm, type ContactFormData } from "@/lib/contact/validation";
+import { validateContactForm, type ContactFormData } from "../../lib/contact/validation";
 
 const RECIPIENT = "reliatools2025@gmail.com";
 
-export async function POST(req: Request) {
+interface Env {
+  RESEND_API_KEY: string;
+}
+
+export async function onRequestPost({
+  request,
+  env,
+}: {
+  request: Request;
+  env: Env;
+}): Promise<Response> {
   let body: ContactFormData & { honeypot?: string };
   try {
-    body = await req.json();
+    body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    return json({ error: "Invalid request body." }, 400);
   }
 
-  if (body.honeypot) {
-    return NextResponse.json({ ok: true });
-  }
+  if (body.honeypot) return json({ ok: true });
 
   const errors = validateContactForm(body);
-  if (errors.length > 0) {
-    return NextResponse.json({ error: errors.join(" ") }, { status: 400 });
-  }
+  if (errors.length > 0) return json({ error: errors.join(" ") }, 400);
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = env.RESEND_API_KEY;
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set.");
-    return NextResponse.json({ error: "Email service is not configured." }, { status: 500 });
+    return json({ error: "Email service is not configured." }, 500);
   }
 
   const { name, email, company, message } = body;
@@ -55,18 +60,19 @@ export async function POST(req: Request) {
     if (!resendRes.ok) {
       const errText = await resendRes.text();
       console.error("Resend API error:", resendRes.status, errText);
-      return NextResponse.json(
-        { error: "Failed to send message. Please try again." },
-        { status: 502 }
-      );
+      return json({ error: "Failed to send message. Please try again." }, 502);
     }
 
-    return NextResponse.json({ ok: true });
+    return json({ ok: true });
   } catch (err) {
     console.error("Contact form send failed:", err);
-    return NextResponse.json(
-      { error: "Failed to send message. Please try again." },
-      { status: 500 }
-    );
+    return json({ error: "Failed to send message. Please try again." }, 500);
   }
+}
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
