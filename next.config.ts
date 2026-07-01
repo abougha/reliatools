@@ -1,12 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "export",
   reactStrictMode: true,
   pageExtensions: ["ts", "tsx"],
-  allowedDevOrigins: ["192.168.40.2"],
+  trailingSlash: true,
+  images: { unoptimized: true },
 };
 
 export default nextConfig;
-
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev();

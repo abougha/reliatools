@@ -22,6 +22,12 @@ type Resource = {
 
 const resourceData = resourceDataRaw as Resource[];
 
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  return resourceData.map((r) => ({ slug: r.slug }));
+}
+
 
 // (Optional) per-page SEO
 export async function generateMetadata({

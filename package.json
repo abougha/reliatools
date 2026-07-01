@@ -10,8 +10,8 @@
     "start": "next start",
     "postbuild": "next-sitemap",
     "test": "vitest run",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "preview": "next build --webpack && wrangler dev",
+    "deploy": "next build --webpack && wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
