@@ -1,4 +1,10 @@
 name = "reliatools"
-pages_build_output_dir = "out"
+main = "worker.ts"
 compatibility_date = "2025-03-01"
 compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "out"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
