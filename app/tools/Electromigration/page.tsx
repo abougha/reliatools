@@ -209,7 +209,7 @@ export default function ElectromigrationCalculator() {
   return (
     <div className="mx-auto max-w-3xl p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Electromigration Lifetime Calculator</h1>
+        <h1 className="text-3xl font-bold">Electromigration MTTF Calculator — Black's Equation</h1>
         <button
           type="button"
           onClick={resetInputs}

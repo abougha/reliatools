@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "HALT & HASS Planning Wizard",
+  title: "HALT/HASS Test Plan Builder — Step-Stress Profiles",
   description:
-    "Plan Highly Accelerated Life Testing (HALT) and Highly Accelerated Stress Screening (HASS) programs. Define step-stress profiles, operating and destruct limits, and screen effectiveness.",
+    "Free online HALT/HASS test plan builder. Define step-stress profiles, operating and destruct limits for accelerated stress screening. No signup required.",
   openGraph: {
-    title: "HALT & HASS Planning Wizard | Reliatools",
+    title: "HALT/HASS Test Plan Builder — Step-Stress Profiles | Reliatools",
     description:
-      "Plan HALT and HASS programs: define step-stress profiles, operating limits, destruct limits, and screen effectiveness for electronics reliability.",
+      "Free online HALT/HASS test plan builder. Define step-stress profiles, operating and destruct limits for accelerated stress screening. No signup required.",
     url: "https://www.reliatools.com/tools/HALTHASSWizard",
     siteName: "Reliatools",
     type: "website",

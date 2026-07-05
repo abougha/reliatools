@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "P-Diagram (Parameter Diagram) Tool",
+  title: "P-Diagram Generator for Robust Design",
   description:
-    "Create parameter diagrams (P-Diagrams) for reliability and robustness engineering. Identify signal factors, control factors, noise factors, and error states to support DFMEA, design reviews, and validation planning.",
+    "Free online P-Diagram generator for robust design. Map signal, control, and noise factors and error states for DFMEA and design reviews. No signup required.",
   openGraph: {
-    title: "P-Diagram (Parameter Diagram) Tool | Reliatools",
+    title: "P-Diagram Generator for Robust Design | Reliatools",
     description:
-      "Create P-Diagrams to identify signal, control, and noise factors and error states for DFMEA, design reviews, and reliability validation planning.",
+      "Free online P-Diagram generator for robust design. Map signal, control, and noise factors and error states for DFMEA and design reviews. No signup required.",
     url: "https://www.reliatools.com/tools/p-diagram",
     siteName: "Reliatools",
     type: "website",

@@ -388,7 +388,7 @@ export default function Page() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Bayesian Reliability Predictor (Software)</h1>
+        <h1 className="text-3xl font-bold">Bayesian Software Reliability Predictor</h1>
         <div className="flex gap-2">
           <button onClick={exportCSV} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white hover:bg-gray-50">
             <Download className="h-4 w-4" /> Export CSV

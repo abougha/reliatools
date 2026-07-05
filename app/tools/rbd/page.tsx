@@ -521,7 +521,7 @@ export default function RbdGeneratorPage() {
     <div className="mx-auto max-w-7xl p-6 space-y-8">
       <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Reliability Block Diagram (RBD) Generator</h1>
+          <h1 className="text-3xl font-bold">Reliability Block Diagram Calculator</h1>
           <p className="text-sm text-gray-600">Build an RBD from a simple table, visualize the hierarchy, and compute overall system reliability.</p>
         </div>
         <div className="flex flex-wrap gap-2">

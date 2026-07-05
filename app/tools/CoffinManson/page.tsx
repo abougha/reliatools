@@ -123,7 +123,7 @@ export default function CoffinMansonCalculator() {
   return (
     <div className="mx-auto max-w-3xl p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Coffin-Manson Calculator</h1>
+        <h1 className="text-3xl font-bold">Coffin-Manson Thermal Fatigue Calculator</h1>
         <button
           type="button"
           onClick={resetInputs}

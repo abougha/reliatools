@@ -179,7 +179,7 @@ export default function SampleSizeCalculator() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Calculator className="h-6 w-6 text-blue-600" />
-          Sample Size Calculator (Binomial)
+          Reliability Sample Size Calculator
         </h1>
         <button
           type="button"

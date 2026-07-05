@@ -23,7 +23,7 @@ export default function BurnInWizardPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4 text-center">Burn-In Test Wizard</h1>
+      <h1 className="text-3xl font-bold mb-4 text-center">Burn-In Test Planning Wizard</h1>
       <WizardStepper currentStep={step} totalSteps={4} />
       <motion.div
         key={step}

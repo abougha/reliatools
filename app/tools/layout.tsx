@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Reliability Engineering Tools",
   description:
-    "Free online reliability engineering calculators and wizards: Arrhenius, Weibull, Coffin-Manson, Sample Size, Mission Profile, HALT/HASS, RBD, and more — built for validation and test engineers.",
+    "Free online reliability engineering calculators: Arrhenius, Weibull, Coffin-Manson, sample size, HALT/HASS, and RBD calculator tools for validation engineers.",
   openGraph: {
     title: "Reliability Engineering Tools | Reliatools",
     description:
-      "Free online reliability engineering calculators and wizards: Arrhenius, Weibull, Coffin-Manson, Sample Size, Mission Profile, HALT/HASS, RBD, and more.",
+      "Free online reliability engineering calculators: Arrhenius, Weibull, Coffin-Manson, sample size, HALT/HASS, and RBD calculator tools for validation engineers.",
     url: "https://www.reliatools.com/tools",
     siteName: "Reliatools",
     type: "website",

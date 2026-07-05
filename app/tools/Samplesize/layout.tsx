@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Reliability Test Sample Size Calculator",
+  title: "Reliability Demonstration Sample Size Calculator (Binomial)",
   description:
-    "Determine the required sample size for reliability demonstrations using binomial statistics. Input your reliability target, confidence level, and allowed failures to compute minimum test sample size.",
+    "Free online reliability sample size calculator. Determine binomial test sample sizes for reliability demonstration at your target confidence. No signup required.",
   openGraph: {
-    title: "Reliability Test Sample Size Calculator | Reliatools",
+    title: "Reliability Demonstration Sample Size Calculator (Binomial) | Reliatools",
     description:
-      "Calculate minimum sample size for reliability demonstrations using binomial statistics given a reliability target, confidence level, and allowed failures.",
+      "Free online reliability sample size calculator. Determine binomial test sample sizes for reliability demonstration at your target confidence. No signup required.",
     url: "https://www.reliatools.com/tools/Samplesize",
     siteName: "Reliatools",
     type: "website",

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Component Derating Calculator",
+  title: "Component Derating Calculator & Navigator (MIL-Style)",
   description:
-    "Apply component stress derating to improve electronic reliability. Calculate derating margins for voltage, current, power, and temperature based on MIL-STD-975 and industry guidelines.",
+    "Free online component derating calculator and navigator. Check voltage, current, power, and temperature margins against MIL-style guidelines. No signup required.",
   openGraph: {
-    title: "Component Derating Calculator | Reliatools",
+    title: "Component Derating Calculator & Navigator (MIL-Style) | Reliatools",
     description:
-      "Calculate derating margins for voltage, current, power, and temperature to reduce overstress risk and improve long-term electronic reliability.",
+      "Free online component derating calculator and navigator. Check voltage, current, power, and temperature margins against MIL-style guidelines. No signup required.",
     url: "https://www.reliatools.com/tools/Derating",
     siteName: "Reliatools",
     type: "website",

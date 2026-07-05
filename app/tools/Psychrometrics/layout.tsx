@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Psychrometrics Calculator — Humidity & Dew Point",
+  title: "Psychrometric Calculator — Humidity, Wet Bulb, Enthalpy",
   description:
-    "Calculate dew point, wet-bulb temperature, absolute humidity, and moisture-related parameters for reliability and environmental test planning of electronics in humid environments.",
+    "Free online psychrometric calculator. Compute humidity, wet bulb temperature, dew point, and enthalpy for environmental test planning. No signup required.",
   openGraph: {
-    title: "Psychrometrics Calculator | Reliatools",
+    title: "Psychrometric Calculator — Humidity, Wet Bulb, Enthalpy | Reliatools",
     description:
-      "Calculate dew point, wet-bulb temperature, and humidity parameters for reliability and environmental test planning.",
+      "Free online psychrometric calculator. Compute humidity, wet bulb temperature, dew point, and enthalpy for environmental test planning. No signup required.",
     url: "https://www.reliatools.com/tools/Psychrometrics",
     siteName: "Reliatools",
     type: "website",

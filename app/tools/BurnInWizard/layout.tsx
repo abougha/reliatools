@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Burn-In Test Planning Wizard",
+  title: "Burn-In Test Calculator & Planning Wizard",
   description:
-    "Plan and size burn-in tests for electronics. Calculate burn-in duration, temperature stress, and screen effectiveness to eliminate infant-mortality failures before field deployment.",
+    "Free online burn-in test calculator and planning wizard. Plan burn-in duration to screen out infant mortality failures before shipment. No signup required.",
   openGraph: {
-    title: "Burn-In Test Planning Wizard | Reliatools",
+    title: "Burn-In Test Calculator & Planning Wizard | Reliatools",
     description:
-      "Plan burn-in tests for electronics: calculate duration, temperature stress, and screen effectiveness to eliminate infant-mortality failures.",
+      "Free online burn-in test calculator and planning wizard. Plan burn-in duration to screen out infant mortality failures before shipment. No signup required.",
     url: "https://www.reliatools.com/tools/BurnInWizard",
     siteName: "Reliatools",
     type: "website",

@@ -663,7 +663,7 @@ export default function Page() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
           <div>
             <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Reliatools</div>
-            <h1 className="text-2xl font-semibold">Reliability Test Architect</h1>
+            <h1 className="text-2xl font-semibold">Reliability Test Plan Generator</h1>
             <p className="text-sm text-slate-600">
               Build a defensible, step-by-step reliability test plan in minutes.
             </p>

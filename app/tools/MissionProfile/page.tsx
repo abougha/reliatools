@@ -587,7 +587,7 @@ export default function MissionProfilePage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-semibold">Mission Profile Builder</h1>
+        <h1 className="text-3xl font-semibold">Mission Profile & Duty Cycle Builder</h1>
         <p className="mt-2 text-sm text-gray-600">Build a duty-cycle stress matrix across lifecycle phases using clickable likelihood cells.</p>
         <div className="mt-3 rounded-xl border bg-gray-50 p-4">
           <p className="text-sm font-medium text-gray-800">Map where stresses are likely, possible, or not likely across storage, transport, operation, and service.</p>

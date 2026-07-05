@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Coffin-Manson Thermal Cycling Calculator",
+  title: "Coffin-Manson Thermal Fatigue Calculator — Cycles to Failure",
   description:
-    "Estimate cycles to failure for solder joints and electronic assemblies under thermal cycling using the Coffin-Manson model. Calculate acceleration factors between test and field conditions.",
+    "Free online Coffin-Manson thermal fatigue calculator. Estimate cycles to failure from thermal cycling and CTE mismatch data. No signup required.",
   openGraph: {
-    title: "Coffin-Manson Thermal Cycling Calculator | Reliatools",
+    title: "Coffin-Manson Thermal Fatigue Calculator — Cycles to Failure | Reliatools",
     description:
-      "Estimate cycles to failure for solder joints under thermal cycling using the Coffin-Manson model and calculate acceleration factors for accelerated life testing.",
+      "Free online Coffin-Manson thermal fatigue calculator. Estimate cycles to failure from thermal cycling and CTE mismatch data. No signup required.",
     url: "https://www.reliatools.com/tools/CoffinManson",
     siteName: "Reliatools",
     type: "website",

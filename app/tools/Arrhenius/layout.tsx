@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Arrhenius Acceleration Factor Calculator",
+  title: "Arrhenius Acceleration Factor Calculator (Free Online Tool)",
   description:
-    "Calculate thermal acceleration factors (AF) using the Arrhenius model. Estimate how much faster failures occur at elevated test temperatures compared to normal use conditions.",
+    "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
   openGraph: {
-    title: "Arrhenius Acceleration Factor Calculator | Reliatools",
+    title: "Arrhenius Acceleration Factor Calculator (Free Online Tool) | Reliatools",
     description:
-      "Calculate thermal acceleration factors using the Arrhenius model for temperature-driven aging and accelerated reliability testing.",
+      "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
     url: "https://www.reliatools.com/tools/Arrhenius",
     siteName: "Reliatools",
     type: "website",

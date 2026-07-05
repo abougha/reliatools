@@ -185,7 +185,7 @@ export default function WeibullCalculator() {
   return (
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Weibull Probability Plot Calculator</h1>
+        <h1 className="text-3xl font-bold">Weibull Analysis Calculator</h1>
         <div className="flex gap-2">
           <button type="button" onClick={() => setUploaderOpen(true)} className="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700">
             Add dataset

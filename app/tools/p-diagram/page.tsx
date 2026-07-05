@@ -131,7 +131,7 @@ const Page: React.FC = () => {
     <div className='max-w-screen-xl mx-auto px-4 md:px-6 py-8'>
       <div className='flex flex-wrap items-center justify-between gap-3 mb-5'>
         <div>
-          <h1 className='text-xl font-semibold text-gray-900'>P Diagram Generator</h1>
+          <h1 className='text-xl font-semibold text-gray-900'>P-Diagram Generator</h1>
           <p className='text-gray-600 text-sm'>Click directly on the diagram to edit.</p>
         </div>
         <div className='flex items-center gap-2'>

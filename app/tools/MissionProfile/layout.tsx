@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mission Profile Builder — Duty Cycle & Stress Exposure Tool",
+  title: "Mission Profile & Duty Cycle Builder for Reliability Testing",
   description:
-    "Build quantified environmental duty cycles and stress exposure profiles for reliability planning. Define thermal, vibration, and humidity loads by life phase to ground test planning in real application conditions.",
+    "Free online mission profile and duty cycle builder. Map thermal, vibration, and humidity stress exposure across lifecycle phases. No signup required.",
   openGraph: {
-    title: "Mission Profile Builder | Reliatools",
+    title: "Mission Profile & Duty Cycle Builder for Reliability Testing | Reliatools",
     description:
-      "Build quantified duty cycles and stress exposure profiles by life phase to ground reliability test planning in real application conditions.",
+      "Free online mission profile and duty cycle builder. Map thermal, vibration, and humidity stress exposure across lifecycle phases. No signup required.",
     url: "https://www.reliatools.com/tools/MissionProfile",
     siteName: "Reliatools",
     type: "website",

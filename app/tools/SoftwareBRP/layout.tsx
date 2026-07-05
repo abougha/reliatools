@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Software Reliability Program (BRP) Tool",
+  title: "Software Reliability Calculator — Bayesian Prediction",
   description:
-    "Plan and structure a Software Business Reliability Program (BRP). Map software reliability requirements, failure modes, and verification strategies for embedded and safety-critical software products.",
+    "Free online Bayesian software reliability predictor. Estimate reliability growth and failure intensity from test data using Bayesian methods. No signup required.",
   openGraph: {
-    title: "Software Reliability Program (BRP) Tool | Reliatools",
+    title: "Software Reliability Calculator — Bayesian Prediction | Reliatools",
     description:
-      "Map software reliability requirements, failure modes, and verification strategies for embedded and safety-critical software using the BRP framework.",
+      "Free online Bayesian software reliability predictor. Estimate reliability growth and failure intensity from test data using Bayesian methods. No signup required.",
     url: "https://www.reliatools.com/tools/SoftwareBRP",
     siteName: "Reliatools",
     type: "website",

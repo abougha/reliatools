@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "DVP&R Test Plan Generator",
+  title: "Reliability Test Plan Generator — Mission Profile to DVP&R",
   description:
-    "Generate a Design Verification Plan and Report (DVP&R) for reliability engineering. Map requirements to test methods, sample sizes, acceptance criteria, and test ownership in a structured format.",
+    "Free online reliability test plan generator. Turn a mission profile into a DVP&R with test methods, sample sizes, and acceptance criteria. No signup required.",
   openGraph: {
-    title: "DVP&R Test Plan Generator | Reliatools",
+    title: "Reliability Test Plan Generator — Mission Profile to DVP&R | Reliatools",
     description:
-      "Generate a Design Verification Plan and Report (DVP&R): map requirements to test methods, sample sizes, and acceptance criteria.",
+      "Free online reliability test plan generator. Turn a mission profile into a DVP&R with test methods, sample sizes, and acceptance criteria. No signup required.",
     url: "https://www.reliatools.com/tools/testplangenerator",
     siteName: "Reliatools",
     type: "website",

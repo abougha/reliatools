@@ -205,7 +205,7 @@ export default function VibrationWizard() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Vibration + Thermal Cycling Wizard</h1>
+        <h1 className="text-2xl font-semibold">Vibration PSD Profile Builder</h1>
         <p className="text-sm text-gray-500">Generate PSD test profiles and fixture requirements from a mission profile.</p>
       </div>
 

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Electromigration MTTF Calculator — Black's Equation",
+  title: "Electromigration MTTF Calculator (Black's Equation)",
   description:
-    "Calculate electromigration mean time to failure (MTTF) for metal interconnects using Black's equation. Assess current density and temperature effects on IC and PCB trace reliability.",
+    "Free online electromigration MTTF calculator using Black's equation. Estimate interconnect lifetime from current density and temperature. No signup required.",
   openGraph: {
-    title: "Electromigration MTTF Calculator | Reliatools",
+    title: "Electromigration MTTF Calculator — Black's Equation | Reliatools",
     description:
-      "Calculate electromigration MTTF using Black's equation. Assess current density and temperature effects on IC interconnect reliability.",
+      "Free online electromigration MTTF calculator using Black's equation. Estimate interconnect lifetime from current density and temperature. No signup required.",
     url: "https://www.reliatools.com/tools/Electromigration",
     siteName: "Reliatools",
     type: "website",

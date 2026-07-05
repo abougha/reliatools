@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Weibull Life Data Analysis",
+  title: "Weibull Analysis Calculator — Probability Plot, Beta & Eta",
   description:
-    "Analyze reliability life data using Weibull distribution fitting. Estimate shape (β) and scale (η) parameters, B10 life, MTTF, and reliability at any mission time from failure and suspension data.",
+    "Free online Weibull analysis calculator. Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time. No signup required.",
   openGraph: {
-    title: "Weibull Life Data Analysis | Reliatools",
+    title: "Weibull Analysis Calculator — Probability Plot, Beta & Eta | Reliatools",
     description:
-      "Fit Weibull distributions to reliability life data. Estimate shape and scale parameters, B10 life, MTTF, and reliability at any mission time.",
+      "Free online Weibull analysis calculator. Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time. No signup required.",
     url: "https://www.reliatools.com/tools/Weibull",
     siteName: "Reliatools",
     type: "website",
