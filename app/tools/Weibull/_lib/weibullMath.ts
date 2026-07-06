@@ -10,6 +10,31 @@ export type DataPoint = {
 export type FitMethod = "REGRESSION" | "MLE";
 export type WeibullModel = "WEIBULL_2P";
 
+export type ParamBounds = {
+  lower: number;
+  upper: number;
+};
+
+export type BandPoint = {
+  percent: number;
+  t: number;
+  tLower?: number;
+  tUpper?: number;
+};
+
+export type FitBounds = {
+  confidenceLevel: number;
+  z: number;
+  approximate: boolean;
+  beta?: ParamBounds;
+  eta?: ParamBounds;
+  b1?: ParamBounds;
+  b10?: ParamBounds;
+  b50?: ParamBounds;
+  rMission?: ParamBounds;
+  band: BandPoint[];
+};
+
 export type FitResult = {
   beta: number;
   eta: number;
@@ -34,6 +59,7 @@ export type FitResult = {
   }>;
   curve: Array<{ x: number; y: number }>;
   r2?: number;
+  bounds?: FitBounds;
 };
 
 export type FitOutput = {
@@ -76,6 +102,53 @@ export function gamma(z: number): number {
   }
   const t = zShifted + lanczosCoefficients.length - 0.5;
   return Math.sqrt(2 * Math.PI) * Math.pow(t, zShifted + 0.5) * Math.exp(-t) * x;
+}
+
+const ACKLAM_A = [
+  -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.383577518672690e2, -3.066479806614716e1,
+  2.506628277459239e0,
+];
+const ACKLAM_B = [-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1];
+const ACKLAM_C = [
+  -7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838e0, -2.549732539343734e0, 4.374664141464968e0,
+  2.938163982698783e0,
+];
+const ACKLAM_D = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996e0, 3.754408661907416e0];
+
+/** Acklam/Wichura rational approximation of the standard normal inverse CDF (~1e-9 accurate). */
+export function inverseNormalCdf(p: number): number {
+  if (!Number.isFinite(p) || p <= 0 || p >= 1) return NaN;
+
+  const pLow = 0.02425;
+  const pHigh = 1 - pLow;
+
+  if (p < pLow) {
+    const q = Math.sqrt(-2 * Math.log(p));
+    return (
+      (((((ACKLAM_C[0] * q + ACKLAM_C[1]) * q + ACKLAM_C[2]) * q + ACKLAM_C[3]) * q + ACKLAM_C[4]) * q + ACKLAM_C[5]) /
+      ((((ACKLAM_D[0] * q + ACKLAM_D[1]) * q + ACKLAM_D[2]) * q + ACKLAM_D[3]) * q + 1)
+    );
+  }
+
+  if (p <= pHigh) {
+    const q = p - 0.5;
+    const r = q * q;
+    return (
+      ((((((ACKLAM_A[0] * r + ACKLAM_A[1]) * r + ACKLAM_A[2]) * r + ACKLAM_A[3]) * r + ACKLAM_A[4]) * r + ACKLAM_A[5]) * q) /
+      (((((ACKLAM_B[0] * r + ACKLAM_B[1]) * r + ACKLAM_B[2]) * r + ACKLAM_B[3]) * r + ACKLAM_B[4]) * r + 1)
+    );
+  }
+
+  const q = Math.sqrt(-2 * Math.log(1 - p));
+  return -(
+    (((((ACKLAM_C[0] * q + ACKLAM_C[1]) * q + ACKLAM_C[2]) * q + ACKLAM_C[3]) * q + ACKLAM_C[4]) * q + ACKLAM_C[5]) /
+    ((((ACKLAM_D[0] * q + ACKLAM_D[1]) * q + ACKLAM_D[2]) * q + ACKLAM_D[3]) * q + 1)
+  );
+}
+
+function zForConfidenceLevel(confidenceLevelPercent: number): number {
+  const clamped = Math.min(99.99, Math.max(1, confidenceLevelPercent));
+  return inverseNormalCdf(1 - (1 - clamped / 100) / 2);
 }
 
 function clampProbability(p: number): number {
@@ -170,15 +243,21 @@ function linearRegression(points: Array<{ x: number; y: number }>): RegressionRe
 }
 
 export function buildPlotPoints(data: DataPoint[]): FitResult["plotPoints"] {
-  const sorted = [...data].sort((a, b) => a.t - b.t);
+  const sorted = [...data].sort((a, b) => {
+    if (a.t !== b.t) return a.t - b.t;
+    if (a.status === b.status) return 0;
+    return a.status === "SUSP" ? -1 : 1;
+  });
   const nTotal = sorted.length;
-  let failRank = 0;
+  let prevAdjustedRank = 0;
 
-  return sorted.map((point) => {
+  return sorted.map((point, i) => {
     const x = weibullX(point.t);
     if (point.status === "FAIL") {
-      failRank += 1;
-      const fPlot = clampProbability((failRank - 0.3) / (nTotal + 0.4));
+      const increment = (nTotal + 1 - prevAdjustedRank) / (1 + (nTotal - i));
+      const adjustedRank = prevAdjustedRank + increment;
+      prevAdjustedRank = adjustedRank;
+      const fPlot = clampProbability((adjustedRank - 0.3) / (nTotal + 0.4));
       return {
         t: point.t,
         x,
@@ -229,6 +308,8 @@ export function buildCurve(beta: number, eta: number, data: DataPoint[]): Array<
   return curve;
 }
 
+const DEFAULT_CONFIDENCE_LEVEL = 90;
+
 function makeFitResult(
   beta: number,
   eta: number,
@@ -237,7 +318,8 @@ function makeFitResult(
   plotPoints: FitResult["plotPoints"],
   tMission?: number,
   r2?: number,
-): FitResult {
+  confidenceLevel?: number,
+): { fit: FitResult; warning?: string } {
   const nTotal = data.length;
   const nFail = data.filter((point) => point.status === "FAIL").length;
   const nSusp = nTotal - nFail;
@@ -246,28 +328,41 @@ function makeFitResult(
   const fMission = missionIsValid ? weibullCdf(tMission as number, beta, eta) : undefined;
   const rMission = missionIsValid ? weibullReliability(tMission as number, beta, eta) : undefined;
 
-  return {
+  const { bounds, warning } = computeFisherBounds(
     beta,
     eta,
+    data,
     method,
-    nTotal,
-    nFail,
-    nSusp,
-    b1: weibullBQuantile(beta, eta, 0.01),
-    b10: weibullBQuantile(beta, eta, 0.1),
-    b50: weibullBQuantile(beta, eta, 0.5),
-    b632: eta,
-    mttf: eta * gamma(1 + 1 / beta),
-    tMission: missionIsValid ? tMission : undefined,
-    rMission,
-    fMission,
-    plotPoints,
-    curve: buildCurve(beta, eta, data),
-    r2,
+    confidenceLevel ?? DEFAULT_CONFIDENCE_LEVEL,
+    missionIsValid ? (tMission as number) : undefined,
+  );
+
+  return {
+    fit: {
+      beta,
+      eta,
+      method,
+      nTotal,
+      nFail,
+      nSusp,
+      b1: weibullBQuantile(beta, eta, 0.01),
+      b10: weibullBQuantile(beta, eta, 0.1),
+      b50: weibullBQuantile(beta, eta, 0.5),
+      b632: eta,
+      mttf: eta * gamma(1 + 1 / beta),
+      tMission: missionIsValid ? tMission : undefined,
+      rMission,
+      fMission,
+      plotPoints,
+      curve: buildCurve(beta, eta, data),
+      r2,
+      bounds,
+    },
+    warning,
   };
 }
 
-function fitRegression(data: DataPoint[], tMission?: number): FitOutput {
+function fitRegression(data: DataPoint[], tMission?: number, confidenceLevel?: number): FitOutput {
   const plotPoints = buildPlotPoints(data);
   const failPoints = plotPoints
     .filter((point) => point.status === "FAIL" && point.y_plot !== undefined)
@@ -290,9 +385,11 @@ function fitRegression(data: DataPoint[], tMission?: number): FitOutput {
     };
   }
 
+  const { fit, warning } = makeFitResult(beta, eta, "REGRESSION", data, plotPoints, tMission, regression.r2, confidenceLevel);
+
   return {
-    warnings: [],
-    fit: makeFitResult(beta, eta, "REGRESSION", data, plotPoints, tMission, regression.r2),
+    warnings: warning ? [warning] : [],
+    fit,
   };
 }
 
@@ -319,6 +416,135 @@ function negLogLikelihood(beta: number, eta: number, data: DataPoint[]): number 
     }
   }
   return nll;
+}
+
+type Matrix2x2 = [[number, number], [number, number]];
+
+function fisherInformation(beta: number, eta: number, data: DataPoint[]): Matrix2x2 {
+  const hBeta = 1e-4 * beta;
+  const hEta = 1e-4 * eta;
+  const f = (b: number, e: number) => negLogLikelihood(b, e, data);
+
+  const f00 = f(beta, eta);
+  const d2Beta2 = (f(beta + hBeta, eta) - 2 * f00 + f(beta - hBeta, eta)) / (hBeta * hBeta);
+  const d2Eta2 = (f(beta, eta + hEta) - 2 * f00 + f(beta, eta - hEta)) / (hEta * hEta);
+  const d2BetaEta =
+    (f(beta + hBeta, eta + hEta) - f(beta + hBeta, eta - hEta) - f(beta - hBeta, eta + hEta) + f(beta - hBeta, eta - hEta)) /
+    (4 * hBeta * hEta);
+
+  return [
+    [d2Beta2, d2BetaEta],
+    [d2BetaEta, d2Eta2],
+  ];
+}
+
+function invert2x2(m: Matrix2x2): Matrix2x2 | null {
+  const [[a, b], [c, d]] = m;
+  const det = a * d - b * c;
+  if (!Number.isFinite(det) || det <= 0) return null;
+  return [
+    [d / det, -b / det],
+    [-c / det, a / det],
+  ];
+}
+
+function paramLogBounds(estimate: number, variance: number, z: number): ParamBounds | undefined {
+  if (!Number.isFinite(estimate) || estimate <= 0 || !Number.isFinite(variance) || variance < 0) return undefined;
+  const se = Math.sqrt(variance) / estimate;
+  if (!Number.isFinite(se)) return undefined;
+  return { lower: estimate * Math.exp(-z * se), upper: estimate * Math.exp(z * se) };
+}
+
+function lnQuantileVariance(beta: number, eta: number, varBeta: number, varEta: number, covBetaEta: number, p: number): number {
+  const w = Math.log(-Math.log(1 - p));
+  const g0 = -w / (beta * beta);
+  const g1 = 1 / eta;
+  return g0 * g0 * varBeta + 2 * g0 * g1 * covBetaEta + g1 * g1 * varEta;
+}
+
+function quantileBounds(
+  beta: number,
+  eta: number,
+  varBeta: number,
+  varEta: number,
+  covBetaEta: number,
+  p: number,
+  z: number,
+): ParamBounds | undefined {
+  const tp = weibullBQuantile(beta, eta, p);
+  if (!Number.isFinite(tp) || tp <= 0) return undefined;
+  const varLnT = lnQuantileVariance(beta, eta, varBeta, varEta, covBetaEta, p);
+  if (!Number.isFinite(varLnT) || varLnT < 0) return undefined;
+  const se = Math.sqrt(varLnT);
+  return { lower: tp * Math.exp(-z * se), upper: tp * Math.exp(z * se) };
+}
+
+function reliabilityBounds(
+  beta: number,
+  eta: number,
+  tMission: number,
+  varBeta: number,
+  varEta: number,
+  covBetaEta: number,
+  z: number,
+): ParamBounds | undefined {
+  if (!(tMission > 0)) return undefined;
+  const u = beta * Math.log(tMission / eta);
+  const g0 = Math.log(tMission / eta);
+  const g1 = -beta / eta;
+  const varU = g0 * g0 * varBeta + 2 * g0 * g1 * covBetaEta + g1 * g1 * varEta;
+  if (!Number.isFinite(varU) || varU < 0) return undefined;
+  const se = Math.sqrt(varU);
+  const lower = Math.exp(-Math.exp(u + z * se));
+  const upper = Math.exp(-Math.exp(u - z * se));
+  if (!Number.isFinite(lower) || !Number.isFinite(upper)) return undefined;
+  return { lower, upper };
+}
+
+function computeFisherBounds(
+  beta: number,
+  eta: number,
+  data: DataPoint[],
+  method: FitMethod,
+  confidenceLevelPercent: number,
+  tMission?: number,
+): { bounds?: FitBounds; warning?: string } {
+  const information = fisherInformation(beta, eta, data);
+  const covariance = invert2x2(information);
+  if (!covariance) {
+    return { warning: "Confidence bounds unavailable (information matrix not positive definite)." };
+  }
+
+  const varBeta = covariance[0][0];
+  const varEta = covariance[1][1];
+  const covBetaEta = covariance[0][1];
+  if (!(varBeta > 0) || !(varEta > 0) || !Number.isFinite(varBeta) || !Number.isFinite(varEta)) {
+    return { warning: "Confidence bounds unavailable (information matrix not positive definite)." };
+  }
+
+  const z = zForConfidenceLevel(confidenceLevelPercent);
+
+  const band: BandPoint[] = probabilityTicksPercent().map((percent) => {
+    const p = percent / 100;
+    const t = weibullBQuantile(beta, eta, p);
+    const bounds = quantileBounds(beta, eta, varBeta, varEta, covBetaEta, p, z);
+    return { percent, t, tLower: bounds?.lower, tUpper: bounds?.upper };
+  });
+
+  return {
+    bounds: {
+      confidenceLevel: confidenceLevelPercent,
+      z,
+      approximate: method === "REGRESSION",
+      beta: paramLogBounds(beta, varBeta, z),
+      eta: paramLogBounds(eta, varEta, z),
+      b1: quantileBounds(beta, eta, varBeta, varEta, covBetaEta, 0.01, z),
+      b10: quantileBounds(beta, eta, varBeta, varEta, covBetaEta, 0.1, z),
+      b50: quantileBounds(beta, eta, varBeta, varEta, covBetaEta, 0.5, z),
+      rMission: tMission !== undefined ? reliabilityBounds(beta, eta, tMission, varBeta, varEta, covBetaEta, z) : undefined,
+      band,
+    },
+  };
 }
 
 type Vertex = {
@@ -435,7 +661,7 @@ function regressionSeedFromFailures(data: DataPoint[]): [number, number] | null 
   return [output.fit.beta, output.fit.eta];
 }
 
-function fitMle(data: DataPoint[], tMission?: number): FitOutput {
+function fitMle(data: DataPoint[], tMission?: number, confidenceLevel?: number): FitOutput {
   const seed = regressionSeedFromFailures(data);
   const times = data.map((point) => point.t).filter((value) => value > 0);
   const medianTime = median(times);
@@ -450,9 +676,18 @@ function fitMle(data: DataPoint[], tMission?: number): FitOutput {
     };
   }
 
+  if (best.x[0] > 50 || best.x[0] < 0.01) {
+    return {
+      warnings: [],
+      error: "MLE did not converge to physically meaningful parameters.",
+    };
+  }
+
+  const { fit, warning } = makeFitResult(best.x[0], best.x[1], "MLE", data, buildPlotPoints(data), tMission, undefined, confidenceLevel);
+
   return {
-    warnings: [],
-    fit: makeFitResult(best.x[0], best.x[1], "MLE", data, buildPlotPoints(data), tMission),
+    warnings: warning ? [warning] : [],
+    fit,
   };
 }
 
@@ -495,7 +730,38 @@ export function classifyBeta(beta: number): string {
   return "Wear-out";
 }
 
-export function fitDataset(data: DataPoint[], method: FitMethod, tMission?: number): FitOutput {
+function formatThreeSigFigs(value: number): string {
+  if (!Number.isFinite(value)) return "N/A";
+  const rounded = Number(value.toPrecision(3));
+  return rounded.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+export function interpretFit(fit: FitResult, unitsLabel: string): string {
+  const category = classifyBeta(fit.beta);
+  const betaText = Number.isFinite(fit.beta) ? fit.beta.toFixed(2) : "N/A";
+
+  let modePhrase: string;
+  if (category === "Infant mortality") {
+    modePhrase = `β = ${betaText} indicates early-life failures dominate — investigate manufacturing or stress screening.`;
+  } else if (category === "Random") {
+    modePhrase = `β = ${betaText} indicates failures are approximately random in time.`;
+  } else if (category === "Wear-out") {
+    modePhrase = `β = ${betaText} indicates a wear-out failure mode.`;
+  } else {
+    modePhrase = `β = ${betaText} — failure mode is undetermined.`;
+  }
+
+  const b10Sentence = ` 10% of units are expected to fail by ${formatThreeSigFigs(fit.b10)} ${unitsLabel}.`;
+
+  let missionSentence = "";
+  if (fit.tMission !== undefined && fit.rMission !== undefined) {
+    missionSentence = ` At the ${formatThreeSigFigs(fit.tMission)} ${unitsLabel} mission, estimated reliability is ${(fit.rMission * 100).toFixed(1)}%.`;
+  }
+
+  return `${modePhrase}${b10Sentence}${missionSentence}`;
+}
+
+export function fitDataset(data: DataPoint[], method: FitMethod, tMission?: number, confidenceLevel?: number): FitOutput {
   const warnings: string[] = [];
   const cleanData = data.filter((point) => Number.isFinite(point.t) && point.t > 0);
 
@@ -513,18 +779,30 @@ export function fitDataset(data: DataPoint[], method: FitMethod, tMission?: numb
     };
   }
 
+  const distinctFailureTimes = new Set(
+    cleanData.filter((point) => point.status === "FAIL").map((point) => point.t),
+  );
+  if (distinctFailureTimes.size < 2) {
+    return {
+      warnings,
+      error:
+        "At least two distinct failure times are required to fit both parameters. For a single failure or identical times, a Weibayes approach (fixed beta) is needed — not yet supported.",
+    };
+  }
+
   if (nFail < 3) {
     warnings.push("High uncertainty; consider Weibayes mode (future).");
   }
 
-  let output = method === "MLE" ? fitMle(cleanData, tMission) : fitRegression(cleanData, tMission);
+  let output =
+    method === "MLE" ? fitMle(cleanData, tMission, confidenceLevel) : fitRegression(cleanData, tMission, confidenceLevel);
 
   if (method === "REGRESSION" && nSusp > 0) {
     warnings.push("Regression forced with censoring present. Suspensions are not directly fit like MLE.");
   }
 
   if (!output.fit && method === "REGRESSION" && nFail >= 1) {
-    output = fitMle(cleanData, tMission);
+    output = fitMle(cleanData, tMission, confidenceLevel);
     warnings.push("Regression could not be solved; fell back to MLE.");
   }
 
@@ -579,6 +857,20 @@ const SELF_TEST_WITH_SUSP: DataPoint[] = [
   { t: 240, status: "SUSP" },
 ];
 
+const SELF_TEST_JOHNSON_RANK: DataPoint[] = [
+  { t: 16, status: "FAIL" },
+  { t: 34, status: "FAIL" },
+  { t: 40, status: "SUSP" },
+  { t: 53, status: "FAIL" },
+  { t: 60, status: "SUSP" },
+  { t: 75, status: "FAIL" },
+  { t: 80, status: "SUSP" },
+  { t: 93, status: "FAIL" },
+  { t: 100, status: "SUSP" },
+  { t: 120, status: "FAIL" },
+  { t: 130, status: "SUSP" },
+];
+
 export function runInternalWeibullSelfTest(): SelfTestResult {
   const errors: string[] = [];
 
@@ -609,6 +901,12 @@ export function runInternalWeibullSelfTest(): SelfTestResult {
     if (Math.abs((caseB.fit.fMission as number) - modelMissionF) > 1e-9) {
       errors.push("Mission point does not match CDF on fitted line.");
     }
+  }
+
+  const johnsonPlotPoints = buildPlotPoints(SELF_TEST_JOHNSON_RANK);
+  const lastFailure = [...johnsonPlotPoints].reverse().find((point) => point.status === "FAIL");
+  if (!lastFailure || lastFailure.F_plot === undefined || Math.abs(lastFailure.F_plot - 0.6699) > 0.0005) {
+    errors.push("Johnson rank check failed: last failure plotting position does not match F = 66.99%.");
   }
 
   return { pass: errors.length === 0, errors };

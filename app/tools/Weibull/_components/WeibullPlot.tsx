@@ -36,6 +36,7 @@ type WeibullPlotProps = {
   unitsLabel: string;
   showBLifeLines: boolean;
   showSuspensions: boolean;
+  showConfidenceBand: boolean;
   tMission?: number;
   yAxisMode: "UNRELIABILITY" | "RELIABILITY";
 };
@@ -116,7 +117,15 @@ function CustomTooltip({
   );
 }
 
-export default function WeibullPlot({ datasets, unitsLabel, showBLifeLines, showSuspensions, tMission, yAxisMode }: WeibullPlotProps) {
+export default function WeibullPlot({
+  datasets,
+  unitsLabel,
+  showBLifeLines,
+  showSuspensions,
+  showConfidenceBand,
+  tMission,
+  yAxisMode,
+}: WeibullPlotProps) {
   const yTicks = useMemo(() => probabilityTickYs(), []);
   const yDomain: [number, number] = [Math.min(...yTicks), Math.max(...yTicks)];
 
@@ -175,12 +184,46 @@ export default function WeibullPlot({ datasets, unitsLabel, showBLifeLines, show
           };
         });
 
+      const bandLowerRows: PlotRow[] = (fit.bounds?.band ?? [])
+        .filter((point) => point.tLower !== undefined)
+        .map((point) => {
+          const y = weibullY(point.percent / 100);
+          return {
+            kind: "curve",
+            datasetName: dataset.name,
+            datasetColor: dataset.colorKey,
+            t: point.tLower as number,
+            x: Math.log(point.tLower as number),
+            y,
+            modelF: point.percent / 100,
+            modelR: 1 - point.percent / 100,
+          };
+        });
+
+      const bandUpperRows: PlotRow[] = (fit.bounds?.band ?? [])
+        .filter((point) => point.tUpper !== undefined)
+        .map((point) => {
+          const y = weibullY(point.percent / 100);
+          return {
+            kind: "curve",
+            datasetName: dataset.name,
+            datasetColor: dataset.colorKey,
+            t: point.tUpper as number,
+            x: Math.log(point.tUpper as number),
+            y,
+            modelF: point.percent / 100,
+            modelR: 1 - point.percent / 100,
+          };
+        });
+
       return {
         dataset,
         fit,
         curveRows,
         failRows,
         suspendedRows,
+        bandLowerRows,
+        bandUpperRows,
       };
     });
   }, [visibleWithFit]);
@@ -196,6 +239,10 @@ export default function WeibullPlot({ datasets, unitsLabel, showBLifeLines, show
       if (showBLifeLines) {
         xs.push(Math.log(group.fit.b10), Math.log(group.fit.b50), Math.log(group.fit.b632));
       }
+      if (showConfidenceBand) {
+        group.bandLowerRows.forEach((row) => xs.push(row.x));
+        group.bandUpperRows.forEach((row) => xs.push(row.x));
+      }
     }
     if (tMission && tMission > 0) {
       xs.push(Math.log(tMission));
@@ -206,7 +253,7 @@ export default function WeibullPlot({ datasets, unitsLabel, showBLifeLines, show
     const span = maxX - minX;
     const pad = span > 0 ? span * 0.06 : 0.8;
     return [minX - pad, maxX + pad];
-  }, [rowsByDataset, showBLifeLines, showSuspensions, tMission]);
+  }, [rowsByDataset, showBLifeLines, showSuspensions, showConfidenceBand, tMission]);
 
   return (
     <div className="h-[520px] rounded border bg-white p-4 shadow">
@@ -245,6 +292,39 @@ export default function WeibullPlot({ datasets, unitsLabel, showBLifeLines, show
               isAnimationActive={false}
             />
           ))}
+
+          {showConfidenceBand
+            ? rowsByDataset.flatMap((group) => [
+                <Line
+                  key={`band-lower-${group.dataset.id}`}
+                  type="linear"
+                  data={group.bandLowerRows}
+                  dataKey="y"
+                  name={`${group.dataset.name} bounds`}
+                  stroke={group.dataset.colorKey}
+                  strokeWidth={1.5}
+                  strokeOpacity={0.5}
+                  strokeDasharray="5 3"
+                  dot={false}
+                  legendType="none"
+                  isAnimationActive={false}
+                />,
+                <Line
+                  key={`band-upper-${group.dataset.id}`}
+                  type="linear"
+                  data={group.bandUpperRows}
+                  dataKey="y"
+                  name={`${group.dataset.name} bounds`}
+                  stroke={group.dataset.colorKey}
+                  strokeWidth={1.5}
+                  strokeOpacity={0.5}
+                  strokeDasharray="5 3"
+                  dot={false}
+                  legendType="none"
+                  isAnimationActive={false}
+                />,
+              ])
+            : null}
 
           {rowsByDataset.map((group) => (
             <Scatter

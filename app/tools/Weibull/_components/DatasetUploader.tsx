@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { parseDataPointsFromTable, parseDelimitedTable } from "../_lib/csv";
 import type { DataPoint } from "../_lib/weibullMath";
+import DataPointsTable, { createEmptyRows, editableRowsToDataPoints, type EditableRow } from "./DataPointsTable";
 
 type DatasetUploaderProps = {
   isOpen: boolean;
   onClose: () => void;
   onAddDataset: (dataset: { name: string; data: DataPoint[] }) => void;
 };
+
+type Mode = "MANUAL" | "CSV";
 
 function guessColumnIndex(headers: string[], patterns: string[], fallback: number): number {
   const index = headers.findIndex((header) => {
@@ -19,10 +22,12 @@ function guessColumnIndex(headers: string[], patterns: string[], fallback: numbe
 }
 
 export default function DatasetUploader({ isOpen, onClose, onAddDataset }: DatasetUploaderProps) {
+  const [mode, setMode] = useState<Mode>("MANUAL");
   const [datasetName, setDatasetName] = useState("");
   const [rawInput, setRawInput] = useState("");
   const [timeColumn, setTimeColumn] = useState(0);
   const [statusColumn, setStatusColumn] = useState(1);
+  const [manualRows, setManualRows] = useState<EditableRow[]>(() => createEmptyRows(5));
   const [errorMessage, setErrorMessage] = useState("");
 
   const parsed = useMemo(() => parseDelimitedTable(rawInput), [rawInput]);
@@ -36,6 +41,7 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
         : null,
     [parsed, timeColumn, statusColumn],
   );
+  const manualParsed = useMemo(() => editableRowsToDataPoints(manualRows), [manualRows]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,7 +70,36 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
     reader.readAsText(file);
   };
 
-  const submit = () => {
+  const resetAndClose = () => {
+    setDatasetName("");
+    setRawInput("");
+    setManualRows(createEmptyRows(5));
+    setErrorMessage("");
+    onClose();
+  };
+
+  const submitManual = () => {
+    setErrorMessage("");
+    const { data } = manualParsed;
+    if (data.length === 0) {
+      setErrorMessage("Enter at least one row with a valid time before adding a dataset.");
+      return;
+    }
+
+    const nFail = data.filter((point) => point.status === "FAIL").length;
+    if (nFail < 1) {
+      setErrorMessage("At least one FAIL row is required.");
+      return;
+    }
+
+    onAddDataset({
+      name: datasetName.trim() || `Dataset ${Date.now()}`,
+      data,
+    });
+    resetAndClose();
+  };
+
+  const submitCsv = () => {
     setErrorMessage("");
     if (!rawInput.trim()) {
       setErrorMessage("Paste or upload CSV data before adding a dataset.");
@@ -89,12 +124,10 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
       name: datasetName.trim() || `Dataset ${Date.now()}`,
       data: parseResult.data,
     });
-
-    setDatasetName("");
-    setRawInput("");
-    setErrorMessage("");
-    onClose();
+    resetAndClose();
   };
+
+  const submit = () => (mode === "MANUAL" ? submitManual() : submitCsv());
 
   if (!isOpen) return null;
 
@@ -107,80 +140,118 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <label className="text-sm">
-          Dataset name
-          <input
-            type="text"
-            value={datasetName}
-            onChange={(event) => setDatasetName(event.target.value)}
-            placeholder="e.g., ALT Lot A"
-            className="mt-1 w-full rounded border p-2"
-          />
-        </label>
-
-        <label className="text-sm">
-          Upload CSV / TSV
-          <input
-            type="file"
-            accept=".csv,.txt,text/csv,text/plain"
-            onChange={(event) => onFileSelected(event.target.files?.[0] ?? null)}
-            className="mt-1 block w-full text-sm"
-          />
-        </label>
-      </div>
-
-      <label className="mt-4 block text-sm">
-        Paste data
-        <textarea
-          value={rawInput}
-          onChange={(event) => setRawInput(event.target.value)}
-          rows={8}
-          placeholder={"time,status\n120,FAIL\n150,F\n200,SUSP"}
-          className="mt-1 w-full rounded border p-2 font-mono text-xs"
+      <label className="mb-4 block text-sm md:w-1/2">
+        Dataset name
+        <input
+          type="text"
+          value={datasetName}
+          onChange={(event) => setDatasetName(event.target.value)}
+          placeholder="e.g., ALT Lot A"
+          className="mt-1 w-full rounded border p-2"
         />
       </label>
 
-      {parsed.headers.length > 0 ? (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="text-sm">
-            Time column
-            <select value={timeColumn} onChange={(event) => setTimeColumn(Number(event.target.value))} className="mt-1 w-full rounded border p-2">
-              {parsed.headers.map((header, index) => (
-                <option key={`time-col-${header}-${index}`} value={index}>
-                  {header}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm">
-            Status column
-            <select value={statusColumn} onChange={(event) => setStatusColumn(Number(event.target.value))} className="mt-1 w-full rounded border p-2">
-              {parsed.headers.map((header, index) => (
-                <option key={`status-col-${header}-${index}`} value={index}>
-                  {header}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : null}
+      <div className="mb-4 flex gap-1 border-b">
+        <button
+          type="button"
+          onClick={() => setMode("MANUAL")}
+          className={`px-3 py-2 text-sm font-medium ${
+            mode === "MANUAL" ? "border-b-2 border-blue-600 text-blue-700" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Enter manually
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("CSV")}
+          className={`px-3 py-2 text-sm font-medium ${
+            mode === "CSV" ? "border-b-2 border-blue-600 text-blue-700" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Paste / upload CSV
+        </button>
+      </div>
 
-      {parseResult ? (
-        <div className="mt-4 rounded border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900">
-          <p>
-            Parsed rows: {parseResult.acceptedRows}/{parseResult.totalRows}
-          </p>
-          <p className="text-xs">
-            Skipped: {parseResult.skippedRows} (missing time: {parseResult.missingTimeRows}, invalid time: {parseResult.invalidTimeRows}, unknown
-            status: {parseResult.unknownStatusRows})
+      {mode === "MANUAL" ? (
+        <div>
+          <DataPointsTable rows={manualRows} onChange={setManualRows} />
+          {manualParsed.ignoredCount > 0 ? (
+            <p className="mt-2 text-xs text-gray-600">
+              {manualParsed.ignoredCount} empty {manualParsed.ignoredCount === 1 ? "row" : "rows"} ignored.
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="text-sm">
+              Upload CSV / TSV
+              <input
+                type="file"
+                accept=".csv,.txt,text/csv,text/plain"
+                onChange={(event) => onFileSelected(event.target.files?.[0] ?? null)}
+                className="mt-1 block w-full text-sm"
+              />
+            </label>
+          </div>
+
+          <label className="mt-4 block text-sm">
+            Paste data
+            <textarea
+              value={rawInput}
+              onChange={(event) => setRawInput(event.target.value)}
+              rows={8}
+              placeholder={"time,status\n120,FAIL\n150,F\n200,SUSP"}
+              className="mt-1 w-full rounded border p-2 font-mono text-xs"
+            />
+          </label>
+
+          {parsed.headers.length > 0 ? (
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="text-sm">
+                Time column
+                <select value={timeColumn} onChange={(event) => setTimeColumn(Number(event.target.value))} className="mt-1 w-full rounded border p-2">
+                  {parsed.headers.map((header, index) => (
+                    <option key={`time-col-${header}-${index}`} value={index}>
+                      {header}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm">
+                Status column
+                <select
+                  value={statusColumn}
+                  onChange={(event) => setStatusColumn(Number(event.target.value))}
+                  className="mt-1 w-full rounded border p-2"
+                >
+                  {parsed.headers.map((header, index) => (
+                    <option key={`status-col-${header}-${index}`} value={index}>
+                      {header}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null}
+
+          {parseResult ? (
+            <div className="mt-4 rounded border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900">
+              <p>
+                Parsed rows: {parseResult.acceptedRows}/{parseResult.totalRows}
+              </p>
+              <p className="text-xs">
+                Skipped: {parseResult.skippedRows} (missing time: {parseResult.missingTimeRows}, invalid time: {parseResult.invalidTimeRows}, unknown
+                status: {parseResult.unknownStatusRows})
+              </p>
+            </div>
+          ) : null}
+
+          <p className="mt-2 text-xs text-gray-600">
+            Accepted status values: FAIL/F/1 and SUSP/C/0/CENSORED. Delimiters supported: comma, tab, semicolon.
           </p>
         </div>
-      ) : null}
-
-      <p className="mt-2 text-xs text-gray-600">
-        Accepted status values: FAIL/F/1 and SUSP/C/0/CENSORED. Delimiters supported: comma, tab, semicolon.
-      </p>
+      )}
 
       {errorMessage ? <p className="mt-2 text-sm text-red-700">{errorMessage}</p> : null}
 
@@ -188,7 +259,7 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
         <button type="button" onClick={submit} className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
           Add dataset
         </button>
-        <button type="button" onClick={onClose} className="rounded border px-4 py-2 text-sm hover:bg-gray-50">
+        <button type="button" onClick={resetAndClose} className="rounded border px-4 py-2 text-sm hover:bg-gray-50">
           Cancel
         </button>
       </div>

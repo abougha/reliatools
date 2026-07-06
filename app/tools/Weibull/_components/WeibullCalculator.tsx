@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
+import DatasetEditor from "./DatasetEditor";
 import DatasetUploader from "./DatasetUploader";
 import ResultsTable from "./ResultsTable";
 import WeibullPlot from "./WeibullPlot";
@@ -40,6 +41,9 @@ type ComputedDataset = Dataset & {
 
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#7c3aed", "#f59e0b", "#0891b2", "#be123c", "#334155"];
 
+const UNIT_PRESETS = ["hours", "cycles", "days", "km", "miles"];
+const CUSTOM_UNITS_VALUE = "__custom__";
+
 const SAMPLE_ALL_FAIL: DataPoint[] = [
   { t: 120, status: "FAIL" },
   { t: 150, status: "FAIL" },
@@ -72,7 +76,8 @@ function formatNumber(value: number | undefined, digits = 4): string {
 
 export default function WeibullCalculator() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [unitsLabel, setUnitsLabel] = useState("hours");
+  const [unitsPreset, setUnitsPreset] = useState<string>("hours");
+  const [customUnitsLabel, setCustomUnitsLabel] = useState("");
   const [missionTime, setMissionTime] = useState("200");
   const [confidenceLevel, setConfidenceLevel] = useState("90");
   const [yAxisMode, setYAxisMode] = useState<"UNRELIABILITY" | "RELIABILITY">("UNRELIABILITY");
@@ -80,7 +85,10 @@ export default function WeibullCalculator() {
   const [showConfidenceBand, setShowConfidenceBand] = useState(false);
   const [showSuspensions, setShowSuspensions] = useState(true);
   const [uploaderOpen, setUploaderOpen] = useState(false);
+  const [expandedDatasetIds, setExpandedDatasetIds] = useState<Set<string>>(new Set());
   const [selfTestErrors, setSelfTestErrors] = useState<string[]>([]);
+
+  const unitsLabel = unitsPreset === CUSTOM_UNITS_VALUE ? customUnitsLabel : unitsPreset;
 
   useEffect(() => {
     const result = runInternalWeibullSelfTest();
@@ -92,10 +100,15 @@ export default function WeibullCalculator() {
   const missionTimeValue = Number(missionTime);
   const missionTimeValid = Number.isFinite(missionTimeValue) && missionTimeValue > 0 ? missionTimeValue : undefined;
 
+  const confidenceLevelValue = Number(confidenceLevel);
+  const confidenceLevelValid =
+    Number.isInteger(confidenceLevelValue) && confidenceLevelValue >= 50 && confidenceLevelValue <= 99;
+  const effectiveConfidenceLevel = confidenceLevelValid ? confidenceLevelValue : 90;
+
   const computedDatasets = useMemo<ComputedDataset[]>(
     () =>
       datasets.map((dataset) => {
-        const output = fitDataset(dataset.data, dataset.method, missionTimeValid);
+        const output = fitDataset(dataset.data, dataset.method, missionTimeValid, effectiveConfidenceLevel);
         return {
           ...dataset,
           fit: output.fit,
@@ -103,7 +116,7 @@ export default function WeibullCalculator() {
           error: output.error,
         };
       }),
-    [datasets, missionTimeValid],
+    [datasets, missionTimeValid, effectiveConfidenceLevel],
   );
 
   const fittedCount = computedDatasets.filter((dataset) => dataset.fit).length;
@@ -137,6 +150,18 @@ export default function WeibullCalculator() {
         return { ...dataset, ...patch };
       }),
     );
+  };
+
+  const toggleDatasetExpanded = (id: string) => {
+    setExpandedDatasetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const loadSampleDatasets = () => {
@@ -206,14 +231,28 @@ export default function WeibullCalculator() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 rounded border bg-white p-4 md:grid-cols-2">
         <label className="text-sm">
-          Units label
-          <input
-            type="text"
-            value={unitsLabel}
-            onChange={(event) => setUnitsLabel(event.target.value)}
+          Units
+          <select
+            value={unitsPreset}
+            onChange={(event) => setUnitsPreset(event.target.value)}
             className="mt-1 w-full rounded border p-2"
-            placeholder="hours"
-          />
+          >
+            {UNIT_PRESETS.map((unit) => (
+              <option key={unit} value={unit}>
+                {unit}
+              </option>
+            ))}
+            <option value={CUSTOM_UNITS_VALUE}>Custom…</option>
+          </select>
+          {unitsPreset === CUSTOM_UNITS_VALUE ? (
+            <input
+              type="text"
+              value={customUnitsLabel}
+              onChange={(event) => setCustomUnitsLabel(event.target.value)}
+              placeholder="e.g., landings"
+              className="mt-2 w-full rounded border p-2"
+            />
+          ) : null}
         </label>
         <label className="text-sm">
           Mission time ({unitsLabel || "units"})
@@ -226,13 +265,19 @@ export default function WeibullCalculator() {
           />
         </label>
         <label className="text-sm">
-          Confidence level (%), v2 placeholder
+          Confidence level (%)
           <input
             type="number"
+            min={50}
+            max={99}
+            step={1}
             value={confidenceLevel}
             onChange={(event) => setConfidenceLevel(event.target.value)}
             className="mt-1 w-full rounded border p-2"
           />
+          {confidenceLevel && !confidenceLevelValid ? (
+            <span className="mt-1 block text-xs text-red-700">Confidence level must be a whole number between 50 and 99.</span>
+          ) : null}
         </label>
         <div className="text-sm space-y-2">
           <label className="block">
@@ -255,14 +300,13 @@ export default function WeibullCalculator() {
             <input type="checkbox" checked={showSuspensions} onChange={(event) => setShowSuspensions(event.target.checked)} />
             Show suspensions
           </label>
-          <label className="mt-1 flex items-center gap-2 text-gray-500">
+          <label className="mt-1 flex items-center gap-2">
             <input
               type="checkbox"
               checked={showConfidenceBand}
               onChange={(event) => setShowConfidenceBand(event.target.checked)}
-              disabled
             />
-            Show confidence band (v2)
+            Show confidence band
           </label>
         </div>
       </div>
@@ -283,12 +327,14 @@ export default function WeibullCalculator() {
         <aside className="space-y-4 rounded border bg-white p-4 lg:col-span-1">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Datasets</h2>
-            <span className="text-xs text-gray-500">
-              {datasets.length} total, {fittedCount} fitted
-            </span>
+            {computedDatasets.length > 0 ? (
+              <span className="text-xs text-gray-500">
+                {datasets.length} total, {fittedCount} fitted
+              </span>
+            ) : null}
           </div>
 
-          {computedDatasets.length === 0 ? <p className="text-sm text-gray-600">No datasets yet. Add one from CSV paste/upload.</p> : null}
+          {computedDatasets.length === 0 ? <p className="text-sm text-gray-600">No datasets yet.</p> : null}
 
           <div className="space-y-3">
             {computedDatasets.map((dataset) => {
@@ -338,7 +384,14 @@ export default function WeibullCalculator() {
                     <p className="mt-2 text-xs text-amber-700">Regression is forced with censoring present. MLE is usually recommended.</p>
                   ) : null}
 
-                  <div className="mt-3 flex justify-end">
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => toggleDatasetExpanded(dataset.id)}
+                      className="text-xs font-medium text-blue-700 hover:underline"
+                    >
+                      {expandedDatasetIds.has(dataset.id) ? "Hide data" : "View / edit data"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => removeDataset(dataset.id)}
@@ -347,6 +400,10 @@ export default function WeibullCalculator() {
                       Remove
                     </button>
                   </div>
+
+                  {expandedDatasetIds.has(dataset.id) ? (
+                    <DatasetEditor data={dataset.data} onChange={(data) => updateDataset(dataset.id, { data })} />
+                  ) : null}
                 </div>
               );
             })}
@@ -354,41 +411,67 @@ export default function WeibullCalculator() {
         </aside>
 
         <section className="space-y-6 lg:col-span-2">
-          <WeibullPlot
-            datasets={computedDatasets}
-            unitsLabel={unitsLabel || "units"}
-            showBLifeLines={showBLifeLines}
-            showSuspensions={showSuspensions}
-            tMission={missionTimeValid}
-            yAxisMode={yAxisMode}
-          />
+          {computedDatasets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-4 rounded border bg-white p-12 text-center">
+              <p className="max-w-md text-sm text-gray-700">
+                Fit failure data to a Weibull distribution — supports censored (suspended) data, multiple datasets, and confidence bounds.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={loadSampleDatasets}
+                  className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                >
+                  Load sample data
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUploaderOpen(true)}
+                  className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Add your data
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <WeibullPlot
+                datasets={computedDatasets}
+                unitsLabel={unitsLabel || "units"}
+                showBLifeLines={showBLifeLines}
+                showSuspensions={showSuspensions}
+                showConfidenceBand={showConfidenceBand}
+                tMission={missionTimeValid}
+                yAxisMode={yAxisMode}
+              />
 
-          <div className="rounded border-l-4 border-blue-500 bg-blue-50 p-4 text-sm text-blue-900">
-            <p className="font-semibold">Active mission time: {missionTimeValid ? `${formatNumber(missionTimeValid)} ${unitsLabel}` : "N/A"}</p>
-            <p className="mt-1">Per dataset outputs include beta, eta, B1/B10/B50, MTTF, and mission reliability R(t).</p>
-            {showConfidenceBand ? <p className="mt-1 text-xs">Confidence bands are placeholder-only in v1.</p> : null}
-          </div>
+              <div className="rounded border-l-4 border-blue-500 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-semibold">Active mission time: {missionTimeValid ? `${formatNumber(missionTimeValid)} ${unitsLabel}` : "N/A"}</p>
+                <p className="mt-1">Per dataset outputs include beta, eta, B1/B10/B50, MTTF, and mission reliability R(t).</p>
+              </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={downloadSummary}
-              disabled={fittedCount === 0}
-              className="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              Download CSV
-            </button>
-            <button
-              type="button"
-              onClick={downloadPlotPoints}
-              disabled={fittedCount === 0}
-              className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            >
-              Download plot points
-            </button>
-          </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={downloadSummary}
+                  disabled={fittedCount === 0}
+                  className="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  Download CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadPlotPoints}
+                  disabled={fittedCount === 0}
+                  className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Download plot points
+                </button>
+              </div>
 
-          <ResultsTable datasets={computedDatasets} unitsLabel={unitsLabel || "units"} />
+              <ResultsTable datasets={computedDatasets} unitsLabel={unitsLabel || "units"} />
+            </>
+          )}
         </section>
       </div>
 

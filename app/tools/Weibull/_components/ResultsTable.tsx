@@ -1,6 +1,6 @@
 "use client";
 
-import { classifyBeta, type FitResult } from "../_lib/weibullMath";
+import { classifyBeta, interpretFit, type FitResult, type ParamBounds } from "../_lib/weibullMath";
 
 type ResultDataset = {
   id: string;
@@ -22,16 +22,39 @@ function formatMetric(value: number | undefined, digits = 4): string {
   return value.toFixed(digits).replace(/\.?0+$/, "");
 }
 
+function formatBoundsRange(bounds: ParamBounds | undefined, digits = 2): string | null {
+  if (!bounds || !Number.isFinite(bounds.lower) || !Number.isFinite(bounds.upper)) return null;
+  return `[${bounds.lower.toFixed(digits)} – ${bounds.upper.toFixed(digits)}]`;
+}
+
+function formatPercentBoundsRange(bounds: ParamBounds | undefined): string | null {
+  if (!bounds || !Number.isFinite(bounds.lower) || !Number.isFinite(bounds.upper)) return null;
+  return `[${(bounds.lower * 100).toFixed(1)}% – ${(bounds.upper * 100).toFixed(1)}%]`;
+}
+
 function chipTone(beta: number): string {
   if (beta < 0.95) return "bg-amber-100 text-amber-800 border-amber-300";
   if (beta <= 1.05) return "bg-blue-100 text-blue-800 border-blue-300";
   return "bg-emerald-100 text-emerald-800 border-emerald-300";
 }
 
+function MetricCell({ label, value, boundsText }: { label: string; value: string; boundsText?: string | null }) {
+  return (
+    <div className="rounded bg-gray-50 p-2">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="font-semibold">{value}</p>
+      {boundsText ? <p className="text-xs text-gray-500">{boundsText}</p> : null}
+    </div>
+  );
+}
+
 export default function ResultsTable({ datasets, unitsLabel }: ResultsTableProps) {
   if (datasets.length === 0) {
     return <p className="rounded border bg-white p-4 text-sm text-gray-600">Add at least one dataset to compute Weibull outputs.</p>;
   }
+
+  const anyBounds = datasets.some((dataset) => dataset.fit?.bounds);
+  const anyApproximateBounds = datasets.some((dataset) => dataset.fit?.bounds?.approximate);
 
   return (
     <div className="space-y-4">
@@ -59,43 +82,41 @@ export default function ResultsTable({ datasets, unitsLabel }: ResultsTableProps
                 </span>
               </div>
 
+              <p className="mb-3 text-sm text-gray-800">{interpretFit(dataset.fit, unitsLabel)}</p>
+
               <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-3">
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">beta</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.beta)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">eta ({unitsLabel})</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.eta)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">B1 ({unitsLabel})</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.b1)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">B10 ({unitsLabel})</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.b10)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">B50 ({unitsLabel})</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.b50)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">B63.2 = eta ({unitsLabel})</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.b632)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">MTTF ({unitsLabel})</p>
-                  <p className="font-semibold">{formatMetric(dataset.fit.mttf)}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">R(t mission)</p>
-                  <p className="font-semibold">{dataset.fit.rMission !== undefined ? `${(dataset.fit.rMission * 100).toFixed(3)}%` : "N/A"}</p>
-                </div>
-                <div className="rounded bg-gray-50 p-2">
-                  <p className="text-xs text-gray-500">F(t mission)</p>
-                  <p className="font-semibold">{dataset.fit.fMission !== undefined ? `${(dataset.fit.fMission * 100).toFixed(3)}%` : "N/A"}</p>
-                </div>
+                <MetricCell label="beta" value={formatMetric(dataset.fit.beta)} boundsText={formatBoundsRange(dataset.fit.bounds?.beta)} />
+                <MetricCell
+                  label={`eta (${unitsLabel})`}
+                  value={formatMetric(dataset.fit.eta)}
+                  boundsText={formatBoundsRange(dataset.fit.bounds?.eta)}
+                />
+                <MetricCell
+                  label={`B1 (${unitsLabel})`}
+                  value={formatMetric(dataset.fit.b1)}
+                  boundsText={formatBoundsRange(dataset.fit.bounds?.b1)}
+                />
+                <MetricCell
+                  label={`B10 (${unitsLabel})`}
+                  value={formatMetric(dataset.fit.b10)}
+                  boundsText={formatBoundsRange(dataset.fit.bounds?.b10)}
+                />
+                <MetricCell
+                  label={`B50 (${unitsLabel})`}
+                  value={formatMetric(dataset.fit.b50)}
+                  boundsText={formatBoundsRange(dataset.fit.bounds?.b50)}
+                />
+                <MetricCell label={`B63.2 = eta (${unitsLabel})`} value={formatMetric(dataset.fit.b632)} />
+                <MetricCell label={`MTTF (${unitsLabel})`} value={formatMetric(dataset.fit.mttf)} />
+                <MetricCell
+                  label="R(t mission)"
+                  value={dataset.fit.rMission !== undefined ? `${(dataset.fit.rMission * 100).toFixed(3)}%` : "N/A"}
+                  boundsText={formatPercentBoundsRange(dataset.fit.bounds?.rMission)}
+                />
+                <MetricCell
+                  label="F(t mission)"
+                  value={dataset.fit.fMission !== undefined ? `${(dataset.fit.fMission * 100).toFixed(3)}%` : "N/A"}
+                />
               </div>
 
               {dataset.fit.r2 !== undefined ? (
@@ -115,6 +136,13 @@ export default function ResultsTable({ datasets, unitsLabel }: ResultsTableProps
           ) : null}
         </div>
       ))}
+
+      {anyBounds ? (
+        <p className="text-xs text-gray-500">
+          Fisher-matrix two-sided bounds at the selected confidence level.
+          {anyApproximateBounds ? " Bounds for regression fits are approximate (evaluated at the regression point estimate)." : ""}
+        </p>
+      ) : null}
     </div>
   );
 }
