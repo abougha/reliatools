@@ -118,5 +118,13 @@
     "description": "Estimate and update software reliability using Bayesian methods. Convert test results and failure data into predictive reliability metrics, MTTF, and release readiness insight.",
     "formulaLatex": "\\boxed{\\text{Bayesian Prediction}}",
     "whenToUse": "When incorporating test or field failures into decision-making."
+  },
+  {
+    "id": "fit-calculator",
+    "title": "FIT Calculator",
+    "route": "/tools/FIT",
+    "description": "Convert between FIT, failure rate, reliability, ppm, MTTF and fleet failures, then check whether a test plan actually supports a claimed FIT target at a given confidence.",
+    "formulaLatex": "\\lambda_{\\text{upper}}=\\dfrac{\\chi^{2}_{C,\\,2r+2}}{2\\,T_{\\text{equiv}}}",
+    "whenToUse": "When a supplier or team cites a FIT number and you need to know what it means over the real mission and whether the test evidence backs it."
   }
 ]
