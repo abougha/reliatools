@@ -61,6 +61,25 @@ const CONVERTER_FIELDS: { key: KnownField; label: string; unit: string }[] = [
   { key: "mttf", label: "MTTF or MTBF", unit: "hours" },
 ];
 
+// Computed value to show in the disabled (non-selected) fields, once a result exists.
+function converterFieldDisplayValue(key: KnownField, res: ConverterResult | null): string {
+  if (!res) return "";
+  switch (key) {
+    case "fit":
+      return fmt(res.fit);
+    case "lambda":
+      return fmt(res.lambda);
+    case "reliability":
+      return isFinite(res.reliability) ? (res.reliability * 100).toPrecision(6) : "—";
+    case "ppm":
+      return fmt(res.ppm);
+    case "mttf":
+      return fmt(res.mttf);
+    default:
+      return "";
+  }
+}
+
 function ConverterModule() {
   const [known, setKnown] = useState<KnownField>(CONVERTER_DEFAULTS.known);
   const [value, setValue] = useState(CONVERTER_DEFAULTS.value);
@@ -180,11 +199,11 @@ function ConverterModule() {
               />
               {f.label} <span className="text-gray-400">({f.unit})</span>
               <input
-                type="number"
+                type={known === f.key ? "number" : "text"}
                 disabled={known !== f.key}
-                value={known === f.key ? value : ""}
+                value={known === f.key ? value : converterFieldDisplayValue(f.key, res)}
                 onChange={(e) => setValue(e.target.value)}
-                className={`mt-1 w-full rounded border p-2 disabled:bg-gray-100 ${
+                className={`mt-1 w-full rounded border p-2 disabled:bg-gray-100 disabled:text-gray-600 ${
                   known === f.key && fieldErrors.value ? "border-red-500" : ""
                 }`}
               />
