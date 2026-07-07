@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -33,6 +35,13 @@ function fmt(n: number, sig = 4): string {
   return Number(n.toPrecision(sig)).toLocaleString();
 }
 
+function fmtFleetFailures(x: number): string {
+  if (!isFinite(x)) return "—";
+  const rounded = Math.round(x);
+  const isWhole = Math.abs(x - rounded) < 1e-6;
+  return `${isWhole ? "" : "≈ "}${fmt(rounded)}`;
+}
+
 function downloadCsv(filename: string, rows: [string, string][]) {
   const csv = rows.map(([k, v]) => `"${k}","${v}"`).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -44,6 +53,15 @@ function downloadCsv(filename: string, rows: [string, string][]) {
   URL.revokeObjectURL(url);
 }
 
+function useDebouncedValue<T>(value: T, delay = 150): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
 // ---------- Module 1: FIT / Reliability Converter ----------
 
 const CONVERTER_DEFAULTS = {
@@ -53,31 +71,49 @@ const CONVERTER_DEFAULTS = {
   fleetSize: "100000",
 };
 
-const CONVERTER_FIELDS: { key: KnownField; label: string; unit: string }[] = [
-  { key: "fit", label: "FIT rate", unit: "failures / 1e9 h" },
-  { key: "lambda", label: "Failure rate λ", unit: "per hour" },
-  { key: "reliability", label: "Reliability over mission", unit: "%" },
-  { key: "ppm", label: "Failure probability over mission", unit: "ppm" },
-  { key: "mttf", label: "MTTF or MTBF", unit: "hours" },
+const CONVERTER_FIELDS: { key: KnownField; pill: string; label: string; unit: string }[] = [
+  { key: "fit", pill: "FIT rate", label: "FIT rate", unit: "failures / 1e9 h" },
+  { key: "lambda", pill: "λ", label: "Failure rate λ", unit: "per hour" },
+  { key: "reliability", pill: "Reliability %", label: "Reliability over mission", unit: "%" },
+  { key: "ppm", pill: "ppm", label: "Failure probability over mission", unit: "ppm" },
+  { key: "mttf", pill: "MTTF", label: "MTTF or MTBF", unit: "hours" },
 ];
 
-// Computed value to show in the disabled (non-selected) fields, once a result exists.
-function converterFieldDisplayValue(key: KnownField, res: ConverterResult | null): string {
-  if (!res) return "";
+// Raw (non-locale-formatted) numeric value for a field, used to seed the editable
+// input when the user switches which metric is the driver.
+function rawSeed(key: KnownField, res: ConverterResult): number {
   switch (key) {
     case "fit":
-      return fmt(res.fit);
+      return res.fit;
     case "lambda":
-      return fmt(res.lambda);
+      return res.lambda;
     case "reliability":
-      return isFinite(res.reliability) ? (res.reliability * 100).toPrecision(6) : "—";
+      return res.reliability * 100;
     case "ppm":
-      return fmt(res.ppm);
+      return res.ppm;
     case "mttf":
-      return fmt(res.mttf);
-    default:
-      return "";
+      return res.mttf;
   }
+}
+
+function seedString(n: number): string {
+  if (!isFinite(n)) return "";
+  if (n === 0) return "0";
+  const abs = Math.abs(n);
+  if (abs >= 1e6 || abs < 1e-3) return n.toExponential(4);
+  return String(Number(n.toPrecision(6)));
+}
+
+function Tile({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <div className="rounded-[10px] border border-[#efeee9] px-3 py-2.5">
+      <div className="mb-1 text-[10.5px] text-[#9a9ea4]">{label}</div>
+      <div className="font-mono text-[15px] font-semibold text-[#1b1c1e]">
+        {value}
+        {unit ? <span className="ml-1 text-[11px] font-normal text-[#9a9ea4]">{unit}</span> : null}
+      </div>
+    </div>
+  );
 }
 
 function ConverterModule() {
@@ -85,10 +121,6 @@ function ConverterModule() {
   const [value, setValue] = useState(CONVERTER_DEFAULTS.value);
   const [missionHours, setMissionHours] = useState(CONVERTER_DEFAULTS.missionHours);
   const [fleetSize, setFleetSize] = useState(CONVERTER_DEFAULTS.fleetSize);
-
-  // Calculated results only update when the user presses Calculate; this snapshot
-  // holds the inputs that produced the currently-displayed results.
-  const [submitted, setSubmitted] = useState(CONVERTER_DEFAULTS);
 
   const t = Number(missionHours);
   const n = Number(fleetSize);
@@ -112,199 +144,255 @@ function ConverterModule() {
     return errors;
   }, [t, n, parsedValue, known]);
 
-  const hasErrors = Object.keys(fieldErrors).length > 0;
+  // Live recompute, debounced ~150ms so fast typing doesn't thrash the chart.
+  const debouncedValue = useDebouncedValue(value);
+  const debouncedMissionHours = useDebouncedValue(missionHours);
+  const debouncedFleetSize = useDebouncedValue(fleetSize);
 
-  const handleCalculate = () => {
-    if (hasErrors) return;
-    setSubmitted({ known, value, missionHours, fleetSize });
-  };
-
-  const submittedParsed = useMemo(() => {
-    const subT = Number(submitted.missionHours);
-    const subN = Number(submitted.fleetSize);
-    const raw = Number(submitted.value);
-    const subValue = submitted.known === "reliability" ? raw / 100 : raw;
+  const computed = useMemo(() => {
+    const subT = Number(debouncedMissionHours);
+    const subN = Number(debouncedFleetSize);
+    const raw = Number(debouncedValue);
+    const subValue = known === "reliability" ? raw / 100 : raw;
     return { subT, subN, subValue };
-  }, [submitted]);
+  }, [debouncedValue, debouncedMissionHours, debouncedFleetSize, known]);
 
   const res: ConverterResult | null = useMemo(() => {
-    const { subT, subN, subValue } = submittedParsed;
+    const { subT, subN, subValue } = computed;
     if (!Number.isFinite(subT) || subT <= 0 || !Number.isFinite(subN) || subN < 1 || !Number.isFinite(subValue) || subValue < 0) {
       return null;
     }
-    return convert({ known: submitted.known, value: subValue, missionHours: subT, fleetSize: subN });
-  }, [submitted, submittedParsed]);
+    return convert({ known, value: subValue, missionHours: subT, fleetSize: subN });
+  }, [computed, known]);
+
+  const handleDriverChange = (key: KnownField) => {
+    if (key === known) return;
+    if (res) setValue(seedString(rawSeed(key, res)));
+    setKnown(key);
+  };
 
   const resetInputs = () => {
     setKnown(CONVERTER_DEFAULTS.known);
     setValue(CONVERTER_DEFAULTS.value);
     setMissionHours(CONVERTER_DEFAULTS.missionHours);
     setFleetSize(CONVERTER_DEFAULTS.fleetSize);
-    setSubmitted(CONVERTER_DEFAULTS);
   };
 
   const chartData = useMemo(() => {
     if (!res || !isFinite(res.lambda)) return [];
     const pts: { t: number; R: number }[] = [];
-    const tMax = submittedParsed.subT * 1.5;
+    const tMax = computed.subT * 1.5;
     for (let i = 0; i <= 60; i++) {
       const tt = (tMax * i) / 60;
       pts.push({ t: tt, R: Math.exp(-res.lambda * tt) });
     }
     return pts;
-  }, [res, submittedParsed]);
+  }, [res, computed]);
+
+  const activeField = CONVERTER_FIELDS.find((f) => f.key === known)!;
+
+  const handleDownload = () => {
+    if (!res) return;
+    downloadCsv("fit-reliability.csv", [
+      ["Mission hours", String(computed.subT)],
+      ["Sample size or Fleet size", String(computed.subN)],
+      ["FIT", fmt(res.fit)],
+      ["Lambda (per h)", fmt(res.lambda)],
+      ["MTTF or MTBF (h)", fmt(res.mttf)],
+      ["Reliability", res.reliability.toPrecision(8)],
+      ["Failure prob ppm", fmt(res.ppm)],
+      ["Expected fleet failures", fmt(res.expectedFleetFailures)],
+      ["Reliability nines", isFinite(res.nines) ? res.nines.toFixed(2) : "inf"],
+    ]);
+  };
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">FIT / Reliability Converter</h2>
-        <button
-          type="button"
-          onClick={resetInputs}
-          className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          Reset
-        </button>
-      </div>
-
-      <div className="mb-6 rounded border bg-gray-50 p-4">
-        <BlockMath math={"R(t)=e^{-\\lambda t},\\quad \\text{FIT}=\\lambda\\times 10^{9},\\quad \\text{MTTF}=\\tfrac{1}{\\lambda}"} />
-        <ul className="mt-2 space-y-1 text-sm text-gray-700">
-          <li>
-            <strong>&lambda;</strong> = constant failure rate (per hour)
-          </li>
-          <li>
-            <strong>t</strong> = mission hours, <strong>n</strong> = sample size or fleet size
-          </li>
-          <li>
-            <strong>FIT</strong> = failures per 1e9 device-hours
-          </li>
-        </ul>
-      </div>
-
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-800">Enter one known value</p>
-          {CONVERTER_FIELDS.map((f) => (
-            <label
-              key={f.key}
-              className={`block text-sm ${known === f.key ? "rounded border-l-4 border-yellow-400 bg-yellow-50 p-2" : ""}`}
-            >
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-[320px_1fr] md:items-stretch">
+        {/* LEFT: driver input + mission context */}
+        <div>
+          <div className="mb-4 rounded-[10px] border border-[#e6e4df] p-3.5">
+            <div className="mb-2.5 flex items-center justify-between">
+              <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wide text-[#71757c]">
+                I know my…
+              </span>
+              <button
+                type="button"
+                onClick={resetInputs}
+                className="text-[11px] text-[#9a9ea4] hover:text-[#6a6e74]"
+              >
+                Reset
+              </button>
+            </div>
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {CONVERTER_FIELDS.map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => handleDriverChange(f.key)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    known === f.key
+                      ? "bg-[#0e9c8b] text-white"
+                      : "bg-[#f3f2ef] text-[#6a6e74] hover:bg-[#e9e7e2]"
+                  }`}
+                >
+                  {f.pill}
+                </button>
+              ))}
+            </div>
+            <div className="rounded-[9px] border-2 border-[#0e9c8b] bg-[#f2fbf9] px-3.5 py-2.5">
+              <label className="mb-0.5 block text-[10.5px] font-semibold text-[#0e9c8b]">
+                {activeField.label} ({activeField.unit})
+              </label>
               <input
-                type="radio"
-                name="known"
-                checked={known === f.key}
-                onChange={() => setKnown(f.key)}
-                className="mr-2"
-              />
-              {f.label} <span className="text-gray-400">({f.unit})</span>
-              <input
-                type={known === f.key ? "number" : "text"}
-                disabled={known !== f.key}
-                value={known === f.key ? value : converterFieldDisplayValue(f.key, res)}
+                type="number"
+                value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className={`mt-1 w-full rounded border p-2 disabled:bg-gray-100 disabled:text-gray-600 ${
-                  known === f.key && fieldErrors.value ? "border-red-500" : ""
-                }`}
+                className="w-full bg-transparent font-mono text-xl font-semibold text-[#0b6a60] outline-none"
               />
-            </label>
-          ))}
-          {fieldErrors.value ? <p className="text-xs text-red-700">{fieldErrors.value}</p> : null}
-        </div>
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-800">Mission context</p>
-          <label className="block text-sm text-gray-700">
-            Mission hours (t)
-            <input
-              type="number"
-              value={missionHours}
-              onChange={(e) => setMissionHours(e.target.value)}
-              className={`mt-1 w-full rounded border p-2 ${fieldErrors.t ? "border-red-500" : ""}`}
-            />
-            {fieldErrors.t ? <p className="mt-1 text-xs text-red-700">{fieldErrors.t}</p> : null}
-          </label>
-          <label className="block text-sm text-gray-700">
-            Sample size or Fleet size (n)
-            <input
-              type="number"
-              value={fleetSize}
-              onChange={(e) => setFleetSize(e.target.value)}
-              className={`mt-1 w-full rounded border p-2 ${fieldErrors.n ? "border-red-500" : ""}`}
-            />
-            {fieldErrors.n ? <p className="mt-1 text-xs text-red-700">{fieldErrors.n}</p> : null}
-          </label>
-          <button
-            type="button"
-            onClick={handleCalculate}
-            disabled={hasErrors}
-            className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            Calculate
-          </button>
-        </div>
-      </div>
-
-      {res && (
-        <>
-          <div className="rounded border-l-4 border-blue-500 bg-blue-50 p-4 text-blue-800">
-            <p className="text-lg font-semibold">
-              Reliability over mission: {(res.reliability * 100).toPrecision(6)}%
-              {isFinite(res.nines) ? ` (${res.nines.toFixed(1)} nines)` : ""}
-            </p>
-            <p className="mt-1 text-sm">Failure probability: {fmt(res.ppm)} ppm</p>
-            <p className="mt-1 text-sm">Expected fleet failures: {fmt(res.expectedFleetFailures)}</p>
-            <p className="mt-1 text-sm">
-              Failure rate &lambda;: {fmt(res.lambda)} /h &mdash; FIT: {fmt(res.fit)} &mdash; MTTF or MTBF: {fmt(res.mttf)} h
-            </p>
+            </div>
+            {fieldErrors.value ? <p className="mt-2 text-xs text-red-700">{fieldErrors.value}</p> : null}
           </div>
 
-          <div className="mt-4 rounded border-l-4 border-gray-400 bg-gray-50 p-3 text-sm text-gray-700">
-            At {fmt(res.fit)} FIT over {fmt(submittedParsed.subT)} h, a fleet of {fmt(submittedParsed.subN)} should see about{" "}
+          <div className="mb-2 font-mono text-[10.5px] font-semibold uppercase tracking-wide text-[#71757c]">
+            Mission context
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <label className="block">
+              <span className="mb-1 block text-[10.5px] text-[#9a9ea4]">Mission hours (t)</span>
+              <input
+                type="number"
+                value={missionHours}
+                onChange={(e) => setMissionHours(e.target.value)}
+                className={`w-full rounded-[8px] border px-2.5 py-2 font-mono text-[13px] ${
+                  fieldErrors.t ? "border-red-500" : "border-[#dcdad5]"
+                }`}
+              />
+              {fieldErrors.t ? <p className="mt-1 text-[11px] text-red-700">{fieldErrors.t}</p> : null}
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10.5px] text-[#9a9ea4]">Fleet size (n)</span>
+              <input
+                type="number"
+                value={fleetSize}
+                onChange={(e) => setFleetSize(e.target.value)}
+                className={`w-full rounded-[8px] border px-2.5 py-2 font-mono text-[13px] ${
+                  fieldErrors.n ? "border-red-500" : "border-[#dcdad5]"
+                }`}
+              />
+              {fieldErrors.n ? <p className="mt-1 text-[11px] text-red-700">{fieldErrors.n}</p> : null}
+            </label>
+          </div>
+        </div>
+
+        {/* RIGHT: dark result panel */}
+        <div className="flex flex-col rounded-xl bg-[#1b1c1e] px-5 pb-4 pt-5 text-white">
+          <div className="mb-1 flex items-baseline justify-between gap-3">
+            <div>
+              <div className="mb-1 font-mono text-[10px] uppercase tracking-wider text-[#7f8489]">
+                Reliability over {Number.isFinite(computed.subT) ? fmt(computed.subT) : "—"} h
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-mono text-4xl font-semibold tracking-tight">
+                  {res ? (res.reliability * 100).toFixed(4) : "—"}
+                </span>
+                <span className="text-lg text-[#8fd7cd]">%</span>
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-[12.5px] font-semibold text-[#56c9ba]">
+              {res && isFinite(res.nines) ? `${res.nines.toFixed(1)} nines` : ""}
+            </span>
+          </div>
+
+          <div className="mt-2 h-52 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
+                <CartesianGrid stroke="#2c2e31" vertical={false} />
+                <XAxis
+                  dataKey="t"
+                  tick={{ fill: "#7f8489", fontSize: 10 }}
+                  tickFormatter={(v) => fmt(v)}
+                  stroke="#3a3d40"
+                  label={{ value: "Time (h) →", position: "insideBottom", offset: -4, fill: "#7f8489", fontSize: 10 }}
+                />
+                <YAxis
+                  domain={[0, 1]}
+                  tick={{ fill: "#7f8489", fontSize: 10 }}
+                  tickFormatter={(v) => v.toFixed(1)}
+                  stroke="#3a3d40"
+                  width={28}
+                />
+                <RechartTooltip
+                  contentStyle={{ background: "#232527", border: "1px solid #2c2e31", fontSize: 12 }}
+                  labelStyle={{ color: "#7f8489" }}
+                  formatter={(v: number) => v.toFixed(6)}
+                  labelFormatter={(l) => `t = ${fmt(Number(l))} h`}
+                />
+                <Area type="monotone" dataKey="R" stroke="#56c9ba" strokeWidth={2.5} fill="#56c9ba" fillOpacity={0.12} />
+                {res ? <ReferenceLine x={computed.subT} stroke="#7f8489" strokeDasharray="3 3" /> : null}
+                {res ? <ReferenceDot x={computed.subT} y={res.reliability} r={4} fill="#56c9ba" stroke="none" /> : null}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between font-mono text-[10.5px] text-[#7f8489]">
+            <span>R(t) mission profile</span>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={!res}
+              className="font-semibold text-[#56c9ba] hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Download CSV ↗
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Converted values */}
+      <div className="mt-5">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wide text-[#71757c]">
+            Converted values
+          </span>
+          <span className="text-[10px] text-[#b7bbc0]">read-only</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <Tile label="Failure probability" value={res ? fmt(res.ppm) : "—"} unit="ppm" />
+          <Tile label="Expected fleet failures" value={res ? fmtFleetFailures(res.expectedFleetFailures) : "—"} />
+          <Tile label="Failure rate λ" value={res ? fmt(res.lambda) : "—"} unit="/h" />
+          <Tile label="MTTF or MTBF" value={res ? fmt(res.mttf) : "—"} unit="h" />
+        </div>
+        {res ? (
+          <p className="mt-3 text-[12.5px] text-[#6a6e74]">
+            At {fmt(res.fit)} FIT over {fmt(computed.subT)} h, a fleet of {fmt(computed.subN)} should see about{" "}
             <strong>{fmt(res.expectedFleetFailures)}</strong> failure(s)
             {isFinite(res.nines) ? ` — ${res.nines.toFixed(1)} nines of reliability` : ""}. High reliability is not
             zero risk.
-          </div>
+          </p>
+        ) : null}
+      </div>
 
-          {chartData.length > 0 && (
-            <div className="mt-6 h-80 rounded border bg-white p-4 shadow">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="t" tickFormatter={(v) => fmt(v)} label={{ value: "Time (h)", position: "insideBottom", offset: -5 }} />
-                  <YAxis
-                    domain={[0, 1]}
-                    tickFormatter={(v) => v.toFixed(3)}
-                    label={{ value: "Reliability R(t)", angle: -90, position: "insideLeft" }}
-                  />
-                  <RechartTooltip formatter={(v: number) => v.toFixed(6)} labelFormatter={(l) => `t = ${fmt(Number(l))} h`} />
-                  <Line type="monotone" dataKey="R" stroke="#2563EB" strokeWidth={2} dot={false} />
-                  <ReferenceLine x={submittedParsed.subT} stroke="black" strokeDasharray="3 3" />
-                  <ReferenceDot x={submittedParsed.subT} y={res.reliability} r={5} fill="black" stroke="none" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          <button
-            onClick={() =>
-              downloadCsv("fit-reliability.csv", [
-                ["Mission hours", String(submittedParsed.subT)],
-                ["Sample size or Fleet size", String(submittedParsed.subN)],
-                ["FIT", fmt(res.fit)],
-                ["Lambda (per h)", fmt(res.lambda)],
-                ["MTTF or MTBF (h)", fmt(res.mttf)],
-                ["Reliability", res.reliability.toPrecision(8)],
-                ["Failure prob ppm", fmt(res.ppm)],
-                ["Expected fleet failures", fmt(res.expectedFleetFailures)],
-                ["Reliability nines", isFinite(res.nines) ? res.nines.toFixed(2) : "inf"],
-              ])
-            }
-            className="mt-4 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-          >
-            Download CSV
-          </button>
-        </>
-      )}
+      {/* Formula & assumptions, collapsed by default */}
+      <details className="mt-5 text-[11.5px] text-[#9a9ea4]">
+        <summary className="cursor-pointer select-none font-medium hover:text-[#6a6e74]">
+          Formula &amp; assumptions
+        </summary>
+        <div className="mt-3 rounded border bg-gray-50 p-4 text-sm text-gray-700">
+          <BlockMath math={"R(t)=e^{-\\lambda t},\\quad \\text{FIT}=\\lambda\\times 10^{9},\\quad \\text{MTTF}=\\tfrac{1}{\\lambda}"} />
+          <ul className="mt-2 space-y-1">
+            <li>
+              <strong>&lambda;</strong> = constant failure rate (per hour)
+            </li>
+            <li>
+              <strong>t</strong> = mission hours, <strong>n</strong> = sample size or fleet size
+            </li>
+            <li>
+              <strong>FIT</strong> = failures per 1e9 device-hours
+            </li>
+          </ul>
+        </div>
+      </details>
     </div>
   );
 }
@@ -510,38 +598,40 @@ function EvidenceModule() {
 
 // ---------- Page ----------
 
-const TABS = [
-  { id: "converter", label: "FIT / Reliability Converter" },
-  { id: "evidence", label: "Test Evidence Reality Check" },
+const STEPS = [
+  { id: "converter", label: "1 · Convert" },
+  { id: "evidence", label: "2 · Check test evidence →" },
 ] as const;
 
 export default function FitCalculatorPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("converter");
+  const [tab, setTab] = useState<(typeof STEPS)[number]["id"]>("converter");
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
+    <div className="mx-auto max-w-4xl p-6">
       <h1 className="text-3xl font-bold">FIT Calculator</h1>
       <p className="mt-2 text-gray-600">
         A FIT number only means something when tied to mission life, fleet size, confidence, acceleration, and test
         evidence. Convert between reliability metrics, then check whether a test plan actually supports the claim.
       </p>
 
-      <div className="mt-6 flex gap-2 border-b border-gray-200">
-        {TABS.map((tt) => (
+      <div className="mt-6 inline-flex rounded-lg bg-[#f3f2ef] p-1 text-[13px] font-semibold">
+        {STEPS.map((s) => (
           <button
-            key={tt.id}
+            key={s.id}
             type="button"
-            onClick={() => setTab(tt.id)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
-              tab === tt.id ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            onClick={() => setTab(s.id)}
+            className={`rounded-md px-3.5 py-1.5 transition ${
+              tab === s.id ? "bg-white text-[#1b1c1e] shadow-sm" : "text-[#9a9ea4] hover:text-[#6a6e74]"
             }`}
           >
-            {tt.label}
+            {s.label}
           </button>
         ))}
       </div>
 
-      <div className="mt-6">{tab === "converter" ? <ConverterModule /> : <EvidenceModule />}</div>
+      <div className="mt-5 rounded-xl border border-[#e6e4df] bg-white p-6 shadow-sm">
+        {tab === "converter" ? <ConverterModule /> : <EvidenceModule />}
+      </div>
 
       <ContactCTA variant="tool" />
 
