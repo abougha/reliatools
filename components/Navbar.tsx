@@ -59,15 +59,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Shift main content so it doesn't sit under the fixed sidebar (desktop) */}
-      <style jsx global>{`
-        @media (min-width: 768px) {
-          body {
-            padding-left: ${SIDEBAR_WIDTH}px;
-          }
-        }
-      `}</style>
-
       {/* Sticky header with AdSense (unchanged) */}
       <header className="w-full bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-1">

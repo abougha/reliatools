@@ -119,3 +119,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Offsets page content past the fixed desktop sidebar in Navbar.tsx (SIDEBAR_WIDTH).
+   Kept as a real stylesheet rule (not a client-injected <style jsx global>) so it's
+   present in the server-rendered HTML and doesn't depend on hydration completing. */
+@media (min-width: 768px) {
+  body {
+    padding-left: 200px;
+  }
+}

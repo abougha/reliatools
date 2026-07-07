@@ -20,10 +20,10 @@ export default function DatasetEditor({ data, onChange }: DatasetEditorProps) {
   const { ignoredCount } = editableRowsToDataPoints(rows);
 
   return (
-    <div className="mt-3 rounded border bg-gray-50 p-3">
+    <div className="mt-3 rounded-lg border border-[#eef1f4] bg-[#f8fafc] p-3">
       <DataPointsTable rows={rows} onChange={updateRows} />
       {ignoredCount > 0 ? (
-        <p className="mt-2 text-xs text-gray-600">
+        <p className="mt-2 text-xs text-[#8a929c]">
           {ignoredCount} empty {ignoredCount === 1 ? "row" : "rows"} ignored.
         </p>
       ) : null}

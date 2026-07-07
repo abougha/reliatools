@@ -70,7 +70,7 @@ export default function DataPointsTable({ rows, onChange }: DataPointsTableProps
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-gray-500">
+            <tr className="text-left text-xs text-[#8a929c]">
               <th className="py-1 pr-2 font-medium">Time</th>
               <th className="py-1 pr-2 font-medium">Status</th>
               <th className="py-1 font-medium" />
@@ -88,14 +88,15 @@ export default function DataPointsTable({ rows, onChange }: DataPointsTableProps
                     min={0}
                     step="any"
                     placeholder="e.g. 120"
-                    className="w-full rounded border p-1.5"
+                    className="w-full rounded-lg border border-[#d5dae1] p-1.5 text-[#1a2027]"
+                    style={{ fontFamily: "var(--font-weibull-mono)" }}
                   />
                 </td>
                 <td className="py-1 pr-2">
                   <select
                     value={row.status}
                     onChange={(event) => updateRow(row.id, { status: event.target.value as Status })}
-                    className="w-full rounded border p-1.5"
+                    className="w-full rounded-lg border border-[#d5dae1] p-1.5 text-[#1a2027]"
                   >
                     <option value="FAIL">Fail</option>
                     <option value="SUSP">Suspended</option>
@@ -106,7 +107,7 @@ export default function DataPointsTable({ rows, onChange }: DataPointsTableProps
                     type="button"
                     onClick={() => removeRow(row.id)}
                     aria-label="Delete row"
-                    className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                    className="rounded-lg border border-[#f0c9c9] px-2 py-1 text-xs text-[#c0362c] hover:bg-[#fff5f5]"
                   >
                     &times;
                   </button>
@@ -116,7 +117,11 @@ export default function DataPointsTable({ rows, onChange }: DataPointsTableProps
           </tbody>
         </table>
       </div>
-      <button type="button" onClick={addRow} className="mt-2 rounded border px-3 py-1.5 text-xs hover:bg-gray-50">
+      <button
+        type="button"
+        onClick={addRow}
+        className="mt-2 rounded-lg border border-[#d5dae1] px-3 py-1.5 text-xs text-[#5b6470] hover:bg-[#f8fafc]"
+      >
         Add row
       </button>
     </div>

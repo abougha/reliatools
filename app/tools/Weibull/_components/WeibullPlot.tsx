@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import {
   CartesianGrid,
   ComposedChart,
-  Legend,
   Line,
   ReferenceDot,
   ReferenceLine,
@@ -256,7 +255,8 @@ export default function WeibullPlot({
   }, [rowsByDataset, showBLifeLines, showSuspensions, showConfidenceBand, tMission]);
 
   return (
-    <div className="h-[520px] rounded border bg-white p-4 shadow">
+    <div className="rounded-xl border border-[#e4e7ec] bg-white p-4">
+      <div className="h-[460px]">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart>
           <CartesianGrid strokeDasharray="3 3" />
@@ -277,7 +277,6 @@ export default function WeibullPlot({
             label={{ value: yAxisMode === "RELIABILITY" ? "Reliability R(t)" : "Unreliability F(t)", angle: -90, position: "insideLeft" }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
 
           {rowsByDataset.map((group) => (
             <Line
@@ -394,6 +393,24 @@ export default function WeibullPlot({
             : null}
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
+
+      {rowsByDataset.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#eef1f4] pt-3">
+          {rowsByDataset.map((group) => (
+            <div key={`legend-${group.dataset.id}`} className="flex items-center gap-3 text-xs text-[#5b6470]">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-[2px] w-4" style={{ backgroundColor: group.dataset.colorKey }} />
+                {group.dataset.name} &middot; fit
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: group.dataset.colorKey }} />
+                failures
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
