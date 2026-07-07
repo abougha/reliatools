@@ -58,7 +58,7 @@ const CONVERTER_FIELDS: { key: KnownField; label: string; unit: string }[] = [
   { key: "lambda", label: "Failure rate λ", unit: "per hour" },
   { key: "reliability", label: "Reliability over mission", unit: "%" },
   { key: "ppm", label: "Failure probability over mission", unit: "ppm" },
-  { key: "mttf", label: "MTTF", unit: "hours" },
+  { key: "mttf", label: "MTTF or MTBF", unit: "hours" },
 ];
 
 function ConverterModule() {
@@ -67,8 +67,12 @@ function ConverterModule() {
   const [missionHours, setMissionHours] = useState(CONVERTER_DEFAULTS.missionHours);
   const [fleetSize, setFleetSize] = useState(CONVERTER_DEFAULTS.fleetSize);
 
+  // Calculated results only update when the user presses Calculate; this snapshot
+  // holds the inputs that produced the currently-displayed results.
+  const [submitted, setSubmitted] = useState(CONVERTER_DEFAULTS);
+
   const t = Number(missionHours);
-  const N = Number(fleetSize);
+  const n = Number(fleetSize);
 
   const parsedValue = useMemo(() => {
     const v = Number(value);
@@ -76,9 +80,9 @@ function ConverterModule() {
   }, [value, known]);
 
   const fieldErrors = useMemo(() => {
-    const errors: Partial<Record<"t" | "N" | "value", string>> = {};
+    const errors: Partial<Record<"t" | "n" | "value", string>> = {};
     if (!Number.isFinite(t) || t <= 0) errors.t = "Mission hours must be > 0.";
-    if (!Number.isFinite(N) || N < 1) errors.N = "Fleet size must be ≥ 1.";
+    if (!Number.isFinite(n) || n < 1) errors.n = "Sample size or Fleet size must be ≥ 1.";
     if (!Number.isFinite(parsedValue) || parsedValue < 0) {
       errors.value = "Enter a valid non-negative value.";
     } else if (known === "reliability" && (parsedValue <= 0 || parsedValue > 1)) {
@@ -87,31 +91,49 @@ function ConverterModule() {
       errors.value = "ppm must be < 1,000,000.";
     }
     return errors;
-  }, [t, N, parsedValue, known]);
+  }, [t, n, parsedValue, known]);
 
   const hasErrors = Object.keys(fieldErrors).length > 0;
 
-  const res: ConverterResult | null = !hasErrors
-    ? convert({ known, value: parsedValue, missionHours: t, fleetSize: N })
-    : null;
+  const handleCalculate = () => {
+    if (hasErrors) return;
+    setSubmitted({ known, value, missionHours, fleetSize });
+  };
+
+  const submittedParsed = useMemo(() => {
+    const subT = Number(submitted.missionHours);
+    const subN = Number(submitted.fleetSize);
+    const raw = Number(submitted.value);
+    const subValue = submitted.known === "reliability" ? raw / 100 : raw;
+    return { subT, subN, subValue };
+  }, [submitted]);
+
+  const res: ConverterResult | null = useMemo(() => {
+    const { subT, subN, subValue } = submittedParsed;
+    if (!Number.isFinite(subT) || subT <= 0 || !Number.isFinite(subN) || subN < 1 || !Number.isFinite(subValue) || subValue < 0) {
+      return null;
+    }
+    return convert({ known: submitted.known, value: subValue, missionHours: subT, fleetSize: subN });
+  }, [submitted, submittedParsed]);
 
   const resetInputs = () => {
     setKnown(CONVERTER_DEFAULTS.known);
     setValue(CONVERTER_DEFAULTS.value);
     setMissionHours(CONVERTER_DEFAULTS.missionHours);
     setFleetSize(CONVERTER_DEFAULTS.fleetSize);
+    setSubmitted(CONVERTER_DEFAULTS);
   };
 
   const chartData = useMemo(() => {
     if (!res || !isFinite(res.lambda)) return [];
     const pts: { t: number; R: number }[] = [];
-    const tMax = t * 1.5;
+    const tMax = submittedParsed.subT * 1.5;
     for (let i = 0; i <= 60; i++) {
       const tt = (tMax * i) / 60;
       pts.push({ t: tt, R: Math.exp(-res.lambda * tt) });
     }
     return pts;
-  }, [res, t]);
+  }, [res, submittedParsed]);
 
   return (
     <div>
@@ -133,7 +155,7 @@ function ConverterModule() {
             <strong>&lambda;</strong> = constant failure rate (per hour)
           </li>
           <li>
-            <strong>t</strong> = mission hours, <strong>N</strong> = fleet size
+            <strong>t</strong> = mission hours, <strong>n</strong> = sample size or fleet size
           </li>
           <li>
             <strong>FIT</strong> = failures per 1e9 device-hours
@@ -183,15 +205,23 @@ function ConverterModule() {
             {fieldErrors.t ? <p className="mt-1 text-xs text-red-700">{fieldErrors.t}</p> : null}
           </label>
           <label className="block text-sm text-gray-700">
-            Fleet size (N)
+            Sample size or Fleet size (n)
             <input
               type="number"
               value={fleetSize}
               onChange={(e) => setFleetSize(e.target.value)}
-              className={`mt-1 w-full rounded border p-2 ${fieldErrors.N ? "border-red-500" : ""}`}
+              className={`mt-1 w-full rounded border p-2 ${fieldErrors.n ? "border-red-500" : ""}`}
             />
-            {fieldErrors.N ? <p className="mt-1 text-xs text-red-700">{fieldErrors.N}</p> : null}
+            {fieldErrors.n ? <p className="mt-1 text-xs text-red-700">{fieldErrors.n}</p> : null}
           </label>
+          <button
+            type="button"
+            onClick={handleCalculate}
+            disabled={hasErrors}
+            className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+          >
+            Calculate
+          </button>
         </div>
       </div>
 
@@ -205,12 +235,12 @@ function ConverterModule() {
             <p className="mt-1 text-sm">Failure probability: {fmt(res.ppm)} ppm</p>
             <p className="mt-1 text-sm">Expected fleet failures: {fmt(res.expectedFleetFailures)}</p>
             <p className="mt-1 text-sm">
-              Failure rate &lambda;: {fmt(res.lambda)} /h &mdash; FIT: {fmt(res.fit)} &mdash; MTTF: {fmt(res.mttf)} h
+              Failure rate &lambda;: {fmt(res.lambda)} /h &mdash; FIT: {fmt(res.fit)} &mdash; MTTF or MTBF: {fmt(res.mttf)} h
             </p>
           </div>
 
           <div className="mt-4 rounded border-l-4 border-gray-400 bg-gray-50 p-3 text-sm text-gray-700">
-            At {fmt(res.fit)} FIT over {fmt(t)} h, a fleet of {fmt(N)} should see about{" "}
+            At {fmt(res.fit)} FIT over {fmt(submittedParsed.subT)} h, a fleet of {fmt(submittedParsed.subN)} should see about{" "}
             <strong>{fmt(res.expectedFleetFailures)}</strong> failure(s)
             {isFinite(res.nines) ? ` — ${res.nines.toFixed(1)} nines of reliability` : ""}. High reliability is not
             zero risk.
@@ -229,8 +259,8 @@ function ConverterModule() {
                   />
                   <RechartTooltip formatter={(v: number) => v.toFixed(6)} labelFormatter={(l) => `t = ${fmt(Number(l))} h`} />
                   <Line type="monotone" dataKey="R" stroke="#2563EB" strokeWidth={2} dot={false} />
-                  <ReferenceLine x={t} stroke="black" strokeDasharray="3 3" />
-                  <ReferenceDot x={t} y={res.reliability} r={5} fill="black" stroke="none" />
+                  <ReferenceLine x={submittedParsed.subT} stroke="black" strokeDasharray="3 3" />
+                  <ReferenceDot x={submittedParsed.subT} y={res.reliability} r={5} fill="black" stroke="none" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -239,11 +269,11 @@ function ConverterModule() {
           <button
             onClick={() =>
               downloadCsv("fit-reliability.csv", [
-                ["Mission hours", String(t)],
-                ["Fleet size", String(N)],
+                ["Mission hours", String(submittedParsed.subT)],
+                ["Sample size or Fleet size", String(submittedParsed.subN)],
                 ["FIT", fmt(res.fit)],
                 ["Lambda (per h)", fmt(res.lambda)],
-                ["MTTF (h)", fmt(res.mttf)],
+                ["MTTF or MTBF (h)", fmt(res.mttf)],
                 ["Reliability", res.reliability.toPrecision(8)],
                 ["Failure prob ppm", fmt(res.ppm)],
                 ["Expected fleet failures", fmt(res.expectedFleetFailures)],
