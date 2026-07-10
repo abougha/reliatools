@@ -1,5 +1,14 @@
 [
     {
+        "slug":  "fit-article",
+        "title":  "What Does 1 FIT Really Mean? Automotive Reliability, PMHF, and the Test-Evidence Problem",
+        "category":  "Article",
+        "description":  "What 1 FIT really means over a real automotive mission: mission ppm, expected fleet failures, PMHF, ASIL A–D targets, diagnostic coverage, and why ultra-low failure-rate claims require billions of device-hours of test evidence.",
+        "date":  "2026-07-09",
+        "content":  "",
+        "link":  "/resources/fit-article"
+    },
+    {
         "slug":  "mission-profile-builder",
         "title":  "Stop Guessing Environmental Loads",
         "category":  "Knowledge",

@@ -7,6 +7,7 @@ import HALTArticle from "@/app/resources/halt";
 import SoftwareBRPArticle from "@/app/resources/SoftwareBRP-article";
 import TaguchiBayesianArticle from "@/app/resources/taguchi-bayesian-article";
 import Derating from "@/app/resources/derating";
+import FitArticle from "@/app/resources/fit-article";
 import ContactCTA from "@/components/ContactCTA";
 
 
@@ -71,6 +72,7 @@ export default async function ResourceDetailPage({
   if (safeSlug === "softwarebrp-article") return <SoftwareBRPArticle />;
   if (safeSlug === "taguchi-bayesian-article") return <TaguchiBayesianArticle />;
   if (safeSlug === "derating") return <Derating />;
+  if (safeSlug === "fit-article") return <FitArticle />;
 
   // Fallback renderer for JSON-defined content
   return (
