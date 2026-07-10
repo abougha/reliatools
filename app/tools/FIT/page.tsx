@@ -79,6 +79,21 @@ const CONVERTER_FIELDS: { key: KnownField; pill: string; label: string; unit: st
   { key: "mttf", pill: "MTTF", label: "MTTF or MTBF", unit: "hours" },
 ];
 
+// Metrics shown in the read-only "Converted values" grid. Reliability is excluded
+// here because it is the hero number in the dark panel above. The active driver
+// metric (whichever the user is entering) is filtered out at render time.
+const CONVERTED_TILES: {
+  key: KnownField;
+  label: string;
+  unit?: string;
+  get: (r: ConverterResult) => string;
+}[] = [
+  { key: "fit", label: "FIT rate", get: (r) => fmt(r.fit) },
+  { key: "lambda", label: "Failure rate λ", unit: "/h", get: (r) => fmt(r.lambda) },
+  { key: "ppm", label: "Failure probability", unit: "ppm", get: (r) => fmt(r.ppm) },
+  { key: "mttf", label: "MTTF or MTBF", unit: "h", get: (r) => fmt(r.mttf) },
+];
+
 // Raw (non-locale-formatted) numeric value for a field, used to seed the editable
 // input when the user switches which metric is the driver.
 function rawSeed(key: KnownField, res: ConverterResult): number {
@@ -358,10 +373,10 @@ function ConverterModule() {
           <span className="text-[10px] text-[#b7bbc0]">read-only</span>
         </div>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <Tile label="Failure probability" value={res ? fmt(res.ppm) : "—"} unit="ppm" />
+          {CONVERTED_TILES.filter((m) => m.key !== known).map((m) => (
+            <Tile key={m.key} label={m.label} value={res ? m.get(res) : "—"} unit={m.unit} />
+          ))}
           <Tile label="Expected fleet failures" value={res ? fmtFleetFailures(res.expectedFleetFailures) : "—"} />
-          <Tile label="Failure rate λ" value={res ? fmt(res.lambda) : "—"} unit="/h" />
-          <Tile label="MTTF or MTBF" value={res ? fmt(res.mttf) : "—"} unit="h" />
         </div>
         {res ? (
           <p className="mt-3 text-[12.5px] text-[#6a6e74]">
