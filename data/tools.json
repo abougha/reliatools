@@ -126,5 +126,13 @@
     "description": "Convert between FIT, failure rate, reliability, ppm, MTTF and fleet failures, then check whether a test plan actually supports a claimed FIT target at a given confidence.",
     "formulaLatex": "\\lambda_{\\text{upper}}=\\dfrac{\\chi^{2}_{C,\\,2r+2}}{2\\,T_{\\text{equiv}}}",
     "whenToUse": "When a supplier or team cites a FIT number and you need to know what it means over the real mission and whether the test evidence backs it."
+  },
+  {
+    "id": "nudd-assessment",
+    "title": "NUDD Assessment",
+    "route": "/tools/NUDD",
+    "description": "Score what is New, Unique, Different, and Difficult for each feature or function, then focus engineering effort where uncertainty and opportunity are highest.",
+    "formulaLatex": "\\boxed{\\text{NUDD Assessment}}",
+    "whenToUse": "During concept selection, design reviews, DRBFM/change-point discussions, or DFMEA prep and test-strategy planning."
   }
 ]
