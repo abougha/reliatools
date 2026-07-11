@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import ContactCTA from "@/components/ContactCTA";
 import {
@@ -99,7 +99,7 @@ function CriticalBadge() {
   );
 }
 
-function ScoreControl({
+function ScoreSelect({
   dimension,
   value,
   onChange,
@@ -109,39 +109,21 @@ function ScoreControl({
   onChange: (v: number) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label={`${DIMENSION_LABELS[dimension]} score`} className="flex gap-1.5">
-      {[0, 1, 2, 3].map((n) => (
-        <button
-          key={n}
-          type="button"
-          role="radio"
-          aria-checked={value === n}
-          onClick={() => onChange(n)}
-          className={`h-9 w-9 rounded-md border text-sm font-semibold transition ${
-            value === n
-              ? "border-blue-600 bg-blue-600 text-white"
-              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          {n}
-        </button>
-      ))}
-    </div>
+    <select
+      aria-label={`${DIMENSION_LABELS[dimension]} score`}
+      value={value === null ? "" : String(value)}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full rounded-md border px-1.5 py-1 text-sm"
+    >
+      <option value="" disabled>
+        &ndash;
+      </option>
+      <option value="0">0</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
   );
-}
-
-function applyDisabledReason(item: NuddItem | null): string | null {
-  if (!item) return null;
-  if (!item.name.trim()) return "Add a feature or function name before applying a score.";
-  if (!isRated(item)) return "Rate all four dimensions (New, Unique, Different, Difficult) before applying.";
-  const total = itemTotal(item);
-  if (total !== null) {
-    const level = classifyLevel(total);
-    if (level !== "Low" && !item.justification.trim()) {
-      return "Medium and High items require justification before applying.";
-    }
-  }
-  return null;
 }
 
 function buildCsv(items: NuddItem[]): string {
@@ -189,17 +171,6 @@ function buildCsv(items: NuddItem[]): string {
 
 export default function NuddAssessmentPage() {
   const [items, setItems] = useState<NuddItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [snapshot, setSnapshot] = useState<NuddItem | null>(null);
-
-  const matrixRef = useRef<HTMLDivElement | null>(null);
-  const summaryRef = useRef<HTMLDivElement | null>(null);
-  const nameInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-
-  const selectedItem = useMemo(
-    () => (selectedId ? items.find((it) => it.id === selectedId) ?? null : null),
-    [items, selectedId]
-  );
 
   const summary = useMemo(() => summarize(items), [items]);
 
@@ -218,24 +189,12 @@ export default function NuddAssessmentPage() {
     );
   }
 
+  function setDimensionScore(id: string, dimension: NuddDimensionKey, value: number) {
+    updateItem(id, { [DIMENSION_FIELD[dimension]]: value } as Partial<NuddItem>);
+  }
+
   function handleAddItem() {
     setItems((prev) => [...prev, createItem()]);
-  }
-
-  function handleAssess(id: string) {
-    const item = items.find((it) => it.id === id);
-    if (!item) return;
-    setSelectedId(id);
-    setSnapshot({ ...item });
-    requestAnimationFrame(() => {
-      matrixRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
-
-  function handleEditFocus(id: string) {
-    const input = nameInputRefs.current[id];
-    input?.focus();
-    input?.select();
   }
 
   function handleDuplicate(id: string) {
@@ -260,44 +219,16 @@ export default function NuddAssessmentPage() {
   function handleDelete(id: string) {
     if (!window.confirm("Delete this feature or function? This cannot be undone.")) return;
     setItems((prev) => prev.filter((it) => it.id !== id));
-    if (selectedId === id) {
-      setSelectedId(null);
-      setSnapshot(null);
-    }
   }
 
   function handleClearAll() {
     if (items.length === 0) return;
     if (!window.confirm("Clear all features and functions? This cannot be undone.")) return;
     setItems([]);
-    setSelectedId(null);
-    setSnapshot(null);
   }
 
   function handleCalculate() {
-    summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function setDimensionScore(dimension: NuddDimensionKey, value: number) {
-    if (!selectedId) return;
-    updateItem(selectedId, { [DIMENSION_FIELD[dimension]]: value } as Partial<NuddItem>);
-  }
-
-  const applyReason = applyDisabledReason(selectedItem);
-  const applyDisabled = applyReason !== null;
-
-  function handleApplyScore() {
-    if (applyDisabled) return;
-    setSelectedId(null);
-    setSnapshot(null);
-  }
-
-  function handleCancelMatrix() {
-    if (selectedId && snapshot) {
-      setItems((prev) => prev.map((it) => (it.id === selectedId ? (snapshot as NuddItem) : it)));
-    }
-    setSelectedId(null);
-    setSnapshot(null);
+    document.getElementById("nudd-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handleDownloadCsv() {
@@ -311,11 +242,8 @@ export default function NuddAssessmentPage() {
     URL.revokeObjectURL(url);
   }
 
-  const provisionalTotal = selectedItem ? itemTotal(selectedItem) : null;
-  const provisionalLevel = provisionalTotal !== null ? classifyLevel(provisionalTotal) : null;
-
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-6xl p-6">
       <h1 className="text-3xl font-bold">NUDD Assessment</h1>
       <p className="mt-2 text-gray-600">
         Score what is New, Unique, Different, and Difficult — then focus engineering effort where
@@ -365,11 +293,16 @@ export default function NuddAssessmentPage() {
             <table className="min-w-full table-fixed border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
-                  <th className="border-b px-3 py-2 text-left w-56">Feature or Function</th>
+                  <th className="border-b px-3 py-2 text-left w-48">Feature or Function</th>
+                  {DIMENSION_KEYS.map((dim) => (
+                    <th key={dim} className="border-b px-2 py-2 text-left w-16">
+                      {DIMENSION_LABELS[dim]}
+                    </th>
+                  ))}
                   <th className="border-b px-3 py-2 text-left w-24">NUDD Score</th>
-                  <th className="border-b px-3 py-2 text-left w-48">NUDD Level</th>
+                  <th className="border-b px-3 py-2 text-left w-40">NUDD Level</th>
                   <th className="border-b px-3 py-2 text-left">Justification or Evidence</th>
-                  <th className="border-b px-3 py-2 text-left w-52 print:hidden">Actions</th>
+                  <th className="border-b px-3 py-2 text-left w-32 print:hidden">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -378,15 +311,12 @@ export default function NuddAssessmentPage() {
                   const total = itemTotal(item);
                   const level = total !== null ? classifyLevel(total) : null;
                   const critical = hasCriticalDimension(item);
-                  const active = item.id === selectedId;
+                  const needsJustification = level !== null && level !== "Low" && !item.justification.trim();
 
                   return (
-                    <tr key={item.id} className={active ? "bg-blue-50" : undefined}>
+                    <tr key={item.id}>
                       <td className="border-b px-3 py-2 align-top">
                         <input
-                          ref={(el) => {
-                            nameInputRefs.current[item.id] = el;
-                          }}
                           type="text"
                           value={item.name}
                           onChange={(e) => updateItem(item.id, { name: e.target.value })}
@@ -394,6 +324,15 @@ export default function NuddAssessmentPage() {
                           className="w-full rounded-md border px-2 py-1 text-sm"
                         />
                       </td>
+                      {DIMENSION_KEYS.map((dim) => (
+                        <td key={dim} className="border-b px-2 py-2 align-top">
+                          <ScoreSelect
+                            dimension={dim}
+                            value={item[DIMENSION_FIELD[dim]]}
+                            onChange={(v) => setDimensionScore(item.id, dim, v)}
+                          />
+                        </td>
+                      ))}
                       <td className="border-b px-3 py-2 align-top font-mono text-sm">
                         {rated ? `${total} / 12` : <span className="text-gray-400">Not assessed</span>}
                       </td>
@@ -409,25 +348,18 @@ export default function NuddAssessmentPage() {
                           onChange={(e) => updateItem(item.id, { justification: e.target.value })}
                           rows={2}
                           placeholder="Optional for Low; required for Medium/High"
-                          className="w-full rounded-md border px-2 py-1 text-xs"
+                          className={`w-full rounded-md border px-2 py-1 text-xs ${
+                            needsJustification ? "border-amber-400" : ""
+                          }`}
                         />
+                        {needsJustification ? (
+                          <p className="mt-1 text-[11px] text-amber-700">
+                            Justification required for Medium/High to count toward the summary.
+                          </p>
+                        ) : null}
                       </td>
                       <td className="border-b px-3 py-2 align-top print:hidden">
                         <div className="flex flex-wrap gap-1.5 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => handleAssess(item.id)}
-                            className="rounded border border-blue-300 bg-blue-50 px-2 py-1 font-medium text-blue-700 hover:bg-blue-100"
-                          >
-                            Assess
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleEditFocus(item.id)}
-                            className="rounded border border-gray-300 px-2 py-1 text-gray-700 hover:bg-gray-100"
-                          >
-                            Edit
-                          </button>
                           <button
                             type="button"
                             onClick={() => handleDuplicate(item.id)}
@@ -453,84 +385,30 @@ export default function NuddAssessmentPage() {
         )}
       </section>
 
-      {/* NUDD Question Matrix */}
-      {selectedItem ? (
-        <section
-          ref={matrixRef}
-          className="mt-6 rounded-xl border-2 border-blue-200 bg-blue-50/30 p-4 shadow-sm print:hidden"
-        >
-          <h2 className="text-xl font-semibold text-gray-800">NUDD Question Matrix</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Selected item: <strong>{selectedItem.name.trim() || "Untitled feature or function"}</strong>
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            Consider each question, then rate the dimension from 0 (none) to 3 (high).
-          </p>
+      {/* NUDD Question Matrix — static reference guide */}
+      <section className="mt-6 rounded-xl border bg-white p-4 shadow-sm print:hidden">
+        <h2 className="text-xl font-semibold text-gray-800">NUDD Question Matrix</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          Reference guide. Consider each question, then enter a 0&ndash;3 score for that dimension directly
+          in the table above.
+        </p>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            {DIMENSION_KEYS.map((dim) => (
-              <div key={dim} className="rounded-lg border bg-white p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <h3 className="font-semibold text-gray-800">{DIMENSION_LABELS[dim]}</h3>
-                  <ScoreControl
-                    dimension={dim}
-                    value={selectedItem[DIMENSION_FIELD[dim]]}
-                    onChange={(v) => setDimensionScore(dim, v)}
-                  />
-                </div>
-                <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600">
-                  {QUESTIONS[dim].map((q) => (
-                    <li key={q}>{q}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border bg-white p-3">
-            <span className="text-sm text-gray-600">Provisional total:</span>
-            <span className="font-mono text-lg font-semibold">
-              {provisionalTotal !== null ? `${provisionalTotal} / 12` : "— / 12"}
-            </span>
-            {provisionalLevel ? <LevelBadge level={provisionalLevel} /> : null}
-            {hasCriticalDimension(selectedItem) ? <CriticalBadge /> : null}
-          </div>
-
-          <label className="mt-4 block text-sm">
-            <span className="mb-1 block font-medium text-gray-700">Justification / Evidence</span>
-            <textarea
-              value={selectedItem.justification}
-              onChange={(e) => updateItem(selectedItem.id, { justification: e.target.value })}
-              placeholder="Explain why the item received this score and identify the available evidence or remaining gap."
-              rows={3}
-              className="w-full rounded-md border px-3 py-2 text-sm"
-            />
-          </label>
-
-          {applyReason ? <p className="mt-2 text-xs text-amber-700">{applyReason}</p> : null}
-
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              disabled={applyDisabled}
-              onClick={handleApplyScore}
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-            >
-              Apply Score
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelMatrix}
-              className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Cancel
-            </button>
-          </div>
-        </section>
-      ) : null}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {DIMENSION_KEYS.map((dim) => (
+            <div key={dim} className="rounded-lg border bg-gray-50 p-3">
+              <h3 className="mb-2 font-semibold text-gray-800">{DIMENSION_LABELS[dim]}</h3>
+              <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600">
+                {QUESTIONS[dim].map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Assessment Summary */}
-      <section ref={summaryRef} className="mt-6 rounded-xl border bg-white p-4 shadow-sm">
+      <section id="nudd-summary" className="mt-6 rounded-xl border bg-white p-4 shadow-sm">
         <h2 className="text-xl font-semibold text-gray-800">Assessment Summary</h2>
 
         {summary.completedCount === 0 ? (
@@ -623,9 +501,10 @@ export default function NuddAssessmentPage() {
         <h2 className="mb-3 text-xl font-semibold text-gray-800">How to use this</h2>
         <p className="mb-4">
           Run this assessment during concept selection, design reviews, or DRBFM/change-point discussions to
-          decide where DFMEA and test-strategy effort should concentrate. Rate each feature or function
-          against all four NUDD dimensions using the guiding questions in the matrix, then apply the score.
-          Items scored Medium or High require a documented justification or evidence gap; Low items do not.
+          decide where DFMEA and test-strategy effort should concentrate. Score each feature or function
+          against all four NUDD dimensions directly in the table, using the question matrix below it as a
+          guide. Items scored Medium or High require a documented justification or evidence gap; Low items
+          do not.
         </p>
         <p className="mb-4">
           <strong>Example:</strong>{" "}
