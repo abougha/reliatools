@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 
+const DESCRIPTION =
+  "NUDD identifies where deeper risk analysis and validation are needed. It complements — but does not replace — DFMEA, DRBFM or technical risk assessment. Free tool to score New, Unique, Different, and Difficult for each feature or function.";
+
 export const metadata: Metadata = {
   title: "NUDD Assessment — New, Unique, Different, Difficult | Reliatools",
-  description:
-    "Free NUDD assessment tool. Score what is New, Unique, Different, and Difficult for each feature or function, then focus engineering effort where uncertainty is highest.",
+  description: DESCRIPTION,
   openGraph: {
     title: "NUDD Assessment — New, Unique, Different, Difficult | Reliatools",
-    description:
-      "Free NUDD assessment tool. Score what is New, Unique, Different, and Difficult for each feature or function, then focus engineering effort where uncertainty is highest.",
+    description: DESCRIPTION,
     url: "https://www.reliatools.com/tools/NUDD",
     siteName: "Reliatools",
     type: "website",
