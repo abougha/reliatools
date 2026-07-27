@@ -49,7 +49,7 @@ const QUESTIONS: Record<NuddDimensionKey, string[]> = {
   ],
 };
 
-const TABLE_COLUMN_COUNT = 7;
+const TABLE_COLUMN_COUNT = 5;
 const NUDD_STORAGE_KEY = "reliatools.nudd.v1";
 
 function generateId(): string {
@@ -326,18 +326,18 @@ function ItemActions({
   onDelete: () => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5 text-xs">
+    <div className="inline-flex flex-nowrap items-center gap-1 whitespace-nowrap text-[10px]">
       <button
         type="button"
         onClick={onDuplicate}
-        className="rounded border border-gray-300 px-2 py-1 text-gray-700 hover:bg-gray-100"
+        className="rounded border border-gray-300 px-1.5 py-0.5 leading-4 text-gray-700 hover:bg-gray-100"
       >
         Duplicate
       </button>
       <button
         type="button"
         onClick={onDelete}
-        className="rounded border border-red-300 px-2 py-1 text-red-700 hover:bg-red-50"
+        className="rounded border border-red-300 px-1.5 py-0.5 leading-4 text-red-700 hover:bg-red-50"
       >
         Delete
       </button>
@@ -532,18 +532,20 @@ export default function NuddAssessmentPage() {
           </div>
         </div>
 
-        {/* Table — sm and up */}
-        <div className="hidden overflow-x-auto sm:block">
-          <table className="min-w-[78rem] border-separate border-spacing-0 text-sm">
+        {/* Five-column table on wide screens; cards below xl avoid horizontal scrolling. */}
+        <div className="hidden xl:block">
+          <table className="w-full min-w-[58rem] border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
-                <th className="w-[22%] min-w-64 border-b px-3 py-2 text-left">Feature or Function</th>
-                <th className="min-w-48 border-b px-3 py-2 text-left">Dimensions</th>
-                <th className="min-w-36 border-b px-3 py-2 text-left">Exposure</th>
-                <th className="min-w-28 border-b px-3 py-2 text-left">Priority</th>
-                <th className="min-w-64 border-b px-3 py-2 text-left">Suggested Response</th>
-                <th className="w-[30%] min-w-[22rem] border-b px-3 py-2 text-left">Evidence / Gap</th>
-                <th className="min-w-28 border-b px-3 py-2 text-left print:hidden">Actions</th>
+                <th className="w-[19%] min-w-48 border-b border-r border-gray-200 px-2 py-2 text-left">
+                  Feature or Function
+                </th>
+                <th className="min-w-36 border-b border-r border-gray-200 px-2 py-2 text-left">Dimensions</th>
+                <th className="min-w-24 border-b border-r border-gray-200 px-2 py-2 text-left">Exposure</th>
+                <th className="w-[25%] min-w-52 border-b border-r border-gray-200 px-2 py-2 text-left">
+                  Suggested Response
+                </th>
+                <th className="w-[34%] min-w-72 border-b px-2 py-2 text-left">Evidence / Gap</th>
               </tr>
             </thead>
             <tbody>
@@ -558,32 +560,32 @@ export default function NuddAssessmentPage() {
                   const priority = actionPriority(item);
                   return (
                     <tr key={item.id}>
-                      <td className="w-[22%] min-w-64 border-b px-3 py-2 align-top">
+                      <td className="w-[19%] min-w-48 border-b border-r border-gray-200 px-2 py-2 align-top">
                         <NameField item={item} onChange={(v) => updateItem(item.id, { name: v })} />
+                        <div className="mt-2 print:hidden">
+                          <ItemActions
+                            onDuplicate={() => handleDuplicate(item.id)}
+                            onDelete={() => handleDelete(item.id)}
+                          />
+                        </div>
                       </td>
-                      <td className="min-w-48 border-b px-3 py-2 align-top">
+                      <td className="min-w-36 border-b border-r border-gray-200 px-2 py-2 align-top">
                         <DimensionScoreGrid
                           item={item}
                           onSetScore={(dim, v) => setDimensionScore(item.id, dim, v)}
                         />
                       </td>
-                      <td className="min-w-36 border-b px-3 py-2 align-top">
+                      <td className="min-w-24 border-b border-r border-gray-200 px-2 py-2 align-top">
                         <ExposureSummary item={item} />
+                        <div className="mt-2">
+                          <PriorityBadge priority={priority} />
+                        </div>
                       </td>
-                      <td className="min-w-28 border-b px-3 py-2 align-top">
-                        <PriorityBadge priority={priority} />
-                      </td>
-                      <td className="min-w-64 border-b px-3 py-2 align-top text-xs leading-5 text-gray-700">
+                      <td className="w-[25%] min-w-52 border-b border-r border-gray-200 px-2 py-2 align-top text-xs leading-5 text-gray-700">
                         {suggestedResponse(item)}
                       </td>
-                      <td className="w-[30%] min-w-[22rem] border-b px-3 py-2 align-top">
+                      <td className="w-[34%] min-w-72 border-b px-2 py-2 align-top">
                         <EvidenceField item={item} onChange={(v) => updateItem(item.id, { justification: v })} />
-                      </td>
-                      <td className="min-w-28 border-b px-3 py-2 align-top print:hidden">
-                        <ItemActions
-                          onDuplicate={() => handleDuplicate(item.id)}
-                          onDelete={() => handleDelete(item.id)}
-                        />
                       </td>
                     </tr>
                   );
@@ -593,8 +595,8 @@ export default function NuddAssessmentPage() {
           </table>
         </div>
 
-        {/* Cards — below sm */}
-        <div className="space-y-3 sm:hidden">
+        {/* Cards below xl keep every field visible without horizontal scrolling. */}
+        <div className="space-y-3 xl:hidden">
           {items.length === 0 ? (
             <p className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
               No features or functions yet. Tap &ldquo;+ Add Feature or Function&rdquo; above to begin.
@@ -605,25 +607,27 @@ export default function NuddAssessmentPage() {
               return (
                 <div key={item.id} className="rounded-lg border border-gray-200 p-3">
                   <NameField item={item} onChange={(v) => updateItem(item.id, { name: v })} />
+                  <div className="mt-2 print:hidden">
+                    <ItemActions
+                      onDuplicate={() => handleDuplicate(item.id)}
+                      onDelete={() => handleDelete(item.id)}
+                    />
+                  </div>
                   <div className="mt-3">
                     <DimensionScoreGrid
                       item={item}
                       onSetScore={(dim, v) => setDimensionScore(item.id, dim, v)}
                     />
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="mt-3">
                     <ExposureSummary item={item} />
-                    <PriorityBadge priority={priority} />
+                    <div className="mt-2">
+                      <PriorityBadge priority={priority} />
+                    </div>
                   </div>
                   <p className="mt-2 text-xs text-gray-700">{suggestedResponse(item)}</p>
                   <div className="mt-3">
                     <EvidenceField item={item} onChange={(v) => updateItem(item.id, { justification: v })} />
-                  </div>
-                  <div className="mt-3">
-                    <ItemActions
-                      onDuplicate={() => handleDuplicate(item.id)}
-                      onDelete={() => handleDelete(item.id)}
-                    />
                   </div>
                 </div>
               );
