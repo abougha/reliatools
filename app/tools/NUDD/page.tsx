@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ContactCTA from "@/components/ContactCTA";
 import {
   DIMENSION_KEYS,
@@ -49,7 +49,7 @@ const QUESTIONS: Record<NuddDimensionKey, string[]> = {
   ],
 };
 
-const TABLE_COLUMN_COUNT = 8;
+const TABLE_COLUMN_COUNT = 7;
 const NUDD_STORAGE_KEY = "reliatools.nudd.v1";
 
 function generateId(): string {
@@ -226,13 +226,55 @@ function DimensionScoreGrid({
 }
 
 function ExposureSummary({ item }: { item: NuddItem }) {
-  const level = classifyLevel(itemTotal(item));
+  const total = itemTotal(item);
+  const level = classifyLevel(total);
   const criticalLabel = criticalDimensionLabel(item);
   return (
-    <p className="text-xs text-gray-700">
-      Total exposure: <span className="font-semibold">{level}</span>
-      {criticalLabel ? <> &middot; Critical dimension: {criticalLabel}</> : null}
-    </p>
+    <div className="text-xs text-gray-700">
+      <p className="whitespace-nowrap">
+        <span className="font-mono font-semibold">{total} / 12</span>
+        <span className="mx-1.5 text-gray-400">&middot;</span>
+        <span className="font-semibold">{level}</span>
+      </p>
+      {criticalLabel ? <p className="mt-1">Critical dimension: {criticalLabel}</p> : null}
+    </div>
+  );
+}
+
+function AutoGrowTextarea({
+  value,
+  onChange,
+  rows,
+  placeholder,
+  ariaLabel,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  rows: number;
+  placeholder: string;
+  ariaLabel: string;
+  className: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      rows={rows}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      className={`${className} resize-none overflow-hidden`}
+    />
   );
 }
 
@@ -242,12 +284,13 @@ function NameField({ item, onChange }: { item: NuddItem; onChange: (v: string) =
   const showHint = !item.name.trim() && touched;
   return (
     <div>
-      <input
-        type="text"
+      <AutoGrowTextarea
         value={item.name}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
+        rows={2}
         placeholder="e.g., Predictive thermal control"
-        className="w-full rounded-md border px-2 py-1 text-sm"
+        ariaLabel="Feature or Function"
+        className="min-h-16 w-full rounded-md border px-2 py-1.5 text-sm leading-5"
       />
       {showHint ? <p className="mt-1 text-[11px] text-amber-700">Name this item to include it in the summary.</p> : null}
     </div>
@@ -258,12 +301,15 @@ function EvidenceField({ item, onChange }: { item: NuddItem; onChange: (v: strin
   const complete = isEvidenceComplete(item);
   return (
     <div>
-      <textarea
+      <AutoGrowTextarea
         value={item.justification}
-        onChange={(e) => onChange(e.target.value)}
-        rows={2}
+        onChange={onChange}
+        rows={3}
         placeholder="What evidence exists, and what remains unknown?"
-        className={`w-full rounded-md border px-2 py-1 text-xs ${complete ? "" : "border-amber-400"}`}
+        ariaLabel="Evidence / Gap"
+        className={`min-h-20 w-full rounded-md border px-2 py-1.5 text-xs leading-5 ${
+          complete ? "" : "border-amber-400"
+        }`}
       />
       {!complete ? (
         <p className="mt-1 text-[11px] text-amber-700">Evidence needed for Medium/High or Elevated-priority items.</p>
@@ -488,17 +534,16 @@ export default function NuddAssessmentPage() {
 
         {/* Table — sm and up */}
         <div className="hidden overflow-x-auto sm:block">
-          <table className="min-w-full border-separate border-spacing-0 text-sm">
+          <table className="min-w-[78rem] border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
-                <th className="border-b px-3 py-2 text-left">Feature or Function</th>
-                <th className="border-b px-3 py-2 text-left">Dimensions</th>
-                <th className="border-b px-3 py-2 text-left">Score</th>
-                <th className="border-b px-3 py-2 text-left">Total Exposure</th>
-                <th className="border-b px-3 py-2 text-left">Priority</th>
-                <th className="border-b px-3 py-2 text-left">Suggested Response</th>
-                <th className="border-b px-3 py-2 text-left">Evidence / Gap</th>
-                <th className="border-b px-3 py-2 text-left print:hidden">Actions</th>
+                <th className="w-[22%] min-w-64 border-b px-3 py-2 text-left">Feature or Function</th>
+                <th className="min-w-48 border-b px-3 py-2 text-left">Dimensions</th>
+                <th className="min-w-36 border-b px-3 py-2 text-left">Exposure</th>
+                <th className="min-w-28 border-b px-3 py-2 text-left">Priority</th>
+                <th className="min-w-64 border-b px-3 py-2 text-left">Suggested Response</th>
+                <th className="w-[30%] min-w-[22rem] border-b px-3 py-2 text-left">Evidence / Gap</th>
+                <th className="min-w-28 border-b px-3 py-2 text-left print:hidden">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -513,31 +558,28 @@ export default function NuddAssessmentPage() {
                   const priority = actionPriority(item);
                   return (
                     <tr key={item.id}>
-                      <td className="border-b px-3 py-2 align-top">
+                      <td className="w-[22%] min-w-64 border-b px-3 py-2 align-top">
                         <NameField item={item} onChange={(v) => updateItem(item.id, { name: v })} />
                       </td>
-                      <td className="border-b px-3 py-2 align-top">
+                      <td className="min-w-48 border-b px-3 py-2 align-top">
                         <DimensionScoreGrid
                           item={item}
                           onSetScore={(dim, v) => setDimensionScore(item.id, dim, v)}
                         />
                       </td>
-                      <td className="border-b px-3 py-2 align-top font-mono text-sm">
-                        {itemTotal(item)} / 12
-                      </td>
-                      <td className="border-b px-3 py-2 align-top">
+                      <td className="min-w-36 border-b px-3 py-2 align-top">
                         <ExposureSummary item={item} />
                       </td>
-                      <td className="border-b px-3 py-2 align-top">
+                      <td className="min-w-28 border-b px-3 py-2 align-top">
                         <PriorityBadge priority={priority} />
                       </td>
-                      <td className="border-b px-3 py-2 align-top text-xs text-gray-700">
+                      <td className="min-w-64 border-b px-3 py-2 align-top text-xs leading-5 text-gray-700">
                         {suggestedResponse(item)}
                       </td>
-                      <td className="border-b px-3 py-2 align-top">
+                      <td className="w-[30%] min-w-[22rem] border-b px-3 py-2 align-top">
                         <EvidenceField item={item} onChange={(v) => updateItem(item.id, { justification: v })} />
                       </td>
-                      <td className="border-b px-3 py-2 align-top print:hidden">
+                      <td className="min-w-28 border-b px-3 py-2 align-top print:hidden">
                         <ItemActions
                           onDuplicate={() => handleDuplicate(item.id)}
                           onDelete={() => handleDelete(item.id)}
@@ -570,11 +612,8 @@ export default function NuddAssessmentPage() {
                     />
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm">{itemTotal(item)} / 12</span>
-                    <PriorityBadge priority={priority} />
-                  </div>
-                  <div className="mt-2">
                     <ExposureSummary item={item} />
+                    <PriorityBadge priority={priority} />
                   </div>
                   <p className="mt-2 text-xs text-gray-700">{suggestedResponse(item)}</p>
                   <div className="mt-3">
