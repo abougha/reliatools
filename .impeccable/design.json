@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-30T00:00:00.000Z",
+  "title": "Design System: Reliatools",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": { "role": "primary", "displayName": "Signal Blue", "canonical": "#2563eb", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"] },
+      "signal-blue-deep": { "role": "primary-hover", "displayName": "Signal Blue Deep", "canonical": "#1d4ed8", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"] },
+      "signal-blue-pale": { "role": "primary-surface", "displayName": "Signal Blue Pale", "canonical": "#eff6ff", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#eff6ff"] },
+      "signal-blue-tint": { "role": "primary-tint", "displayName": "Signal Blue Tint", "canonical": "#dbeafe", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"] },
+      "signal-blue-line": { "role": "primary-border", "displayName": "Signal Blue Line", "canonical": "#bfdbfe", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"] },
+      "ink": { "role": "neutral-text", "displayName": "Ink", "canonical": "#0f172a", "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"] },
+      "ink-deep": { "role": "neutral-text-strong", "displayName": "Ink Deep", "canonical": "#020617", "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"] },
+      "slate-body": { "role": "neutral-text-secondary", "displayName": "Slate Body", "canonical": "#475569", "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"] },
+      "slate-muted": { "role": "neutral-text-tertiary", "displayName": "Slate Muted", "canonical": "#64748b", "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"] },
+      "slate-line": { "role": "neutral-border", "displayName": "Slate Line", "canonical": "#e2e8f0", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"] },
+      "slate-surface": { "role": "neutral-surface", "displayName": "Slate Surface", "canonical": "#f8fafc", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#e2e8f0", "#f8fafc"] },
+      "paper": { "role": "neutral-canvas", "displayName": "Paper", "canonical": "#ffffff", "tonalRamp": ["#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc", "#fafbfc", "#fdfdfe", "#ffffff"] },
+      "warn-surface": { "role": "warning-surface", "displayName": "Warning Surface", "canonical": "#fffbeb", "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a", "#fffbeb"] },
+      "warn-line": { "role": "warning-border", "displayName": "Warning Line", "canonical": "#f59e0b", "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a", "#fef3c7"] },
+      "warn-ink": { "role": "warning-text", "displayName": "Warning Ink", "canonical": "#92400e", "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a", "#fef3c7"] },
+      "danger-surface": { "role": "danger-surface", "displayName": "Danger Surface", "canonical": "#fef2f2", "tonalRamp": ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fef2f2"] },
+      "danger-line": { "role": "danger-border", "displayName": "Danger Line", "canonical": "#ef4444", "tonalRamp": ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fee2e2"] },
+      "danger-ink": { "role": "danger-text", "displayName": "Danger Ink", "canonical": "#b91c1c", "tonalRamp": ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fee2e2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headline only (homepage H1)." },
+      "headline": { "displayName": "Headline", "purpose": "Page-level H1 on tool and resource pages." },
+      "title": { "displayName": "Title", "purpose": "Section headers, card titles, article H2/H3." },
+      "body": { "displayName": "Body", "purpose": "Paragraph copy, 65-75ch measure in articles." },
+      "label": { "displayName": "Label", "purpose": "Eyebrow labels, category chips, form field labels." }
+    },
+    "shadows": [
+      { "name": "rest", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "Default resting state for cards, header, sidebar." },
+      { "name": "hover-lift", "value": "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)", "purpose": "Interactive card/button hover or focus, paired with a small upward translate." },
+      { "name": "signature-glow", "value": "0 20px 25px -5px rgba(37,99,235,0.15)", "purpose": "Reserved for the hero diagnostic-pulse logo only." }
+    ],
+    "motion": [
+      { "name": "ring-spin-fast", "value": "28s linear infinite", "purpose": "Outer dashed ring rotation on the diagnostic-pulse logo." },
+      { "name": "ring-spin-slow", "value": "42s linear infinite reverse", "purpose": "Inner dashed ring, opposing direction, on the diagnostic-pulse logo." },
+      { "name": "scan-sweep", "value": "4.8s ease-in-out infinite", "purpose": "Vertical sweep line traveling through the diagnostic-pulse logo." },
+      { "name": "pulse", "value": "2.8s ease-in-out infinite", "purpose": "Staggered circuit-node pulsing on the diagnostic-pulse logo." },
+      { "name": "hover-transition", "value": "150ms ease", "purpose": "Standard shadow/transform transition for interactive card and button hover." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main call-to-action button; solid Signal Blue.",
+      "html": "<button class=\"ds-btn-primary\">Explore Tools</button>",
+      "css": ".ds-btn-primary { background: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 1rem; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease; cursor: pointer; } .ds-btn-primary:hover { background: #1d4ed8; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); transform: translateY(-2px); } .ds-btn-primary:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outline button for secondary actions alongside a primary CTA.",
+      "html": "<button class=\"ds-btn-secondary\">Start with Mission Profile</button>",
+      "css": ".ds-btn-secondary { background: #ffffff; color: #1d4ed8; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 1rem; border: 1px solid #bfdbfe; transition: background 150ms ease, border-color 150ms ease; cursor: pointer; } .ds-btn-secondary:hover { background: #eff6ff; border-color: #93c5fd; }"
+    },
+    {
+      "name": "Tool Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Clickable card linking to a calculator or resource; lifts on hover.",
+      "html": "<a href=\"#\" class=\"ds-card\"><h3 class=\"ds-card-title\">Mission Profile Builder</h3><p class=\"ds-card-desc\">Translate application use conditions into duty cycles and stress exposure inputs.</p></a>",
+      "css": ".ds-card { display: block; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); text-decoration: none; transition: box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease; } .ds-card:hover { border-color: #bfdbfe; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); transform: translateY(-2px); } .ds-card-title { font-size: 1.125rem; font-weight: 600; color: #0f172a; margin: 0 0 12px; } .ds-card-desc { font-size: 0.875rem; line-height: 1.5; color: #475569; margin: 0; }"
+    },
+    {
+      "name": "Result Callout",
+      "kind": "custom",
+      "refersTo": "callout-result",
+      "description": "Flat, left-bordered strip presenting a calculated result.",
+      "html": "<div class=\"ds-callout ds-callout-result\"><p class=\"ds-callout-title\">AF from Arrhenius equation: 78.4</p><p class=\"ds-callout-body\">To simulate 8000 hours of use at 50°C, test for 500 hours at 100°C.</p></div>",
+      "css": ".ds-callout { border-radius: 4px; padding: 16px; border-left: 4px solid; } .ds-callout-result { background: #eff6ff; border-left-color: #3b82f6; color: #1e40af; } .ds-callout-title { font-size: 1.125rem; font-weight: 600; margin: 0 0 4px; } .ds-callout-body { font-size: 0.875rem; margin: 0; }"
+    },
+    {
+      "name": "Warning Callout",
+      "kind": "custom",
+      "refersTo": "callout-warning",
+      "description": "Flat, left-bordered strip flagging a non-fatal calculator condition.",
+      "html": "<div class=\"ds-callout ds-callout-warning\">AF is 0.8 (&le; 1). This condition is not accelerating.</div>",
+      "css": ".ds-callout-warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; border-radius: 4px; padding: 12px 16px; font-size: 0.875rem; }"
+    },
+    {
+      "name": "Error Callout",
+      "kind": "custom",
+      "refersTo": "callout-error",
+      "description": "Flat, left-bordered strip for field validation or invalid physical results.",
+      "html": "<div class=\"ds-callout ds-callout-error\">Please fix input validation errors.</div>",
+      "css": ".ds-callout-error { background: #fef2f2; border-left: 4px solid #ef4444; color: #b91c1c; border-radius: 4px; padding: 12px 16px; font-size: 0.875rem; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Numeric input field used across all calculators.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Activation Energy (eV)</span><input type=\"number\" class=\"ds-field-input\" value=\"0.7\" /></label>",
+      "css": ".ds-field { display: block; font-size: 0.875rem; color: #0f172a; } .ds-field-label { display: block; margin-bottom: 4px; } .ds-field-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; font-size: 1rem; background: #ffffff; transition: border-color 150ms ease, box-shadow 150ms ease; } .ds-field-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px #bfdbfe; }"
+    },
+    {
+      "name": "Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Sidebar navigation link, default and active state.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" class=\"ds-nav-item ds-nav-item-active\">Tools</a><a href=\"#\" class=\"ds-nav-item\">Resources</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; } .ds-nav-item { display: block; padding: 8px 12px; border-radius: 8px; color: #334155; text-decoration: none; border: 1px solid transparent; transition: background 150ms ease; } .ds-nav-item:hover { background: #f8fafc; } .ds-nav-item-active { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }"
+    },
+    {
+      "name": "Wizard Step Dot",
+      "kind": "custom",
+      "refersTo": "wizard-stepper",
+      "description": "Numbered circular step indicator used in multi-step wizards (HALT/HASS, Burn-In).",
+      "html": "<div class=\"ds-stepper\"><span class=\"ds-step ds-step-active\">1</span><span class=\"ds-step\">2</span><span class=\"ds-step\">3</span></div>",
+      "css": ".ds-stepper { display: flex; align-items: center; justify-content: center; gap: 16px; } .ds-step { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; background: #cbd5e1; color: #334155; } .ds-step-active { background: #3b82f6; color: #ffffff; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Diagnostic Instrument",
+    "overview": "Reliatools reads like the display panel of a piece of lab test equipment: precise, calm, and built to be trusted under scrutiny rather than to impress. Most of the interface is deliberately quiet — white surfaces, restrained slate type, thin hairline borders — so that when the accent color appears, it means something: a value being measured, a state being flagged, an action being offered. Signal Blue (#2563eb) is that instrument's single active signal color, echoing an oscilloscope trace or a status LED. The homepage's animated logo (concentric rings, a scanning sweep line, pulsing circuit nodes, all in blue) is this identity's one permitted piece of literal theater; it names the metaphor the rest of the system stays quiet about.\n\nThe system is not neutral-flat everywhere. Interactive surfaces — cards, nav items, primary actions — are meant to feel physically liftable: a resting shadow-sm state that promotes to a deeper, cooler-toned shadow with a real upward translation on hover/focus, closer to a confident SaaS product than a static spec sheet. Inline calculation output, by contrast (results, warnings, errors), stays flat — colored left-border callout strips, not cards — because that content behaves like an instrument readout, not an interactive object.",
+    "keyCharacteristics": [
+      "One accent color (Signal Blue) carrying all interactivity, emphasis, and brand signal; nothing else competes with it.",
+      "Neutral scale is slate, not gray — cooler, slightly blue-leaning, consistent with the accent.",
+      "Flat, left-border callout strips for calculated results/warnings/errors; shadowed, lifting cards for everything the user can click or navigate.",
+      "Geist Sans throughout; no serif, no display-only webfont.",
+      "KaTeX-rendered formulas are a first-class visual element on every tool page, not an afterthought.",
+      "One expressive motion signature (the diagnostic-pulse logo); everywhere else motion is a state-transition utility, not a decoration."
+    ],
+    "rules": [
+      { "name": "The One-Signal Rule", "body": "Signal Blue is the only accent color in the system. It never shares emphasis duty with a second brand hue; when a second color appears, it is always semantic (warning amber, danger red), never decorative.", "section": "colors" },
+      { "name": "The Slate-Not-Gray Rule", "body": "Neutrals are drawn from the slate scale, not gray. Some older tool-calculator pages still use Tailwind's gray-* scale (a documented inconsistency, not the standard) — treat any gray-* neutral found in existing code as drift to converge toward slate-* on next touch, not as a second accepted register.", "section": "colors" },
+      { "name": "The Formula-Is-Type Rule", "body": "KaTeX-rendered equations are treated as first-class typographic elements, not images — they sit inline with body copy at matching visual weight, inside the same slate-surface reference boxes as their variable-definition lists.", "section": "typography" },
+      { "name": "The Readout-Stays-Flat Rule", "body": "Anything the calculator computed (a result, a warning, an error) is presented flat with a colored left border, never inside a shadowed card. Shadows are earned by interactivity, not by importance.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Signal Blue (#2563eb) as the only accent color; every other hue in the system is semantic (amber warning, red danger) or structural (slate neutrals).",
+      "Do use the slate neutral scale (slate-50 … slate-950) as canonical going forward, even where existing tool pages still use gray-*.",
+      "Do render calculated output (results, warnings, errors) as flat, left-bordered callout strips — never inside a shadowed card.",
+      "Do give interactive cards and buttons a real hover/focus promotion: deeper shadow plus a small upward lift, not just a border-color change.",
+      "Do treat the diagnostic-pulse animated logo as the system's single reserved moment of motion theater; respect prefers-reduced-motion on any new motion, following its existing pattern.",
+      "Do keep KaTeX formula blocks inside slate-surface reference boxes alongside their variable-definition lists, on every calculator page."
+    ],
+    "donts": [
+      "Don't introduce a second brand accent color alongside Signal Blue; new emphasis needs are a weight/size/spacing problem, not a new-hue problem.",
+      "Don't put a card-style shadow on a results/warnings/errors callout — that visually confuses \"computed readout\" with \"clickable object.\"",
+      "Don't reuse the hero logo's tinted blue glow (shadow-blue-100/60) on ordinary UI cards; it's reserved for that one signature moment.",
+      "Don't treat the shadcn/components/ui CSS-variable theme (currently only consumed by components/ui/card.tsx) as the system's real token source — the actually-operative palette is the Tailwind slate/blue utility values documented above; that CSS-variable layer is legacy scaffolding, not the source of truth."
+    ]
+  }
+}

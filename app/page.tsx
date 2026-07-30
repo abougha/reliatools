@@ -112,10 +112,7 @@ export default function Home() {
       <section className="overflow-hidden bg-gradient-to-b from-white via-slate-50 to-white">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-10 sm:py-12 lg:grid-cols-[minmax(0,0.7fr)_minmax(280px,0.3fr)] lg:px-8 lg:py-14">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-              Reliability Engineering | Physics of Failure | Validation Planning
-            </p>
-            <h1 className="mt-5 max-w-5xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1 className="max-w-5xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
               Physics-Based Reliability Tools for Faster, Smarter Validation
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
@@ -176,10 +173,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-3xl">
-              <p className="text-sm font-semibold text-blue-600">
-                Start with the core workflow
-              </p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">
                 Top Reliability Tools
               </h2>
               <p className="mt-4 text-lg text-slate-600">
@@ -189,7 +183,7 @@ export default function Home() {
             </div>
             <Link
               href="/tools"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800"
+              className="inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
               View all tools <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
@@ -200,7 +194,7 @@ export default function Home() {
               <Link
                 key={tool.title}
                 href={tool.href}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg focus-visible:-translate-y-1 focus-visible:border-blue-200 focus-visible:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 <h3 className="text-lg font-semibold text-slate-900">
                   {tool.title}
@@ -217,10 +211,7 @@ export default function Home() {
       <section className="bg-slate-50 px-6 py-8 sm:py-10">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold text-blue-600">
-              Built for engineering decisions
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
               Why Engineers Use Reliatools
             </h2>
             <p className="mt-4 text-lg text-slate-600">
@@ -230,21 +221,23 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
+          <div className="mt-7 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm">
             {valueCards.map(({ title, description, icon: Icon }) => (
               <div
                 key={title}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="flex flex-col gap-4 p-6 sm:flex-row sm:items-start sm:gap-6"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <div className="flex h-12 w-12 flex-none items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                   <Icon className="h-6 w-6" aria-hidden="true" />
                 </div>
-                <h3 className="mt-5 text-xl font-semibold text-slate-900">
-                  {title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {description}
-                </p>
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -254,10 +247,7 @@ export default function Home() {
       <section className="bg-white px-6 py-8 sm:py-10">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold text-blue-600">
-              Reliability knowledge base
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
               Learn the Engineering Behind the Tools
             </h2>
             <p className="mt-4 text-lg text-slate-600">
@@ -271,7 +261,7 @@ export default function Home() {
             {resources.map((resource) => (
               <article
                 key={resource.href}
-                className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-lg"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                   {resource.category}
@@ -284,7 +274,7 @@ export default function Home() {
                 </p>
                 <Link
                   href={resource.href}
-                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800"
+                  className="mt-6 inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
                 >
                   Read article <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
@@ -295,7 +285,7 @@ export default function Home() {
           <div className="mt-7">
             <Link
               href="/resources"
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
               View all resources <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
