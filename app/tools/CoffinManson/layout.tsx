@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Coffin-Manson Thermal Fatigue Calculator — Cycles to Failure",
+  title: "Coffin-Manson Thermal Fatigue Calculator — Cycles to Failure | Reliatools",
   description:
     "Free online Coffin-Manson thermal fatigue calculator. Estimate cycles to failure from thermal cycling and CTE mismatch data. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Coffin-Manson Thermal Fatigue Calculator",
+          description:
+            "Estimate cycles to failure from thermal cycling and CTE mismatch data.",
+          path: "/tools/CoffinManson",
+        })}
+      />
+      {children}
+    </>
+  );
 }

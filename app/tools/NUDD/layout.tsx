@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 const DESCRIPTION =
   "NUDD identifies where deeper risk analysis and validation are needed. It complements — but does not replace — DFMEA, DRBFM or technical risk assessment. Free tool to score New, Unique, Different, and Difficult for each feature or function.";
@@ -17,5 +19,16 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "NUDD Assessment",
+          description: DESCRIPTION,
+          path: "/tools/NUDD",
+        })}
+      />
+      {children}
+    </>
+  );
 }

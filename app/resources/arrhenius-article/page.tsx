@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import ArrheniusArticle from "@/app/resources/arrhenius-article";
+import JsonLd from "@/components/JsonLd";
+import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Arrhenius Model in Reliability Engineering — Thermal Acceleration Explained",
+  title: "Arrhenius Model in Reliability Engineering — Thermal Acceleration Explained | Reliatools",
   description:
     "How the Arrhenius model calculates thermal acceleration factors for temperature-driven failure mechanisms. Includes worked examples and guidance on activation energy selection for reliability testing.",
   openGraph: {
@@ -17,5 +19,18 @@ export const metadata: Metadata = {
 };
 
 export default function ArrheniusArticlePage() {
-  return <ArrheniusArticle />;
+  return (
+    <>
+      <JsonLd
+        data={articleJsonLd({
+          title: "Understanding Arrhenius for Reliability",
+          description:
+            "A deep dive into thermal aging models and their application in reliability engineering.",
+          path: "/resources/arrhenius-article",
+          datePublished: "2025-05-27",
+        })}
+      />
+      <ArrheniusArticle />
+    </>
+  );
 }

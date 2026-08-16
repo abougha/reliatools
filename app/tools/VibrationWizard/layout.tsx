@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Vibration Test PSD Calculator & Profile Builder (GRMS)",
+  title: "Vibration Test PSD Calculator & Profile Builder (GRMS) | Reliatools",
   description:
     "Free online vibration test PSD calculator and profile builder. Compute Grms levels and test durations from your mission profile. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Vibration Test PSD Calculator & Profile Builder",
+          description:
+            "Compute Grms levels and test durations from your mission profile.",
+          path: "/tools/VibrationWizard",
+        })}
+      />
+      {children}
+    </>
+  );
 }

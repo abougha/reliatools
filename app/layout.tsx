@@ -4,6 +4,8 @@ import "katex/dist/katex.min.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import PublicSiteChrome from "../components/PublicSiteChrome";
+import JsonLd from "../components/JsonLd";
+import { organizationJsonLd, websiteJsonLd } from "../lib/seo/jsonld";
 
 // Import Geist font family
 const geistSans = Geist({
@@ -47,6 +49,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white transition-colors duration-300">
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
         <PublicSiteChrome>{children}</PublicSiteChrome>
       </body>
     </html>

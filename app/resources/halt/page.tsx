@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import HALTArticle from "@/app/resources/halt";
+import JsonLd from "@/components/JsonLd";
+import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "HALT Testing — Highly Accelerated Life Testing Guide",
+  title: "HALT Testing — Highly Accelerated Life Testing Guide | Reliatools",
   description:
     "A practical guide to Highly Accelerated Life Testing (HALT). Learn how HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
   openGraph: {
@@ -17,5 +19,18 @@ export const metadata: Metadata = {
 };
 
 export default function HALTArticlePage() {
-  return <HALTArticle />;
+  return (
+    <>
+      <JsonLd
+        data={articleJsonLd({
+          title: "HALT Testing — Highly Accelerated Life Testing Guide",
+          description:
+            "A practical guide to Highly Accelerated Life Testing (HALT). Learn how HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
+          path: "/resources/halt",
+          datePublished: "2025-04-15",
+        })}
+      />
+      <HALTArticle />
+    </>
+  );
 }

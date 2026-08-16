@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -20,7 +22,7 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Weibull Analysis Calculator — Probability Plot, Beta & Eta",
+  title: "Weibull Analysis Calculator — Probability Plot, Beta & Eta | Reliatools",
   description:
     "Free online Weibull analysis calculator. Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time. No signup required.",
   openGraph: {
@@ -37,6 +39,14 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`${plexSans.variable} ${plexMono.variable} ${newsreader.variable}`} style={{ fontFamily: "var(--font-weibull-sans)" }}>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Weibull Analysis Calculator",
+          description:
+            "Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time.",
+          path: "/tools/Weibull",
+        })}
+      />
       {children}
     </div>
   );

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Mission Profile & Duty Cycle Builder for Reliability Testing",
+  title: "Mission Profile & Duty Cycle Builder for Reliability Testing | Reliatools",
   description:
     "Free online mission profile and duty cycle builder. Map thermal, vibration, and humidity stress exposure across lifecycle phases. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Mission Profile & Duty Cycle Builder",
+          description:
+            "Map thermal, vibration, and humidity stress exposure across lifecycle phases.",
+          path: "/tools/MissionProfile",
+        })}
+      />
+      {children}
+    </>
+  );
 }

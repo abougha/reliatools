@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import FitArticle from "@/app/resources/fit-article";
+import JsonLd from "@/components/JsonLd";
+import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title:
-    "What Does 1 FIT Really Mean? Automotive Reliability, PMHF & ASIL Explained",
+    "What Does 1 FIT Really Mean? Automotive Reliability, PMHF & ASIL Explained | Reliatools",
   description:
     "What 1 FIT really means: mission ppm, expected fleet failures, PMHF, ASIL targets, and why ultra-low failure-rate claims need billions of device-hours of evidence.",
   keywords: [
@@ -31,5 +33,19 @@ export const metadata: Metadata = {
 };
 
 export default function FitArticlePage() {
-  return <FitArticle />;
+  return (
+    <>
+      <JsonLd
+        data={articleJsonLd({
+          title:
+            "What Does 1 FIT Really Mean? Automotive Reliability, PMHF, and the Test-Evidence Problem",
+          description:
+            "What 1 FIT really means over a real automotive mission: mission ppm, expected fleet failures, PMHF, ASIL A–D targets, diagnostic coverage, and why ultra-low failure-rate claims require billions of device-hours of test evidence.",
+          path: "/resources/fit-article",
+          datePublished: "2026-07-09",
+        })}
+      />
+      <FitArticle />
+    </>
+  );
 }

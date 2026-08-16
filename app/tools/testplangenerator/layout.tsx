@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Reliability Test Plan Generator — Mission Profile to DVP&R",
+  title: "Reliability Test Plan Generator — Mission Profile to DVP&R | Reliatools",
   description:
     "Free online reliability test plan generator. Turn a mission profile into a DVP&R with test methods, sample sizes, and acceptance criteria. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Reliability Test Plan Generator",
+          description:
+            "Turn a mission profile into a DVP&R with test methods, sample sizes, and acceptance criteria.",
+          path: "/tools/testplangenerator",
+        })}
+      />
+      {children}
+    </>
+  );
 }

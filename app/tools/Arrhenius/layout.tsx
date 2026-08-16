@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Arrhenius Acceleration Factor Calculator (Free Online Tool)",
+  title: "Arrhenius Acceleration Factor Calculator (Free Online Tool) | Reliatools",
   description:
     "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Arrhenius Acceleration Factor Calculator",
+          description:
+            "Compute thermal acceleration factors and equivalent test duration for accelerated life testing.",
+          path: "/tools/Arrhenius",
+        })}
+      />
+      {children}
+    </>
+  );
 }

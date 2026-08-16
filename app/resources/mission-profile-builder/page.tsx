@@ -2,22 +2,38 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import ContactCTA from "@/components/ContactCTA";
+import JsonLd from "@/components/JsonLd";
+import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile",
+  title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile | Reliatools",
   description:
     "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress × phase matrix.",
   openGraph: {
-    title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile",
+    title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile | Reliatools",
     description:
       "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress × phase matrix.",
+    url: "https://www.reliatools.com/resources/mission-profile-builder",
+    siteName: "Reliatools",
+    type: "article",
     images: ["/resources/dutycycle.png"],
   },
+  alternates: { canonical: "https://www.reliatools.com/resources/mission-profile-builder" },
 };
 
 export default function MissionProfileBuilderArticlePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
+      <JsonLd
+        data={articleJsonLd({
+          title: "Stop Guessing Environmental Loads",
+          description:
+            "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress x phase matrix.",
+          path: "/resources/mission-profile-builder",
+          datePublished: "2026-02-22",
+          image: "/resources/dutycycle.png",
+        })}
+      />
       <h1 className="mb-4 text-4xl font-bold">
         Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile
       </h1>

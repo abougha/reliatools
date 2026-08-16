@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Burn-In Test Calculator & Planning Wizard",
+  title: "Burn-In Test Calculator & Planning Wizard | Reliatools",
   description:
     "Free online burn-in test calculator and planning wizard. Plan burn-in duration to screen out infant mortality failures before shipment. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "Burn-In Test Calculator & Planning Wizard",
+          description:
+            "Plan burn-in duration to screen out infant mortality failures before shipment.",
+          path: "/tools/BurnInWizard",
+        })}
+      />
+      {children}
+    </>
+  );
 }

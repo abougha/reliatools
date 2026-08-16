@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "FIT Calculator — Reliability, ppm, and Test Evidence",
+  title: "FIT Calculator — Reliability, ppm, and Test Evidence | Reliatools",
   description:
     "Free online FIT calculator. Convert between FIT, failure rate, reliability, ppm, MTTF, and fleet failures, then check whether a test plan supports a claimed FIT target at a given confidence.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "FIT Calculator",
+          description:
+            "Convert between FIT, failure rate, reliability, ppm, MTTF, and fleet failures, and check test evidence against a claimed FIT target.",
+          path: "/tools/FIT",
+        })}
+      />
+      {children}
+    </>
+  );
 }

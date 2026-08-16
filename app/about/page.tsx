@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "About Reliatools",
+  title: "About",
   description:
     "Reliatools is a free suite of physics-based reliability engineering tools built for validation engineers, test engineers, and reliability professionals who need accurate, workflow-driven calculators.",
   openGraph: {

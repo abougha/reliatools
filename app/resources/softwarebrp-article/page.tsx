@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import SoftwareBRPArticle from "@/app/resources/SoftwareBRP-article";
+import JsonLd from "@/components/JsonLd";
+import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Software Reliability Program (BRP) — Planning Guide",
+  title: "Software Reliability Program (BRP) — Planning Guide | Reliatools",
   description:
     "How to structure a Software Business Reliability Program (BRP) for embedded and safety-critical software. Covers reliability requirements, failure mode analysis, verification strategy, and test planning.",
   openGraph: {
@@ -17,5 +19,18 @@ export const metadata: Metadata = {
 };
 
 export default function SoftwareBRPArticlePage() {
-  return <SoftwareBRPArticle />;
+  return (
+    <>
+      <JsonLd
+        data={articleJsonLd({
+          title: "Bayesian Reliability Predictor (Software)",
+          description:
+            "How to estimate software reliability early using Bayesian evidence fusion.",
+          path: "/resources/softwarebrp-article",
+          datePublished: "2025-10-19",
+        })}
+      />
+      <SoftwareBRPArticle />
+    </>
+  );
 }

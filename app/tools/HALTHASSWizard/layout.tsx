@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "HALT/HASS Test Plan Builder — Step-Stress Profiles",
+  title: "HALT/HASS Test Plan Builder — Step-Stress Profiles | Reliatools",
   description:
     "Free online HALT/HASS test plan builder. Define step-stress profiles, operating and destruct limits for accelerated stress screening. No signup required.",
   openGraph: {
@@ -16,5 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <JsonLd
+        data={softwareAppJsonLd({
+          name: "HALT/HASS Test Plan Builder",
+          description:
+            "Define step-stress profiles, operating and destruct limits for accelerated stress screening.",
+          path: "/tools/HALTHASSWizard",
+        })}
+      />
+      {children}
+    </>
+  );
 }
