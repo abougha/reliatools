@@ -83,9 +83,9 @@
     "id": "Samplesize",
     "title": "Sample Size Calculator",
     "route": "/tools/Samplesize",
-    "description": "Determine required sample size, allowable failures, or achieved reliability and confidence using binomial reliability-demonstration theory—aligned with common qualification and DV requirements.",
+    "description": "Size a test by what it has to prove: binomial demonstration and success run, extended bogey, MTBF test time, tolerance intervals, comparative A/B tests, Weibayes prior credit, HALT unit budgets and HASS screen sampling.",
     "formulaLatex": "1-\\sum_{i=0}^{f}\\binom{n}{i}(1-R)^iR^{n-i}\\ge\\mathrm{CL}",
-    "whenToUse": "When planning reliability demonstration or pass/fail validation."
+    "whenToUse": "When planning any reliability test — demonstration, life characterisation, margin, HALT or HASS screening."
   },
   {
     "id": "Psychrometric",

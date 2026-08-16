@@ -1,329 +1,244 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import "katex/dist/katex.min.css";
-import { BlockMath } from "react-katex";
-import { Calculator, CheckCircle } from "lucide-react";
-import {
-  binomialAcceptanceProbability,
-  confidenceFromAcceptance,
-  solveReliabilityFromBinomial,
-  solveSampleSizeForConfidence,
-} from "@/lib/reliabilityMath";
+import { Calculator } from "lucide-react";
 import ContactCTA from "@/components/ContactCTA";
+import CharacteriseLifeTab from "./_components/CharacteriseLifeTab";
+import HaltBudgetTab from "./_components/HaltBudgetTab";
+import HassScreenTab from "./_components/HassScreenTab";
+import MeasureMarginTab from "./_components/MeasureMarginTab";
+import ProveClaimTab from "./_components/ProveClaimTab";
+import {
+  DEFAULT_TAB,
+  TABS,
+  resolveHash,
+  type CharacteriseMethodId,
+  type MarginMethodId,
+  type ProveMethodId,
+  type TabId,
+} from "./_components/tabs";
 
-type SolveTarget = "n" | "R" | "CL";
+export default function SampleSizeCalculatorPage() {
+  const [tab, setTab] = useState<TabId>(DEFAULT_TAB);
+  // One method per tab, held separately so switching tabs never carries a
+  // selection across or reuses another tab's state.
+  const [proveMethod, setProveMethod] = useState<ProveMethodId>("success-run");
+  const [characteriseMethod, setCharacteriseMethod] = useState<CharacteriseMethodId>("weibull-life");
+  const [marginMethod, setMarginMethod] = useState<MarginMethodId>("tolerance-interval");
 
-const DEFAULTS = {
-  failures: "0",
-  confidence: "95",
-  reliability: "90",
-  sampleSize: "30",
-  solveFor: "n" as SolveTarget,
-};
+  const applyHash = useCallback(() => {
+    const resolved = resolveHash(window.location.hash);
+    if (!resolved) return;
+    setTab(resolved.tab);
+    if (!resolved.method) return;
+    if (resolved.tab === "prove") setProveMethod(resolved.method as ProveMethodId);
+    if (resolved.tab === "characterise") setCharacteriseMethod(resolved.method as CharacteriseMethodId);
+    if (resolved.tab === "margin") setMarginMethod(resolved.method as MarginMethodId);
+  }, []);
 
-export default function SampleSizeCalculator() {
-  const [failures, setFailures] = useState(DEFAULTS.failures);
-  const [confidence, setConfidence] = useState(DEFAULTS.confidence);
-  const [reliability, setReliability] = useState(DEFAULTS.reliability);
-  const [sampleSize, setSampleSize] = useState(DEFAULTS.sampleSize);
-  const [solveFor, setSolveFor] = useState<SolveTarget>(DEFAULTS.solveFor);
-  const [result, setResult] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<Array<{ n: number; cl: number }>>([]);
-  const [warning, setWarning] = useState("");
+  useEffect(() => {
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [applyHash]);
 
-  const parsed = useMemo(() => {
-    return {
-      f: Number(failures),
-      clPct: Number(confidence),
-      rPct: Number(reliability),
-      n: Number(sampleSize),
-    };
-  }, [failures, confidence, reliability, sampleSize]);
-
-  const fieldErrors = useMemo(() => {
-    const errors: Partial<Record<"f" | "CL" | "R" | "n", string>> = {};
-
-    if (!Number.isInteger(parsed.f) || parsed.f < 0) {
-      errors.f = "Failures must be a non-negative integer.";
-    }
-    if (!Number.isFinite(parsed.clPct) || parsed.clPct <= 0 || parsed.clPct >= 100) {
-      errors.CL = "Confidence must be between 0 and 100 (exclusive).";
-    }
-    if (!Number.isFinite(parsed.rPct) || parsed.rPct <= 0 || parsed.rPct >= 100) {
-      errors.R = "Reliability must be between 0 and 100 (exclusive).";
-    }
-    if (!Number.isInteger(parsed.n) || parsed.n <= 0) {
-      errors.n = "Sample size must be a positive integer.";
-    }
-    if (Number.isInteger(parsed.f) && Number.isInteger(parsed.n) && parsed.f >= parsed.n && solveFor !== "n") {
-      errors.n = "Sample size n must be greater than failures f.";
-    }
-
-    return errors;
-  }, [parsed, solveFor]);
-
-  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
-
-  const handleCalculate = () => {
-    setResult(null);
-    setWarning("");
-
-    if (hasFieldErrors) {
-      setResult("Please fix input validation errors.");
-      setChartData([]);
-      return;
-    }
-
-    const f = parsed.f;
-    const inputR = parsed.rPct / 100;
-    const inputCL = parsed.clPct / 100;
-    const inputN = parsed.n;
-
-    try {
-      if (solveFor === "n") {
-        const solved = solveSampleSizeForConfidence(f, inputR, inputCL);
-        setSampleSize(String(solved.n));
-        setResult(`Required sample size: ${solved.n} (ceil from n_real=${solved.nReal.toFixed(4)})`);
-
-        const data: Array<{ n: number; cl: number }> = [];
-        for (let nVal = Math.max(f + 1, solved.n - 10); nVal <= solved.n + 10; nVal += 1) {
-          const acceptance = binomialAcceptanceProbability(nVal, f, inputR);
-          const cl = confidenceFromAcceptance(acceptance) * 100;
-          data.push({ n: nVal, cl: Number(cl.toFixed(3)) });
-        }
-        setChartData(data);
-        return;
-      }
-
-      if (solveFor === "R") {
-        if (f >= inputN) {
-          setResult("No solution: n must be greater than f.");
-          setChartData([]);
-          return;
-        }
-
-        const solvedR = solveReliabilityFromBinomial(inputN, f, inputCL);
-        setReliability((solvedR * 100).toFixed(4));
-        setResult(`Minimum reliability: ${(solvedR * 100).toFixed(4)}%`);
-
-        const acceptanceAtRoot = binomialAcceptanceProbability(inputN, f, solvedR);
-        const residual = Math.abs(acceptanceAtRoot - (1 - inputCL));
-        if (residual > 1e-6) {
-          setWarning("Solver residual is above 1e-6; verify assumptions.");
-        }
-
-        const data: Array<{ n: number; cl: number }> = [];
-        for (let nVal = Math.max(f + 1, inputN - 10); nVal <= inputN + 10; nVal += 1) {
-          const acceptance = binomialAcceptanceProbability(nVal, f, solvedR);
-          const cl = confidenceFromAcceptance(acceptance) * 100;
-          data.push({ n: nVal, cl: Number(cl.toFixed(3)) });
-        }
-        setChartData(data);
-        return;
-      }
-
-      if (f >= inputN) {
-        setResult("No solution: n must be greater than f.");
-        setChartData([]);
-        return;
-      }
-
-      const acceptance = binomialAcceptanceProbability(inputN, f, inputR);
-      const solvedCl = confidenceFromAcceptance(acceptance);
-      setConfidence((solvedCl * 100).toFixed(4));
-      setResult(`Achieved confidence level: ${(solvedCl * 100).toFixed(4)}%`);
-
-      const data: Array<{ n: number; cl: number }> = [];
-      for (let nVal = Math.max(f + 1, inputN - 10); nVal <= inputN + 10; nVal += 1) {
-        const acceptanceAtN = binomialAcceptanceProbability(nVal, f, inputR);
-        const cl = confidenceFromAcceptance(acceptanceAtN) * 100;
-        data.push({ n: nVal, cl: Number(cl.toFixed(3)) });
-      }
-      setChartData(data);
-    } catch (error) {
-      setResult(error instanceof Error ? error.message : "Calculation failed.");
-      setChartData([]);
-    }
+  // replaceState rather than assigning location.hash, so switching tabs does not
+  // scroll the page or stack history entries.
+  const writeHash = (key: string) => {
+    window.history.replaceState(null, "", `#${key}`);
   };
 
-  const resetInputs = () => {
-    setFailures(DEFAULTS.failures);
-    setConfidence(DEFAULTS.confidence);
-    setReliability(DEFAULTS.reliability);
-    setSampleSize(DEFAULTS.sampleSize);
-    setSolveFor(DEFAULTS.solveFor);
-    setResult(null);
-    setChartData([]);
-    setWarning("");
+  // Tabs with methods deep-link to the active method; the rest link to the tab.
+  const hashFor = (target: TabId) => {
+    if (target === "prove") return proveMethod;
+    if (target === "characterise") return characteriseMethod;
+    if (target === "margin") return marginMethod;
+    return target;
   };
 
-  const downloadCSV = () => {
-    const rows = ["Sample Size,Confidence Level (%)"];
-    chartData.forEach((row) => rows.push(`${row.n},${row.cl}`));
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.setAttribute("hidden", "");
-    anchor.setAttribute("href", url);
-    anchor.setAttribute("download", "confidence_vs_sample_size.csv");
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
+  const selectTab = (next: TabId) => {
+    setTab(next);
+    writeHash(hashFor(next));
   };
+
+  const selectProveMethod = (next: ProveMethodId) => {
+    setProveMethod(next);
+    writeHash(next);
+  };
+
+  const selectCharacteriseMethod = (next: CharacteriseMethodId) => {
+    setCharacteriseMethod(next);
+    writeHash(next);
+  };
+
+  const selectMarginMethod = (next: MarginMethodId) => {
+    setMarginMethod(next);
+    writeHash(next);
+  };
+
+  const activeTab = TABS.find((entry) => entry.id === tab) ?? TABS[0];
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Calculator className="h-6 w-6 text-blue-600" />
-          Reliability Sample Size Calculator
-        </h1>
-        <button
-          type="button"
-          onClick={resetInputs}
-          className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          Reset
-        </button>
+    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+      <h1 className="flex items-center gap-2 text-3xl font-bold text-slate-900">
+        <Calculator className="h-7 w-7 shrink-0 text-blue-600" />
+        Reliability Sample Size Calculator
+      </h1>
+      <p className="mt-3 text-slate-600">
+        There is no single sample size formula. The right method is decided by what your test has to prove &mdash;
+        pass a reliability gate, characterise a life distribution, measure margin, discover limits, or screen
+        production. Pick the test type below; each is an independent calculator with its own inputs, its own
+        assumptions, and its own statement of what the answer does not mean.
+      </p>
+
+      <div className="mt-6 overflow-x-auto pb-1">
+        <div className="inline-flex min-w-max gap-1 rounded-lg bg-slate-100 p-1 text-sm font-semibold" role="tablist">
+          {TABS.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === entry.id}
+              onClick={() => selectTab(entry.id)}
+              className={`whitespace-nowrap rounded-md px-3.5 py-1.5 transition ${
+                tab === entry.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <section className="mb-6 rounded border border-gray-200 bg-gray-100 p-4 text-sm text-gray-800">
-        <h2 className="mb-2 text-base font-semibold text-blue-700">Binomial Acceptance Equation</h2>
-        <div className="mb-2 text-center text-base">
-          <BlockMath math={"\\sum_{i=0}^{f} \\binom{n}{i}(1-R)^i R^{n-i} = 1-CL"} />
-        </div>
-        <p>
-          <strong>n</strong> = sample size, <strong>f</strong> = allowed failures, <strong>R</strong> = reliability,
-          <strong> CL</strong> = confidence level.
-        </p>
-      </section>
+      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <h2 className="text-xl font-semibold text-slate-900">
+          {activeTab.heading} <span className="font-normal text-slate-500">({activeTab.qualifier})</span>
+        </h2>
+        <p className="mb-5 mt-1 text-sm text-slate-600">{activeTab.blurb}</p>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {[
-          {
-            label: "Failures (f)",
-            value: failures,
-            onChange: setFailures,
-            id: "f" as const,
-            error: fieldErrors.f,
-            solvable: false,
-            solveValue: null,
-          },
-          {
-            label: "Confidence Level (%)",
-            value: confidence,
-            onChange: setConfidence,
-            id: "CL" as const,
-            error: fieldErrors.CL,
-            solvable: true,
-            solveValue: "CL" as const,
-          },
-          {
-            label: "Reliability (%)",
-            value: reliability,
-            onChange: setReliability,
-            id: "R" as const,
-            error: fieldErrors.R,
-            solvable: true,
-            solveValue: "R" as const,
-          },
-          {
-            label: "Sample Size (n)",
-            value: sampleSize,
-            onChange: setSampleSize,
-            id: "n" as const,
-            error: fieldErrors.n,
-            solvable: true,
-            solveValue: "n" as const,
-          },
-        ].map((field) => (
-          <div key={field.id}>
-            <label className="flex items-center gap-2 text-sm font-medium">
-              {field.solvable ? (
-                <input
-                  type="radio"
-                  name="solveFor"
-                  value={field.solveValue ?? ""}
-                  checked={field.solveValue !== null && solveFor === field.solveValue}
-                  onChange={() => field.solveValue && setSolveFor(field.solveValue)}
-                />
-              ) : null}
-              {field.label}
-            </label>
-            <input
-              className={`mt-1 w-full rounded border p-2 ${field.error ? "border-red-500" : ""}`}
-              value={field.value}
-              onChange={(event) => field.onChange(event.target.value)}
-              disabled={field.solveValue !== null && solveFor === field.solveValue}
-            />
-            {field.error ? <p className="mt-1 text-xs text-red-700">{field.error}</p> : null}
-          </div>
-        ))}
+        {tab === "prove" ? <ProveClaimTab method={proveMethod} onMethodChange={selectProveMethod} /> : null}
+        {tab === "characterise" ? (
+          <CharacteriseLifeTab method={characteriseMethod} onMethodChange={selectCharacteriseMethod} />
+        ) : null}
+        {tab === "margin" ? <MeasureMarginTab method={marginMethod} onMethodChange={selectMarginMethod} /> : null}
+        {tab === "halt" ? <HaltBudgetTab /> : null}
+        {tab === "hass" ? <HassScreenTab /> : null}
       </div>
-
-      <button onClick={handleCalculate} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-        Calculate
-      </button>
-
-      {result ? (
-        <div className="mt-6 flex items-center justify-center gap-2 rounded border bg-gray-50 p-4 text-center text-lg font-semibold text-green-700">
-          <CheckCircle className="h-5 w-5" />
-          {result}
-        </div>
-      ) : null}
-
-      {warning ? (
-        <div className="mt-4 rounded border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">{warning}</div>
-      ) : null}
-
-      {chartData.length > 0 ? (
-        <div className="mt-8">
-          <h2 className="mb-2 text-lg font-semibold text-blue-700">Confidence vs Sample Size</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="n" label={{ value: "Sample Size (n)", position: "insideBottom", offset: -5 }} />
-              <YAxis label={{ value: "Confidence (%)", angle: -90, position: "insideLeft" }} />
-              <Tooltip />
-              <Line type="monotone" dataKey="cl" stroke="#000" dot={{ r: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
-          <button onClick={downloadCSV} className="mt-4 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">
-            Download CSV
-          </button>
-        </div>
-      ) : null}
 
       <ContactCTA variant="tool" />
 
-      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
-        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
-        <p className="mb-4">
-          For a reliability demonstration with <strong>zero allowed failures</strong> (a success-run test), the
-          number of units you must test to prove a reliability R at confidence C is:
+      {/* Rendered on every load, outside the tab state, so all five methods are in
+          the static export rather than hidden behind client-side interaction. */}
+      <section id="how-it-works" className="mt-12 border-t pt-8 text-sm text-slate-600">
+        <h2 className="mb-3 text-xl font-semibold text-slate-800">How it works</h2>
+        <p className="mb-6">
+          Sample size is not one calculation. Asking &ldquo;how many units do I need?&rdquo; without saying what the
+          test must prove is what produces the familiar answer of 22 units for everything. These five test types each
+          answer a different question, and they disagree with each other by design.
         </p>
-        <BlockMath math={"n = \\frac{\\ln(1 - C)}{\\ln(R)}"} />
-        <p className="mb-4">
-          <strong>Example:</strong> To demonstrate <strong>R&nbsp;=&nbsp;90% at 90% confidence (R90C90)</strong>{" "}
-          with no failures, you need <strong>n&nbsp;=&nbsp;ln(0.10)/ln(0.90) &asymp; 22 units</strong>.
-          Demanding R99C90 instead jumps the requirement to <strong>230 units</strong> &mdash; a vivid
-          illustration of how expensive high reliability targets become. The calculator also solves for
-          reliability or confidence when the sample size is fixed, and handles cases that allow one or more
-          failures via the binomial form.
+
+        <h3 className="mb-2 text-base font-semibold text-slate-800">1. Prove a reliability claim (test-to-pass)</h3>
+        <p className="mb-3">
+          The demonstration test. You have a target such as R90C90 &mdash; 90% reliability at 90% confidence &mdash;
+          and you need to show the design meets it. With zero allowed failures, the sample size is{" "}
+          <strong>n = ln(1 &minus; C) / ln(R)</strong>, which gives <strong>22 units</strong> for R90C90 and{" "}
+          <strong>230 units</strong> for R99C90. That jump is the central fact of reliability demonstration: high
+          targets are punishingly expensive to prove by counting.
         </p>
+        <p className="mb-3">
+          Allowing failures raises the count &mdash; at R90C90, one allowed failure needs 38 units, two needs 52,
+          three needs 65 &mdash; because a test that can survive a failure must be bigger to prove the same thing.
+        </p>
+        <p className="mb-3">
+          <strong>Extended bogey</strong> trades units for time. If failures follow a Weibull with shape &beta;,
+          running each unit to a multiple of one life earns credit:{" "}
+          <strong>n = ln(1 &minus; C) / [(t/T)<sup>&beta;</sup> &middot; ln R]</strong>. At &beta; = 2, testing to two
+          lives cuts R90C90 from 22 units to 6. But the saving lives entirely in &beta;: at &beta; = 1 &mdash; random
+          failures &mdash; doubling the test only halves the units, and below 1 it buys almost nothing. A &beta;
+          borrowed from a handbook rather than measured from failure data is the most common way this method produces
+          a confident wrong answer.
+        </p>
+        <p className="mb-6">
+          <strong>MTBF demonstration</strong> answers in time, not units. The total test time is{" "}
+          <strong>T = MTBF<sub>req</sub> &middot; &chi;&sup2;(1&minus;C, 2r+2) / 2</strong>, where r is the number of
+          failures allowed. At 90% confidence with zero failures the multiplier is 2.3026, so demonstrating a 5,000
+          hour MTBF takes 11,513 unit-hours &mdash; splittable across any number of units. It assumes a constant
+          failure rate, which is exactly the assumption the{" "}
+          <Link href="/tools/Weibull" className="text-blue-600 hover:underline">
+            Weibull tool
+          </Link>{" "}
+          exists to test.
+        </p>
+
+        <h3 className="mb-2 text-base font-semibold text-slate-800">
+          2. Characterise the life distribution (test-to-failure)
+        </h3>
+        <p className="mb-6">
+          If you want to know <em>when</em> things fail rather than whether they pass, there is no closed-form sample
+          size, because what you need is <strong>failures, not units</strong>. Two or three failures give an
+          engineering feel for the mode; around seven support a usable &beta;; fifteen to twenty tighten the
+          confidence bounds enough to quote a B10 life. Units follow from failures once you assume a censoring
+          fraction. Accelerated life testing needs at least three stress levels with failures at{" "}
+          <em>every</em> level &mdash; a level that produces none contributes nothing to the model &mdash; and
+          degradation testing needs far fewer units, typically five to ten, because each unit contributes a whole
+          curve rather than a single data point.
+        </p>
+
+        <h3 className="mb-2 text-base font-semibold text-slate-800">3. Measure margin instead of counting failures</h3>
+        <p className="mb-3">
+          Counting pass/fail outcomes throws away most of the information in a measurement. If the characteristic is
+          continuous and roughly normal, a <strong>tolerance interval</strong> proves the same claim with far fewer
+          units: 90/90 by the attribute route takes 22 units, by the variables route about 10. The saving is not
+          free. It holds only if the design carries the margin &mdash; at n = 10 the one-sided factor is k = 2.0657,
+          so you need the spec limit to sit at least 2.07 standard deviations from the mean. A design running close to
+          its limit gets no discount, and the method requires normality.
+        </p>
+        <p className="mb-6">
+          A <strong>comparative test</strong> (A versus B) is sized from effect size and statistical power, not from R
+          and C at all &mdash; it answers whether two designs differ, not whether either is reliable. Detecting a one
+          standard deviation difference at 80% power needs 17 units per arm. <strong>Weibayes</strong> credits
+          existing test evidence from a comparable design against the new requirement, which can cut the remaining
+          test dramatically &mdash; and is only as defensible as the claim that the two designs are comparable.
+        </p>
+
+        <h3 className="mb-2 text-base font-semibold text-slate-800">4. HALT unit budget</h3>
+        <p className="mb-6">
+          HALT is <strong>discovery, not proof</strong>. It finds operating and destruct limits by stepping stress
+          past specification until things break, so no reliability or confidence figure can be claimed from it, no
+          matter how many units you run. The unit count is a budget question: how many stress axes you explore,
+          whether you push to destruct limits, and how many units each axis consumes. It usually lands at three to
+          six. Build the stress profile itself in the{" "}
+          <Link href="/tools/HALTHASSWizard" className="text-blue-600 hover:underline">
+            HALT/HASS Wizard
+          </Link>
+          .
+        </p>
+
+        <h3 className="mb-2 text-base font-semibold text-slate-800">5. HASS screen sizing</h3>
+        <p className="mb-6">
+          HASS is a production screen, a different problem from HALT: it removes latent defects from units you intend
+          to ship. Sampling is a lot-acceptance question &mdash; how many parts per lot must be screened to catch a
+          lot sitting at the target escape rate &mdash; and the honest answer is often a large fraction of the lot,
+          which is why screening starts at 100% and reduces only after a proof-of-screen. Screen strength must stay
+          well inside the destruct limits found in HALT; a screen that consumes useful life ships weakened product.
+        </p>
+
+        <h3 className="mb-2 text-base font-semibold text-slate-800">Shortening the test instead of enlarging it</h3>
         <p>
-          Use this early in test planning to trade sample size against confidence and reliability before
-          committing lab resources. To shorten test duration instead of adding units, combine with an acceleration
-          model such as{" "}
+          Every method here trades units, time, and assumptions. When schedule is the binding constraint rather than
+          unit cost, combine with an acceleration model &mdash;{" "}
           <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
             Arrhenius
           </Link>{" "}
-          or{" "}
+          for temperature-driven mechanisms,{" "}
           <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
             Coffin-Manson
+          </Link>{" "}
+          for thermal cycling &mdash; and check the resulting claim against your field target with the{" "}
+          <Link href="/tools/FIT" className="text-blue-600 hover:underline">
+            FIT calculator
           </Link>
           .
         </p>

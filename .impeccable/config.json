@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "app/tools/Samplesize/_components/ui.tsx"
+        ],
+        "createdAt": "2026-08-16T22:45:21.437Z",
+        "reason": "DESIGN.md L109/L114/L173 mandate left-border callout strips for calculated results, warnings and errors; ui.tsx holds the five shared callout primitives"
+      }
+    ]
+  }
+}
