@@ -3,6 +3,10 @@
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
+import {
+  toolSlugFromPathname,
+  useCalculatorTracking,
+} from "@/lib/useCalculatorTracking";
 
 export default function PublicSiteChrome({
   children,
@@ -10,6 +14,12 @@ export default function PublicSiteChrome({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
+  // Mounted once for the whole site: the hook is document-delegated, so every
+  // calculator under /tools/<slug> is covered without any tracking code
+  // reaching the tool pages themselves. A no-op everywhere else.
+  useCalculatorTracking(toolSlugFromPathname(pathname));
+
   const isAppWorkspace = pathname === "/app" || pathname.startsWith("/app/");
 
   if (isAppWorkspace) {

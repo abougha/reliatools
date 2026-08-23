@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
 
 const TOOL_COPY = [
   "Need help applying this to a real validation program? Contact Reliatools.",
@@ -29,11 +30,22 @@ export default function ContactCTA({
 }) {
   const pathname = usePathname() || "";
   const copyList = variant === "tool" ? TOOL_COPY : ARTICLE_COPY;
-  const copy = copyList[hashString(pathname) % copyList.length];
+  const copyIndex = hashString(pathname) % copyList.length;
+  const copy = copyList[copyIndex];
 
   return (
     <div className="mt-8 border-t border-gray-200 pt-4 text-sm text-gray-500">
-      <Link href="/contact" className="hover:text-gray-700 hover:underline">
+      <Link
+        href="/contact"
+        className="hover:text-gray-700 hover:underline"
+        onClick={() =>
+          // Fire-and-forget: never preventDefault, never delay navigation.
+          trackEvent("cta_click", {
+            cta_variant: `${variant}-${copyIndex}`,
+            source_page: pathname,
+          })
+        }
+      >
         {copy}
       </Link>
     </div>

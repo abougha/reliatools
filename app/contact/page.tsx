@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { validateContactForm, type ContactFormData } from "@/lib/contact/validation";
+import { trackEvent } from "@/lib/analytics";
 
 type FormState = "idle" | "submitting" | "success";
 
@@ -50,6 +51,9 @@ export default function ContactPage() {
       }
 
       setState("success");
+      // Confirmed success only — never on click, validation failure, or a
+      // non-OK/failed request. No form field values are sent.
+      trackEvent("contact_form_submit", { form_location: "contact_page" });
       setForm({ name: "", email: "", company: "", message: "", honeypot: "" });
     } catch {
       setError("Something went wrong. Please try again.");
