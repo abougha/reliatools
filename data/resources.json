@@ -1,5 +1,14 @@
 [
     {
+        "slug":  "nudd-engineering-risk",
+        "title":  "NUDD: What Automotive Can Learn from Consumer Electronics",
+        "category":  "Article",
+        "description":  "NUDD is a fast front-end uncertainty scan for automotive teams adopting consumer-electronics technology. Learn how to turn New/Unique/Different/Difficult findings into concrete reliability evidence.",
+        "date":  "2026-08-30",
+        "content":  "",
+        "link":  "/resources/nudd-engineering-risk"
+    },
+    {
         "slug":  "fit-article",
         "title":  "What Does 1 FIT Really Mean? Automotive Reliability, PMHF, and the Test-Evidence Problem",
         "category":  "Article",
