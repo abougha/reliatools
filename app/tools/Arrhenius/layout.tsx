@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import JsonLd from "@/components/JsonLd";
 import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Arrhenius Acceleration Factor Calculator (Free Online Tool) | Reliatools",
+  title: PAGE_NAMES["/tools/Arrhenius/"],
   description:
     "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
   openGraph: {
-    title: "Arrhenius Acceleration Factor Calculator (Free Online Tool) | Reliatools",
+    title: ogTitle("/tools/Arrhenius/"),
     description:
       "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
     url: "https://www.reliatools.com/tools/Arrhenius",

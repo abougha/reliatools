@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import JsonLd from "@/components/JsonLd";
 import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Component Derating Calculator & Navigator (MIL-Style) | Reliatools",
+  title: PAGE_NAMES["/tools/Derating/"],
   description:
     "Free online component derating calculator and navigator. Check voltage, current, power, and temperature margins against MIL-style guidelines. No signup required.",
   openGraph: {
-    title: "Component Derating Calculator & Navigator (MIL-Style) | Reliatools",
+    title: ogTitle("/tools/Derating/"),
     description:
       "Free online component derating calculator and navigator. Check voltage, current, power, and temperature margins against MIL-style guidelines. No signup required.",
     url: "https://www.reliatools.com/tools/Derating",

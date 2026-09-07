@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import TaguchiBayesianArticle from "@/app/resources/taguchi-bayesian-article";
 import JsonLd from "@/components/JsonLd";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Hybrid Test Planning: Taguchi, Bayesian, and Monte Carlo | Reliatools",
+  title: PAGE_NAMES["/resources/taguchi-bayesian-article/"],
   description:
     "How to combine Taguchi design of experiments, Bayesian inference, and Monte Carlo simulation for smarter reliability validation planning. A practical approach to optimizing test strategy and coverage.",
   openGraph: {
-    title: "Hybrid Test Planning: Taguchi, Bayesian, and Monte Carlo | Reliatools",
+    title: ogTitle("/resources/taguchi-bayesian-article/"),
     description:
       "Combine Taguchi DOE, Bayesian inference, and Monte Carlo simulation for smarter reliability validation planning and test strategy optimization.",
     url: "https://www.reliatools.com/resources/taguchi-bayesian-article",

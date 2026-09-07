@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import Image from "next/image";
 import Link from "next/link";
 import ContactCTA from "@/components/ContactCTA";
@@ -6,11 +7,11 @@ import JsonLd from "@/components/JsonLd";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile | Reliatools",
+  title: PAGE_NAMES["/resources/mission-profile-builder/"],
   description:
     "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress × phase matrix.",
   openGraph: {
-    title: "Stop Guessing Environmental Loads — Start Designing from a Real Mission Profile | Reliatools",
+    title: ogTitle("/resources/mission-profile-builder/"),
     description:
       "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress × phase matrix.",
     url: "https://www.reliatools.com/resources/mission-profile-builder",

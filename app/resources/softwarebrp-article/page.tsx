@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import SoftwareBRPArticle from "@/app/resources/SoftwareBRP-article";
 import JsonLd from "@/components/JsonLd";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Software Reliability Program (BRP) — Planning Guide | Reliatools",
+  title: PAGE_NAMES["/resources/softwarebrp-article/"],
   description:
     "How to structure a Software Business Reliability Program (BRP) for embedded and safety-critical software. Covers reliability requirements, failure mode analysis, verification strategy, and test planning.",
   openGraph: {
-    title: "Software Reliability Program (BRP) — Planning Guide | Reliatools",
+    title: ogTitle("/resources/softwarebrp-article/"),
     description:
       "How to structure a Software BRP for embedded and safety-critical software: reliability requirements, failure mode analysis, verification strategy, and test planning.",
     url: "https://www.reliatools.com/resources/softwarebrp-article",

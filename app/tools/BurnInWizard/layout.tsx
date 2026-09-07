@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import JsonLd from "@/components/JsonLd";
 import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Burn-In Test Calculator & Planning Wizard | Reliatools",
+  title: PAGE_NAMES["/tools/BurnInWizard/"],
   description:
     "Free online burn-in test calculator and planning wizard. Plan burn-in duration to screen out infant mortality failures before shipment. No signup required.",
   openGraph: {
-    title: "Burn-In Test Calculator & Planning Wizard | Reliatools",
+    title: ogTitle("/tools/BurnInWizard/"),
     description:
       "Free online burn-in test calculator and planning wizard. Plan burn-in duration to screen out infant mortality failures before shipment. No signup required.",
     url: "https://www.reliatools.com/tools/BurnInWizard",

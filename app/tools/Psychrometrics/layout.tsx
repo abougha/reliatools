@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import JsonLd from "@/components/JsonLd";
 import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Psychrometric Calculator — Humidity, Wet Bulb, Enthalpy | Reliatools",
+  title: PAGE_NAMES["/tools/Psychrometrics/"],
   description:
     "Free online psychrometric calculator. Compute humidity, wet bulb temperature, dew point, and enthalpy for environmental test planning. No signup required.",
   openGraph: {
-    title: "Psychrometric Calculator — Humidity, Wet Bulb, Enthalpy | Reliatools",
+    title: ogTitle("/tools/Psychrometrics/"),
     description:
       "Free online psychrometric calculator. Compute humidity, wet bulb temperature, dew point, and enthalpy for environmental test planning. No signup required.",
     url: "https://www.reliatools.com/tools/Psychrometrics",

@@ -6,9 +6,10 @@ import {
   ArrowRight,
 } from "lucide-react";
 import AnimatedReliabilityLogo from "@/components/AnimatedReliabilityLogo";
+import { ABSOLUTE_TITLES, ogTitle } from "@/lib/seo/titles";
 
 export const metadata = {
-  title: "Reliatools | Physics-Based Reliability Engineering Tools",
+  title: ABSOLUTE_TITLES["/"],
   description:
     "Physics-based reliability tools for mission profiles, acceleration factors, reliability test sizing, Weibull analysis, and validation planning.",
   keywords: [
@@ -20,7 +21,7 @@ export const metadata = {
     "Weibull Analysis",
   ],
   openGraph: {
-    title: "Reliatools | Physics-Based Reliability Engineering Tools",
+    title: ogTitle("/"),
     description:
       "Build mission profiles, calculate acceleration factors, size reliability tests, analyze Weibull data, and generate defensible validation plans.",
     url: "https://www.reliatools.com/",

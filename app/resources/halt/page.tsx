@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import HALTArticle from "@/app/resources/halt";
 import JsonLd from "@/components/JsonLd";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "HALT Testing — Highly Accelerated Life Testing Guide | Reliatools",
+  title: PAGE_NAMES["/resources/halt/"],
   description:
     "A practical guide to Highly Accelerated Life Testing (HALT). Learn how HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
   openGraph: {
-    title: "HALT Testing — Highly Accelerated Life Testing Guide | Reliatools",
+    title: ogTitle("/resources/halt/"),
     description:
       "How HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
     url: "https://www.reliatools.com/resources/halt",

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import FitArticle from "@/app/resources/fit-article";
 import JsonLd from "@/components/JsonLd";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title:
-    "What Does 1 FIT Really Mean? Automotive Reliability, PMHF & ASIL Explained | Reliatools",
+    PAGE_NAMES["/resources/fit-article/"],
   description:
     "What 1 FIT really means: mission ppm, expected fleet failures, PMHF, ASIL targets, and why ultra-low failure-rate claims need billions of device-hours of evidence.",
   keywords: [
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     "reliability testing",
   ],
   openGraph: {
-    title: "What Does 1 FIT Really Mean? PMHF & ASIL Explained | Reliatools",
+    title: ogTitle("/resources/fit-article/"),
     description:
       "Convert a FIT claim into mission ppm, expected fleet failures, and required test evidence, and see how FIT relates to PMHF and ASIL A–D.",
     url: "https://www.reliatools.com/resources/fit-article",

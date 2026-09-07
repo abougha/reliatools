@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import JsonLd from "@/components/JsonLd";
 import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Software Reliability Calculator — Bayesian Prediction | Reliatools",
+  title: PAGE_NAMES["/tools/SoftwareBRP/"],
   description:
     "Free online Bayesian software reliability predictor. Estimate reliability growth and failure intensity from test data using Bayesian methods. No signup required.",
   openGraph: {
-    title: "Software Reliability Calculator — Bayesian Prediction | Reliatools",
+    title: ogTitle("/tools/SoftwareBRP/"),
     description:
       "Free online Bayesian software reliability predictor. Estimate reliability growth and failure intensity from test data using Bayesian methods. No signup required.",
     url: "https://www.reliatools.com/tools/SoftwareBRP",

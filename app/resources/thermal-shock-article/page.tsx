@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import ThermalShockArticle from "@/app/resources/thermal-shock-article";
 import JsonLd from "@/components/JsonLd";
 import { articleJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Thermal Shock, Thermal Cycling, and the Coffin-Manson Model | Reliatools",
+  title: PAGE_NAMES["/resources/thermal-shock-article/"],
   description:
     "How thermal cycling drives fatigue damage in solder joints and electronic assemblies, and how the Coffin-Manson model estimates cycles to failure for accelerated life testing.",
   openGraph: {
-    title: "Thermal Shock, Thermal Cycling, and the Coffin-Manson Model | Reliatools",
+    title: ogTitle("/resources/thermal-shock-article/"),
     description:
       "How thermal cycling drives fatigue damage in electronics and how the Coffin-Manson model estimates cycles to failure for accelerated life testing.",
     url: "https://www.reliatools.com/resources/thermal-shock-article",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogTitle, PAGE_NAMES } from "@/lib/seo/titles";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
 import JsonLd from "@/components/JsonLd";
 import { softwareAppJsonLd } from "@/lib/seo/jsonld";
@@ -22,11 +23,11 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Weibull Analysis Calculator — Probability Plot, Beta & Eta | Reliatools",
+  title: PAGE_NAMES["/tools/Weibull/"],
   description:
     "Free online Weibull analysis calculator. Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time. No signup required.",
   openGraph: {
-    title: "Weibull Analysis Calculator — Probability Plot, Beta & Eta | Reliatools",
+    title: ogTitle("/tools/Weibull/"),
     description:
       "Free online Weibull analysis calculator. Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time. No signup required.",
     url: "https://www.reliatools.com/tools/Weibull",
