@@ -214,7 +214,7 @@ export default function HaltBudgetTab() {
           </div>
           <p className="mt-2 text-xs text-slate-500">
             Build the actual stress profile &mdash; step sizes, dwell times, lanes &mdash; in the{" "}
-            <Link href="/tools/HALTHASSWizard" className="text-blue-600 hover:underline">
+            <Link href="/tools/HALTHASSWizard/" className="text-blue-600 hover:underline">
               HALT/HASS Wizard
             </Link>
             .

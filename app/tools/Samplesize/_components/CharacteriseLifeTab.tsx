@@ -165,7 +165,7 @@ function WeibullLifePlanner() {
             </p>
             <p className="mt-2">
               Once you have the failure data, fit it in the{" "}
-              <Link href="/tools/Weibull" className="text-blue-600 hover:underline">
+              <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">
                 Weibull tool
               </Link>
               .
@@ -308,11 +308,11 @@ function AltPlanner() {
           </div>
           <p className="mt-2 text-xs text-slate-500">
             Derive the acceleration factor itself with{" "}
-            <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+            <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
               Arrhenius
             </Link>{" "}
             or{" "}
-            <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+            <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">
               Coffin-Manson
             </Link>
             .

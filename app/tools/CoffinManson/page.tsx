@@ -7,6 +7,7 @@ import "katex/dist/katex.min.css";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { computeCoffinMansonCyclesToFailure } from "@/lib/reliabilityMath";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 type SolveTarget = "Nf" | "A" | "deltaEps" | "c";
 
@@ -237,16 +238,17 @@ export default function CoffinMansonCalculator() {
         <p>
           Use this for thermal-cycling and thermal-shock fatigue. For diffusion- or reaction-driven wear-out, use
           the{" "}
-          <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+          <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
             Arrhenius calculator
           </Link>{" "}
           instead; to define the real-world &Delta;T distribution your product sees, start with the{" "}
-          <Link href="/tools/MissionProfile" className="text-blue-600 hover:underline">
+          <Link href="/tools/MissionProfile/" className="text-blue-600 hover:underline">
             Mission Profile tool
           </Link>
           .
         </p>
       </section>
+      <RelatedLinks route="/tools/CoffinManson/" />
     </div>
   );
 }

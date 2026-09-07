@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 export default function FitArticle() {
   return (
@@ -94,7 +95,7 @@ export default function FitArticle() {
 
       <p className="text-center mt-6">
         Want to run these numbers on your own claim? Try the{" "}
-        <Link href="/tools/FIT" className="text-blue-600 hover:underline">FIT Calculator</Link>{" "}
+        <Link href="/tools/FIT/" className="text-blue-600 hover:underline">FIT Calculator</Link>{" "}
         to convert a FIT value into mission ppm, fleet failures, and required test evidence.
       </p>
 
@@ -267,11 +268,11 @@ export default function FitArticle() {
       <p>When <InlineMath math={"\\beta = 1"} /> the Weibull model reduces to a constant failure rate. When{" "}
         <InlineMath math={"\\beta > 1"} /> the failure rate increases with time, indicating wear-out. For time-dependent
         life data, the{" "}
-        <Link href="/tools/Weibull" className="text-blue-600 hover:underline">Weibull Calculator</Link>{" "}
+        <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">Weibull Calculator</Link>{" "}
         evaluates shape, characteristic life, B-life, and mission reliability directly.</p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">What the FIT Calculator does today</h2>
-      <p>The Reliatools <Link href="/tools/FIT" className="text-blue-600 hover:underline">FIT Calculator</Link> is built
+      <p>The Reliatools <Link href="/tools/FIT/" className="text-blue-600 hover:underline">FIT Calculator</Link> is built
         to turn abstract failure-rate numbers into practical engineering meaning. It currently includes two modules:</p>
       <ul className="list-disc list-inside space-y-1 mt-2">
         <li><strong>FIT / Reliability Converter</strong> &mdash; enter one known value (FIT, failure rate per hour,
@@ -284,7 +285,7 @@ export default function FitArticle() {
       <p className="mt-4 text-sm text-gray-600">A Safety FIT / PMHF budget preview (ASIL selection, per-block base FIT,
         safety-relevant fraction, diagnostic coverage, and simplified residual dangerous FIT) and an advanced Weibull
         section for time-dependent cases are planned extensions to this tool. Until then, use the standalone{" "}
-        <Link href="/tools/Weibull" className="text-blue-600 hover:underline">Weibull Calculator</Link>{" "}
+        <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">Weibull Calculator</Link>{" "}
         for wear-out analysis.</p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Final takeaway</h2>
@@ -300,9 +301,9 @@ export default function FitArticle() {
 
       <p className="text-center mt-6">
         Turn a quoted FIT number into an engineering result with the{" "}
-        <Link href="/tools/FIT" className="text-blue-600 hover:underline">FIT Calculator</Link>, and evaluate
+        <Link href="/tools/FIT/" className="text-blue-600 hover:underline">FIT Calculator</Link>, and evaluate
         time-dependent life data with the{" "}
-        <Link href="/tools/Weibull" className="text-blue-600 hover:underline">Weibull Calculator</Link>.
+        <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">Weibull Calculator</Link>.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">References and further reading</h2>
@@ -322,6 +323,7 @@ export default function FitArticle() {
         functional-safety review.
       </p>
 
+      <RelatedLinks route="/resources/fit-article/" />
       <ContactCTA variant="article" />
     </main>
   );

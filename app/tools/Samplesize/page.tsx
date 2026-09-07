@@ -166,7 +166,7 @@ export default function SampleSizeCalculatorPage() {
           failures allowed. At 90% confidence with zero failures the multiplier is 2.3026, so demonstrating a 5,000
           hour MTBF takes 11,513 unit-hours &mdash; splittable across any number of units. It assumes a constant
           failure rate, which is exactly the assumption the{" "}
-          <Link href="/tools/Weibull" className="text-blue-600 hover:underline">
+          <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">
             Weibull tool
           </Link>{" "}
           exists to test.
@@ -210,7 +210,7 @@ export default function SampleSizeCalculatorPage() {
           matter how many units you run. The unit count is a budget question: how many stress axes you explore,
           whether you push to destruct limits, and how many units each axis consumes. It usually lands at three to
           six. Build the stress profile itself in the{" "}
-          <Link href="/tools/HALTHASSWizard" className="text-blue-600 hover:underline">
+          <Link href="/tools/HALTHASSWizard/" className="text-blue-600 hover:underline">
             HALT/HASS Wizard
           </Link>
           .
@@ -229,15 +229,15 @@ export default function SampleSizeCalculatorPage() {
         <p>
           Every method here trades units, time, and assumptions. When schedule is the binding constraint rather than
           unit cost, combine with an acceleration model &mdash;{" "}
-          <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+          <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
             Arrhenius
           </Link>{" "}
           for temperature-driven mechanisms,{" "}
-          <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+          <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">
             Coffin-Manson
           </Link>{" "}
           for thermal cycling &mdash; and check the resulting claim against your field target with the{" "}
-          <Link href="/tools/FIT" className="text-blue-600 hover:underline">
+          <Link href="/tools/FIT/" className="text-blue-600 hover:underline">
             FIT calculator
           </Link>
           .

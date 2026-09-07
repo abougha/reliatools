@@ -13,6 +13,7 @@ import { ResultsSummary, type SummaryRow } from "./ResultsSummary";
 import { ExportPanel } from "./ExportPanel";
 import { Tabs, TabPanel, type TabKey } from "./Tabs";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 const ALL_COMPONENT_TYPES: ComponentType[] = [
     "Silicon: Digital MOS",
@@ -427,6 +428,7 @@ export default function DeratingToolPage() {
             <TabPanel active={tab === "export"}>
                 <ExportPanel state={state} />
             </TabPanel>
+            <RelatedLinks route="/tools/Derating/" />
             <ContactCTA variant="tool" />
         </div>
     );

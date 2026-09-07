@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 export default function DeratingArticlePage() {
   return (
@@ -255,7 +256,7 @@ export default function DeratingArticlePage() {
         <div className="text-sm font-semibold">Try the Derating Navigator</div>
         <p className="mt-1 text-sm text-neutral-700">
           If you want to apply these rules consistently (and avoid spreadsheet back-and-forth), use our{" "}
-          <Link href="/tools/Derating" className="text-blue-600 hover:underline">
+          <Link href="/tools/Derating/" className="text-blue-600 hover:underline">
             Derating Navigator
           </Link>{" "}
           to select a component type, match the rule library, and compute derated DM/FOS and thermal margin
@@ -278,15 +279,16 @@ export default function DeratingArticlePage() {
 
       <p className="mt-6 text-center">
         Want to translate temperature or voltage margin into lifetime impact? Try our{" "}
-        <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+        <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
           Arrhenius Calculator
         </Link>{" "}
         and build equivalent-stress plans with the{" "}
-        <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">
+        <Link href="/tools/BurnInWizard/" className="text-blue-600 hover:underline">
           Burn-In Wizard
         </Link>
         .
       </p>
+      <RelatedLinks route="/resources/derating/" />
       <ContactCTA variant="article" />
     </main>
   );

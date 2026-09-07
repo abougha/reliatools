@@ -26,6 +26,7 @@ import {
   type EvidenceResult,
 } from "@/lib/fitpmhf";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 function fmt(n: number, sig = 4): string {
   if (!isFinite(n)) return "—";
@@ -656,7 +657,7 @@ export default function FitCalculatorPage() {
           <li>
             The converter assumes a constant failure rate (exponential model). It does not represent infant-mortality
             or wear-out phases &mdash; that is what the{" "}
-            <Link href="/tools/Weibull" className="text-blue-600 hover:underline">
+            <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">
               Weibull
             </Link>{" "}
             module covers.
@@ -668,11 +669,11 @@ export default function FitCalculatorPage() {
           <li>
             Acceleration factor is treated as a single scalar; it should come from a validated physics-of-failure
             model (e.g.{" "}
-            <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+            <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
               Arrhenius
             </Link>
             ,{" "}
-            <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+            <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">
               Coffin-Manson
             </Link>
             ).
@@ -680,6 +681,7 @@ export default function FitCalculatorPage() {
           <li>This tool is educational and for planning. It does not replace a formal FMEDA, safety case, or ISO 26262 assessment.</li>
         </ul>
       </section>
+      <RelatedLinks route="/tools/FIT/" />
     </div>
   );
 }

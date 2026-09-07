@@ -5,6 +5,7 @@ import Image from "next/image";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 export default function ThermalShockArticle() {
   return (
@@ -56,7 +57,7 @@ export default function ThermalShockArticle() {
       </p>
 
       <p className="text-center mt-4">
-        Want to understand how thermal shock impacts your design? Use our <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link> to estimate fatigue life based on thermal cycles.
+        Want to understand how thermal shock impacts your design? Use our <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link> to estimate fatigue life based on thermal cycles.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Limitations and Best Practices</h2>
@@ -69,8 +70,9 @@ export default function ThermalShockArticle() {
       <h2 className="text-2xl font-semibold mt-8 mb-4">Conclusion: Designing for Durability</h2>
       <p>The Coffin-Manson model is essential for understanding fatigue from thermal cycling in microelectronics.</p>
       <p>
-        With predictive tools like our <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link>, engineers can make smarter design decisions and ensure devices remain reliable in everyday use.
+        With predictive tools like our <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">Coffin-Manson Calculator</Link>, engineers can make smarter design decisions and ensure devices remain reliable in everyday use.
       </p>
+      <RelatedLinks route="/resources/thermal-shock-article/" />
       <ContactCTA variant="article" />
     </main>
   );

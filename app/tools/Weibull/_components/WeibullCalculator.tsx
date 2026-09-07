@@ -576,7 +576,7 @@ export default function WeibullCalculator() {
         <p>
           Use this to turn field or test failure data into quantitative life predictions and to distinguish infant
           mortality from wear-out. Pair it with the{" "}
-          <Link href="/tools/Samplesize" className="text-blue-600 hover:underline">
+          <Link href="/tools/Samplesize/" className="text-blue-600 hover:underline">
             Sample Size calculator
           </Link>{" "}
           when planning the test that generates the data.

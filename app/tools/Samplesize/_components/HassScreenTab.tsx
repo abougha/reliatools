@@ -200,7 +200,7 @@ export default function HassScreenTab() {
           <p className="mt-3 text-xs text-slate-500">
             Establish the destruct limits this percentage is measured against with a HALT first &mdash; build the
             profile in the{" "}
-            <Link href="/tools/HALTHASSWizard" className="text-blue-600 hover:underline">
+            <Link href="/tools/HALTHASSWizard/" className="text-blue-600 hover:underline">
               HALT/HASS Wizard
             </Link>
             .

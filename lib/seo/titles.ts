@@ -3,20 +3,19 @@
 // Single canonical source for every indexable page title on the site.
 //
 // Two consumers read this file and they must never disagree:
-//   1. Route metadata (`app/**/layout.tsx`, `app/**/page.tsx`) — renders <title>.
-//   2. The GA4 pageview (`components/AnalyticsPageviews.tsx`) — sends `page_title`.
+//   1. `metadata.title` (`app/**/layout.tsx`, `app/**/page.tsx`) — the <title>.
+//   2. `metadata.openGraph.title`, via `ogTitle()` — the share-card title.
 //
-// Before this existed, GA4 read `document.title` at send time. That made the
-// reported title depend on when the hit fired relative to Next.js committing
-// the new <title> on a client-side navigation, and it also picked up
-// browser-translated titles (a Chrome auto-translate of /tools/Weibull/ was
-// logging as "Calculadora de analisis de Weibull"). One page therefore
-// reported as several rows in GA4. Sending page_title explicitly from this
-// map removes both failure modes.
+// Why it exists: `app/tools/layout.tsx` and `app/resources/layout.tsx` each
+// set `title` as a plain string, which in Next.js nulls `title.template` for
+// the whole subtree. The root "%s | Reliatools" template therefore never
+// reached any tool or article page, and each one hardcoded the suffix — so a
+// new page under either root shipped bare. Commit cb8ec53 (2026-08-16) fixed
+// the 13 pages that had already shipped that way; this map fixes the cause.
 //
 // PAGE_NAMES holds the *bare* page name. The " | Reliatools" suffix is added
-// exactly once, either by the Next.js `title.template` for rendered metadata
-// or by `pageTitle()` for analytics — never hardcoded into a name here.
+// exactly once, by the Next.js `title.template` for rendered metadata or by
+// `pageTitleFor()` / `ogTitle()` — never hardcoded into a name here.
 
 export const SITE_NAME = "Reliatools";
 
@@ -81,9 +80,9 @@ export function normalizeRoute(pathname: string): string {
 }
 
 /**
- * Full page title for a route, suffix included — the value sent to GA4 as
- * `page_title`. Returns null for routes that are not in the map (the /app
- * workspace, 404s), so the caller can decide on a fallback.
+ * Full page title for any pathname, suffix included. Returns null for routes
+ * that are not in the map (the /app workspace, 404s), so the caller can decide
+ * on a fallback. Use `pageTitleFor()` when the route is known at build time.
  */
 export function pageTitle(pathname: string): string | null {
   const route = normalizeRoute(pathname);

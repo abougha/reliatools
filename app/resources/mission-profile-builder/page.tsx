@@ -129,7 +129,7 @@ export default function MissionProfileBuilderArticlePage() {
       <h2 className="mb-4 mt-8 text-2xl font-semibold">Try It</h2>
       <p className="mb-6">
         Try it directly in the{" "}
-        <Link href="/tools/MissionProfile" className="font-semibold text-blue-600 hover:underline">
+        <Link href="/tools/MissionProfile/" className="font-semibold text-blue-600 hover:underline">
           Mission Profile Builder
         </Link>
         .
@@ -141,7 +141,7 @@ export default function MissionProfileBuilderArticlePage() {
           Build a defensible duty cycle and map lifetime exposure before writing your next test plan.
         </p>
         <Link
-          href="/tools/MissionProfile"
+          href="/tools/MissionProfile/"
           className="mt-4 inline-flex rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
         >
           Try the Mission Profile Builder

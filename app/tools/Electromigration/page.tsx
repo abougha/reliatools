@@ -382,7 +382,7 @@ export default function ElectromigrationCalculator() {
         <p>
           Use this when sizing metal traces, vias, or bond wires for long-term current loading. For thermally
           activated chemical wear-out, see the{" "}
-          <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+          <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
             Arrhenius calculator
           </Link>
           .

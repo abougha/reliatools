@@ -5,6 +5,7 @@ import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import Image from "next/image";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 export default function ArrheniusArticle() {
   return (
@@ -77,7 +78,7 @@ export default function ArrheniusArticle() {
       </p>
 
       <p className="text-center mt-4">
-        Curious how temperature affects your reliability? Check out our <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
+        Curious how temperature affects your reliability? Check out our <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> for quick estimates.
       </p>
 
       <h3 className="text-xl font-semibold mt-6 mb-2">Microelectronics: Managing Thermal Risks</h3>
@@ -88,7 +89,7 @@ export default function ArrheniusArticle() {
       </p>
 
       <p className="text-center mt-4">
-        Want to estimate your own short burn-in test conditions to check for early failures? Try our <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
+        Want to estimate your own short burn-in test conditions to check for early failures? Try our <Link href="/tools/BurnInWizard/" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simulate equivalent field life from accelerated test plans.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">Limitations and Cautions</h2>
@@ -105,8 +106,9 @@ export default function ArrheniusArticle() {
       </p>
 
       <p className="text-center mt-6">
-        Ready to try it yourself? Visit our <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> and <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simplify your reliability test planning today.
+        Ready to try it yourself? Visit our <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">Arrhenius Calculator</Link> and <Link href="/tools/BurnInWizard/" className="text-blue-600 hover:underline">Burn-In Wizard</Link> to simplify your reliability test planning today.
       </p>
+      <RelatedLinks route="/resources/arrhenius-article/" />
       <ContactCTA variant="article" />
     </main>
   );

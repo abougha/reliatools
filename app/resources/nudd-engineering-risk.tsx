@@ -160,13 +160,13 @@ export default function NuddEngineeringRiskArticle() {
               <td className="p-3">New material with limited automotive history</td>
               <td className="p-3">
                 Material characterization, degradation analysis, supplier-process review, and{" "}
-                <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">accelerated aging</Link>
+                <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">accelerated aging</Link>
               </td>
             </tr>
             <tr>
               <td className="p-3">Unique combination of temperature, vibration, and electrical load</td>
               <td className="p-3">
-                <Link href="/tools/MissionProfile" className="text-blue-600 hover:underline">
+                <Link href="/tools/MissionProfile/" className="text-blue-600 hover:underline">
                   Mission-profile development
                 </Link>
                 , physics-of-failure review, and combined-environment testing
@@ -176,11 +176,11 @@ export default function NuddEngineeringRiskArticle() {
               <td className="p-3">Different duty cycle from the reference application</td>
               <td className="p-3">
                 Damage-equivalence assessment,{" "}
-                <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+                <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">
                   thermal-cycle test-profile revision
                 </Link>
                 , and{" "}
-                <Link href="/tools/Weibull" className="text-blue-600 hover:underline">reliability-model update</Link>
+                <Link href="/tools/Weibull/" className="text-blue-600 hover:underline">reliability-model update</Link>
               </td>
             </tr>
             <tr>
@@ -244,7 +244,7 @@ export default function NuddEngineeringRiskArticle() {
 
       <p className="mt-4 rounded-md bg-blue-50 border-l-4 border-blue-500 p-4 text-gray-800">
         <strong>Run a structured NUDD review:</strong> the{" "}
-        <Link href="/tools/NUDD" className="text-blue-600 hover:underline">Reliatools NUDD Assessment</Link> scores each
+        <Link href="/tools/NUDD/" className="text-blue-600 hover:underline">Reliatools NUDD Assessment</Link> scores each
         item across all four lenses, flags any single dimension rated High, and exports the result for your design
         review.
       </p>

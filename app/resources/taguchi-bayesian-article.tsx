@@ -143,14 +143,14 @@ export default function TaguchiBayesianArticle() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <Link
-            href="/tools/Arrhenius"
+            href="/tools/Arrhenius/"
             className="rounded-xl border bg-white p-4 text-sm hover:bg-gray-50"
           >
             <div className="font-semibold">Arrhenius Calculator</div>
             <div className="mt-1 text-gray-600">Thermal acceleration</div>
           </Link>
           <Link
-            href="/tools/BurnInWizard"
+            href="/tools/BurnInWizard/"
             className="rounded-xl border bg-white p-4 text-sm hover:bg-gray-50"
           >
             <div className="font-semibold">Burn-In Wizard</div>
@@ -500,11 +500,11 @@ export default function TaguchiBayesianArticle() {
       <h2 className="text-2xl font-semibold mt-10 mb-4">Reliatools links</h2>
       <p className="text-gray-700">
         Use the{" "}
-        <Link href="/tools/Arrhenius" className="text-blue-600 hover:underline">
+        <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
           Arrhenius Calculator
         </Link>{" "}
         to translate accelerated thermal tests to field life. For early failure screening and equivalent life planning, try the{" "}
-        <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">
+        <Link href="/tools/BurnInWizard/" className="text-blue-600 hover:underline">
           Burn-In Wizard
         </Link>
         .

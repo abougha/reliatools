@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import "react-tooltip/dist/react-tooltip.css";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 const DEFAULTS = {
   Ea: "0.7",
@@ -411,16 +412,17 @@ export default function ArrheniusCalculator() {
         </p>
         <p>
           Use this for diffusion- and reaction-driven wear-out. For fatigue or thermal-cycling failures, use the{" "}
-          <Link href="/tools/CoffinManson" className="text-blue-600 hover:underline">
+          <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">
             Coffin-Manson calculator
           </Link>
           ; to turn an AF into a screening plan, see the{" "}
-          <Link href="/tools/BurnInWizard" className="text-blue-600 hover:underline">
+          <Link href="/tools/BurnInWizard/" className="text-blue-600 hover:underline">
             Burn-In Wizard
           </Link>
           .
         </p>
       </section>
+      <RelatedLinks route="/tools/Arrhenius/" />
     </div>
   );
 }

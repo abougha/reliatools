@@ -79,7 +79,7 @@ export default function SoftwareBRPArticle() {
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">How to Use the Tool</h2>
       <ol className="list-decimal list-inside mb-6 space-y-2">
-        <li>Go to <Link href="/tools/SoftwareBRP" className="text-blue-600 hover:underline">Bayesian Reliability Predictor</Link> under <strong>Software Reliability Tools</strong>.</li>
+        <li>Go to <Link href="/tools/SoftwareBRP/" className="text-blue-600 hover:underline">Bayesian Reliability Predictor</Link> under <strong>Software Reliability Tools</strong>.</li>
         <li>Select a preset such as “Web API”, “Embedded”, or “Enterprise App.”</li>
         <li>Adjust sliders for <em>test coverage</em>, <em>code size</em>, and <em>process maturity</em> to match your project.</li>
         <li>Observe the <strong>Posterior Reliability</strong> and <strong>Residual Defects</strong> estimates update instantly.</li>
@@ -105,7 +105,7 @@ export default function SoftwareBRPArticle() {
       </p>
 
       <p className="text-center mt-6">
-        Try the tool now: <Link href="/tools/SoftwareBRP" className="text-blue-600 hover:underline">Bayesian Reliability Predictor</Link>
+        Try the tool now: <Link href="/tools/SoftwareBRP/" className="text-blue-600 hover:underline">Bayesian Reliability Predictor</Link>
       </p>
       <ContactCTA variant="article" />
     </main>
