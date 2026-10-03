@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.19",
+    "@playwright/cli": "^0.1.22",
     "@types/file-saver": "^2.0.7",
     "@types/node": "22.15.18",
     "@types/papaparse": "^5.3.16",
