@@ -43,11 +43,20 @@ function buildPlaylistCsv(profile: MissionProfile, templates: Record<string, Psd
   return [header, ...rows].join("\n");
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildFixtureHtml(fixture: FixtureEvaluation, warnings: FixtureWarning[]): string {
   const warningItems = warnings
-    .map((w) => `<li><strong>${w.level}:</strong> ${w.message}</li>`)
+    .map((w) => `<li><strong>${escapeHtml(w.level)}:</strong> ${escapeHtml(w.message)}</li>`)
     .join("");
-  const checklistItems = fixture.checklist.map((item) => `<li>${item}</li>`).join("");
+  const checklistItems = fixture.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
   return `
   <html>
     <head>

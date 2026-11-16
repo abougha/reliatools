@@ -9,3 +9,12 @@ binding = "ASSETS"
 html_handling = "auto-trailing-slash"
 not_found_handling = "404-page"
 run_worker_first = ["/*", "!/_next/*"]
+
+# Contact form: at most 3 submissions per minute per visitor IP.
+[[ratelimits]]
+name = "CONTACT_RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 3
+  period = 60

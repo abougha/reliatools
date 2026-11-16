@@ -1,0 +1,6 @@
+# /_next/* is served straight from the assets binding without running
+# worker.ts, so the headers worker.ts adds to every other response are
+# repeated here for those files.
+/_next/*
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000

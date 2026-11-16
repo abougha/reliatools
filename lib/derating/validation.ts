@@ -53,7 +53,11 @@ export const STATUSES = ["Pass", "Attention", "Fail"] as const;
 
 // ---------- helpers ----------
 const finiteNumber = (name: string) =>
-  z.number({ required_error: `${name} is required` }).finite(`${name} must be a finite number`);
+  z
+    .number({
+      error: (issue) => (issue.input === undefined ? `${name} is required` : undefined),
+    })
+    .finite(`${name} must be a finite number`);
 
 const nonNeg = (name: string) => finiteNumber(name).min(0, `${name} must be ≥ 0`);
 const pos = (name: string) => finiteNumber(name).gt(0, `${name} must be > 0`);
