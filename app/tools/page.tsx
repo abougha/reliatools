@@ -1,11 +1,10 @@
 // app/tools/page.tsx
 //
-// Tools index. Server component: the intro, the "how to choose" prose and the
-// ItemList JSON-LD ship as static HTML. Grouping comes from lib/toolGroups.ts
+// Tools index. Server component: the intro, the card list and the ItemList
+// JSON-LD ship as static HTML. Grouping comes from lib/toolGroups.ts
 // (shared with the navbar and home page) so the three never drift; card copy
 // comes from data/tools.json. Search and filtering live in ToolsBrowser.
 
-import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import toolsData from "@/data/tools.json";
 import { TOOL_GROUPS } from "@/lib/toolGroups";
@@ -93,72 +92,6 @@ function buildData() {
   return { groups, featured };
 }
 
-/** Static guidance per workflow stage, linking tools to companion articles. */
-const GUIDE: { title: string; body: React.ReactNode }[] = [
-  {
-    title: "1. Define the use conditions",
-    body: (
-      <>
-        Start with the environment the product will actually see. The{" "}
-        <Link href="/tools/MissionProfile/">Mission Profile Builder</Link> captures duty cycle and
-        stress by lifecycle phase (background:{" "}
-        <Link href="/resources/mission-profile-builder/">Stop Guessing Environmental Loads</Link>).
-        Use the <Link href="/tools/NUDD/">NUDD Assessment</Link> to find where a design is new or
-        risky (<Link href="/resources/nudd-engineering-risk/">why NUDD works</Link>), the{" "}
-        <Link href="/tools/p-diagram/">P-Diagram Generator</Link> to map signals and noise factors,
-        the <Link href="/tools/Derating/">Derating Navigator</Link> to check component stress
-        margins (<Link href="/resources/derating/">derating guide</Link>), and the{" "}
-        <Link href="/tools/rbd/">RBD Generator</Link> to model system architecture.
-      </>
-    ),
-  },
-  {
-    title: "2. Model how stress accelerates failure",
-    body: (
-      <>
-        Physics-of-failure models convert field conditions into test conditions. Use the{" "}
-        <Link href="/tools/Arrhenius/">Arrhenius Calculator</Link> for temperature-driven aging (
-        <Link href="/resources/arrhenius-article/">Understanding Arrhenius</Link>), the{" "}
-        <Link href="/tools/CoffinManson/">Coffin-Manson Calculator</Link> for thermal-cycling fatigue
-        (<Link href="/resources/thermal-shock-article/">thermal shock and Coffin-Manson</Link>), the{" "}
-        <Link href="/tools/Electromigration/">Electromigration Calculator</Link> for interconnect
-        wear-out, and the <Link href="/tools/Psychrometrics/">Psychrometric Calculator</Link> for
-        humidity conditions.
-      </>
-    ),
-  },
-  {
-    title: "3. Plan the validation",
-    body: (
-      <>
-        Turn reliability targets into a test plan with the{" "}
-        <Link href="/tools/testplangenerator/">Test Plan Generator</Link> (see also{" "}
-        <Link href="/resources/taguchi-bayesian-article/">hybrid test planning</Link>), then size it
-        with the <Link href="/tools/Samplesize/">Sample Size Calculator</Link>. For margin discovery
-        and production screening, use the{" "}
-        <Link href="/tools/HALTHASSWizard/">HALT/HASS Planning Wizard</Link> (
-        <Link href="/resources/halt/">HALT explained</Link>), the{" "}
-        <Link href="/tools/BurnInWizard/">Burn-In Test Wizard</Link> and the{" "}
-        <Link href="/tools/VibrationWizard/">Vibration + Thermal Cycling Wizard</Link>.
-      </>
-    ),
-  },
-  {
-    title: "4. Analyze results and predict life",
-    body: (
-      <>
-        Fit failure and suspension data with the{" "}
-        <Link href="/tools/Weibull/">Weibull Probability Plot</Link>, translate failure rates with
-        the <Link href="/tools/FIT/">FIT Calculator</Link> (
-        <Link href="/resources/fit-article/">What does 1 FIT really mean?</Link>), and estimate
-        software release readiness with the{" "}
-        <Link href="/tools/SoftwareBRP/">Bayesian Reliability Predictor</Link> (
-        <Link href="/resources/softwarebrp-article/">how it works</Link>).
-      </>
-    ),
-  },
-];
-
 export default function ToolsPage() {
   const { groups, featured } = buildData();
   const allTools = groups.flatMap((g) => g.tools);
@@ -193,29 +126,6 @@ export default function ToolsPage() {
       </header>
 
       <ToolsBrowser groups={groups} featured={featured} />
-
-      <section
-        className="mt-14 border-t border-slate-200 pt-10"
-        aria-labelledby="choose-heading"
-      >
-        <h2 id="choose-heading" className="text-xl font-semibold text-slate-900">
-          How to choose the right reliability tool
-        </h2>
-        <p className="mt-2 max-w-3xl text-slate-600">
-          The tools follow the order of a typical reliability program, from understanding the use
-          environment to demonstrating life with test data. Pick the stage you are in:
-        </p>
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {GUIDE.map((g) => (
-            <div key={g.title}>
-              <h3 className="font-semibold text-slate-900">{g.title}</h3>
-              <p className="mt-1 leading-relaxed text-slate-600 [&_a]:font-medium [&_a]:text-blue-600 [&_a:hover]:text-blue-700 [&_a:hover]:underline">
-                {g.body}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
