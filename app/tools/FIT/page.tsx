@@ -156,9 +156,13 @@ function ConverterModule() {
       errors.value = "Reliability must be in (0, 100%].";
     } else if (known === "ppm" && parsedValue >= 1e6) {
       errors.value = "ppm must be < 1,000,000.";
+    } else if (known === "mttf" && parsedValue <= 0) {
+      errors.value = "MTTF must be > 0.";
+    } else if (value.trim() === "") {
+      errors.value = "Enter a value.";
     }
     return errors;
-  }, [t, n, parsedValue, known]);
+  }, [t, n, parsedValue, known, value]);
 
   // Live recompute, debounced ~150ms so fast typing doesn't thrash the chart.
   const debouncedValue = useDebouncedValue(value);
@@ -178,8 +182,13 @@ function ConverterModule() {
     if (!Number.isFinite(subT) || subT <= 0 || !Number.isFinite(subN) || subN < 1 || !Number.isFinite(subValue) || subValue < 0) {
       return null;
     }
+    // Never show a result next to a validation error for the same input.
+    if (debouncedValue.trim() === "") return null;
+    if (known === "reliability" && (subValue <= 0 || subValue > 1)) return null;
+    if (known === "ppm" && subValue >= 1e6) return null;
+    if (known === "mttf" && subValue <= 0) return null;
     return convert({ known, value: subValue, missionHours: subT, fleetSize: subN });
-  }, [computed, known]);
+  }, [computed, known, debouncedValue]);
 
   const handleDriverChange = (key: KnownField) => {
     if (key === known) return;
@@ -275,7 +284,7 @@ function ConverterModule() {
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <label className="block">
-              <span className="mb-1 block text-[10.5px] text-[#9a9ea4]">Mission hours (t)</span>
+              <span className="mb-1 block text-[10.5px] text-[#6a6e74]">Mission hours (t)</span>
               <input
                 type="number"
                 value={missionHours}
@@ -287,7 +296,7 @@ function ConverterModule() {
               {fieldErrors.t ? <p className="mt-1 text-[11px] text-red-700">{fieldErrors.t}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-[10.5px] text-[#9a9ea4]">Fleet size (n)</span>
+              <span className="mb-1 block text-[10.5px] text-[#6a6e74]">Fleet size (n)</span>
               <input
                 type="number"
                 value={fleetSize}
@@ -446,9 +455,11 @@ function EvidenceModule() {
     if (!Number.isFinite(nUnits) || nUnits < 1) errors.n = "Test units must be ≥ 1.";
     if (!Number.isFinite(h) || h <= 0) errors.h = "Test hours per unit must be > 0.";
     if (!Number.isFinite(AF) || AF < 1) errors.AF = "Acceleration factor must be ≥ 1.";
-    if (!Number.isFinite(r) || r < 0) errors.r = "Failures must be ≥ 0.";
+    if (!Number.isInteger(Number(failures)) || Number(failures) < 0 || failures.trim() === "") {
+      errors.r = "Failures must be a whole number, 0 or more.";
+    }
     return errors;
-  }, [target, C, nUnits, h, AF, r]);
+  }, [target, C, nUnits, h, AF, failures]);
 
   const hasErrors = Object.keys(fieldErrors).length > 0;
 
@@ -522,6 +533,12 @@ function EvidenceModule() {
           </label>
         ))}
       </div>
+
+      {!res ? (
+        <div className="rounded border-l-4 border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+          Fix the highlighted inputs above to see whether the test plan supports the target.
+        </div>
+      ) : null}
 
       {res && (
         <>

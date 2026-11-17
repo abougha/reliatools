@@ -37,7 +37,7 @@ export default function StyleStep({ entryMode, haltStyle, onStyleChange }: Style
   return (
     <section className="space-y-4">
       <div className="rounded-xl border bg-gray-50 p-4 text-sm text-gray-700">
-        Default suggestion from Step A: <span className="font-semibold">{defaultStyle === "classical" ? "Classical HALT" : "Rapid HALT"}</span>.
+        Suggested from your choice in step 1: <span className="font-semibold">{defaultStyle === "classical" ? "Classical HALT" : "Rapid HALT"}</span>.
         You can override it below.
       </div>
 

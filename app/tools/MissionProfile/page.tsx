@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   applyTemplate,
@@ -262,12 +263,10 @@ export default function MissionProfilePage() {
     return { notLikely, possible, likely };
   }, [matrix]);
 
+  // The summary is always live, so the table can never disagree with the matrix or the exports.
   const latestLifetimeSummary = useMemo(() => buildLifetimeSummaryData(matrix, lifeHours), [matrix, lifeHours]);
-  const [lifetimeSummary, setLifetimeSummary] = useState(() => buildLifetimeSummaryData(matrix, lifeHours));
-
-  function generateLifetimeSummary() {
-    setLifetimeSummary(latestLifetimeSummary);
-  }
+  const lifetimeSummary = latestLifetimeSummary;
+  const hasSummaryData = lifetimeSummary.some((row) => row.totalExposureHours > 0 || row.totalEvents > 0);
 
   function updateMatrix(updater: (draft: MissionMatrix) => void) {
     setMatrix((prev) => {
@@ -277,8 +276,12 @@ export default function MissionProfilePage() {
     });
   }
 
+  // First click selects a cell for editing; clicking the already-selected cell
+  // changes its likelihood. Selecting a cell must never alter its data.
   function handleCellClick(stressKey: StressKey, phaseKey: PhaseKey, reverse = false) {
+    const alreadySelected = selectedCell.stressKey === stressKey && selectedCell.phaseKey === phaseKey;
     setSelectedCell({ stressKey, phaseKey });
+    if (!alreadySelected) return;
     updateMatrix((draft) => {
       draft[stressKey][phaseKey].likelihood = cycleLikelihood(draft[stressKey][phaseKey].likelihood, reverse);
     });
@@ -639,7 +642,7 @@ export default function MissionProfilePage() {
         {selectedTemplate?.description ? <p className="mt-1 text-xs text-gray-600">{selectedTemplate.description}</p> : null}
 
         <details className="mt-2">
-          <summary className="cursor-pointer text-xs font-medium text-gray-700">Advanced actions</summary>
+          <summary className="cursor-pointer text-xs font-medium text-gray-700">Export, import and reset</summary>
           <div className="mt-2 flex flex-wrap gap-2">
             <button type="button" onClick={exportProfile} className="rounded-lg border px-3 py-1.5 text-xs font-medium">Export JSON</button>
             <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-3 py-1.5 text-xs font-medium">Import JSON</button>
@@ -698,7 +701,10 @@ export default function MissionProfilePage() {
           <span className="rounded border bg-green-100 px-2 py-1 text-green-900">Not likely (N)</span>
           <span className="rounded border bg-yellow-100 px-2 py-1 text-yellow-900">Possible (P)</span>
           <span className="rounded border bg-red-100 px-2 py-1 text-red-900">Likely (L)</span>
-          <span className="text-xs text-gray-600">Shift+Click on a cell cycles backward.</span>
+          <span className="text-xs text-gray-600">
+            Click a cell to select it and edit its details. Click the selected cell again to change its likelihood
+            (Shift+Click steps backward).
+          </span>
         </div>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-lg border bg-red-50 p-3 text-sm"><div className="text-xs text-red-800">Likely</div><div className="text-xl font-semibold text-red-900">{counts.likely}</div></div>
@@ -758,8 +764,8 @@ export default function MissionProfilePage() {
         </div>
 
         <aside className="rounded-xl border bg-white p-4">
-          <div className="text-sm font-semibold">Selected Cell Editor</div>
-          <div className="mt-2 text-xs text-gray-600">{selectedStress.label} - {selectedPhase.label}</div>
+          <div className="text-sm font-semibold">Selected cell</div>
+          <div className="mt-2 text-sm font-medium text-gray-800">{selectedStress.label} during {selectedPhase.label}</div>
 
           <div className="mt-4">
             <label className="text-xs text-gray-500">Likelihood</label>
@@ -772,7 +778,7 @@ export default function MissionProfilePage() {
             <div className="text-xs font-semibold text-gray-700">Exposure</div>
             <div className="mt-2"><label className="text-xs text-gray-500">Mode</label>
               <select className="mt-1 w-full rounded-lg border px-2 py-2 text-sm" value={selectedCellData.exposure.mode} onChange={(event) => setExposureMode(selectedStress.key, selectedPhase.key, event.target.value as ExposureMode)}>
-                <option value="Once">Once</option><option value="Hours">Hours</option><option value="PercentLife">% Life</option>
+                <option value="PercentLife">% of lifetime</option><option value="Hours">Total hours</option><option value="Once">Number of events</option>
               </select>
             </div>
 
@@ -804,17 +810,19 @@ export default function MissionProfilePage() {
         </aside>
       </div>
 
-      <div className="mb-6 rounded-xl border bg-white p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-6 mt-6 rounded-xl border bg-white p-4">
+        <div className="mb-3">
           <div className="text-sm font-semibold">Lifetime Summary</div>
-          <button
-            type="button"
-            onClick={generateLifetimeSummary}
-            className="rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white"
-          >
-            Generate
-          </button>
+          <p className="mt-1 text-xs text-gray-600">
+            Total exposure per stress across all phases, for cells marked Possible or Likely. Updates as you edit.
+          </p>
         </div>
+        {!hasSummaryData ? (
+          <p className="mb-3 rounded-lg border border-dashed bg-gray-50 p-3 text-xs text-gray-600">
+            Nothing to total yet. Select a Possible or Likely cell and enter its exposure (% of lifetime, hours or
+            events) to see it here.
+          </p>
+        ) : null}
         <div className="overflow-auto">
           <table className="w-full min-w-[760px] border-separate border-spacing-0">
             <thead><tr><th className="border-b bg-gray-50 p-2 text-left text-xs font-semibold">Stress</th><th className="border-b bg-gray-50 p-2 text-left text-xs font-semibold">Exposure Hours</th><th className="border-b bg-gray-50 p-2 text-left text-xs font-semibold">Events</th><th className="border-b bg-gray-50 p-2 text-left text-xs font-semibold">% of Life</th><th className="border-b bg-gray-50 p-2 text-left text-xs font-semibold">Dominant Phase</th></tr></thead>
@@ -833,6 +841,30 @@ export default function MissionProfilePage() {
         </div>
       </div>
       <ContactCTA variant="tool" />
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How to use this</h2>
+        <p className="mb-4">
+          A mission profile records which stresses a product sees, how severe they are, and for how long, across its
+          whole life: storage, transport, assembly, operation, maintenance and misuse. It is the starting point for a
+          test plan, because a test can only be called representative if you know what it is meant to represent.
+        </p>
+        <ol className="mb-4 list-decimal space-y-1 pl-5">
+          <li>Pick the closest industry, product and location, then load the template as a starting point.</li>
+          <li>Set the target life in years or hours.</li>
+          <li>For each stress and phase, mark the cell Not likely, Possible or Likely.</li>
+          <li>Select a Possible or Likely cell and enter its severity (for example minimum and maximum temperature) and its exposure.</li>
+          <li>Read the lifetime summary, then export the profile as PDF, Excel or JSON.</li>
+        </ol>
+        <p>
+          The temperature swings recorded here feed the{" "}
+          <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">Coffin-Manson calculator</Link>,
+          steady temperatures feed the{" "}
+          <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">Arrhenius calculator</Link>, and the
+          overall ranges can be sent to the{" "}
+          <Link href="/tools/HALTHASSWizard/" className="text-blue-600 hover:underline">HALT/HASS wizard</Link>.
+        </p>
+      </section>
     </div>
   );
 }

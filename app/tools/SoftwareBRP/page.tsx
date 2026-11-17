@@ -56,7 +56,6 @@ type FactorKey =
   | "processMaturity";
 
 type Inputs = {
-  targetReliability: number; // e.g., probability of meeting R target
   priorReliability: number; // prior belief P(HighReliability)
   testCoverage: number; // percent 0-100
   reviewCoverage: number; // percent 0-100
@@ -234,14 +233,36 @@ function estimateResidualDefects(p: number, inp: Inputs) {
   return Math.max(0, (1 - p) * totalPotential);
 }
 
+const FACTOR_LABELS: Record<FactorKey, string> = {
+  testCoverage: "Test coverage",
+  reviewCoverage: "Review coverage",
+  codeComplexity: "Complexity",
+  loc: "Code size",
+  defectDensityPrior: "Defect density",
+  teamExperience: "Experience",
+  processMaturity: "Process maturity",
+};
+
+const DEFAULT_INPUTS: Inputs = {
+  priorReliability: 0.6,
+  testCoverage: 80,
+  reviewCoverage: 70,
+  codeComplexity: "Moderate",
+  loc: 100,
+  defectDensityPrior: 0.8,
+  teamExperience: "Medium",
+  processMaturity: 3,
+};
+
 // Simple sensitivity by recomputing with each factor nudged to a favorable/unfavorable extreme
 function sensitivityTornado(inp: Inputs) {
   const base = posteriorReliability(inp).p;
   const entries: { name: string; delta: number }[] = [];
 
   const perturb: Partial<Record<FactorKey, Inputs>> = {
-    testCoverage: { ...inp, testCoverage: 95 },
-    reviewCoverage: { ...inp, reviewCoverage: 95 },
+    // "Improved" never means worse than today: a team already above 95% stays where it is.
+    testCoverage: { ...inp, testCoverage: Math.max(inp.testCoverage, 95) },
+    reviewCoverage: { ...inp, reviewCoverage: Math.max(inp.reviewCoverage, 95) },
     codeComplexity: { ...inp, codeComplexity: "Low" },
     loc: { ...inp, loc: Math.max(1, inp.loc * 0.6) },
     defectDensityPrior: { ...inp, defectDensityPrior: Math.max(0.05, inp.defectDensityPrior * 0.6) },
@@ -251,7 +272,7 @@ function sensitivityTornado(inp: Inputs) {
 
   (Object.keys(perturb) as FactorKey[]).forEach((k) => {
     const alt = posteriorReliability(perturb[k] as Inputs).p;
-    entries.push({ name: k, delta: +(alt - base).toFixed(4) });
+    entries.push({ name: FACTOR_LABELS[k], delta: +(alt - base).toFixed(4) });
   });
 
   return entries.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
@@ -280,17 +301,7 @@ function download(filename: string, content: string, type = "text/csv;charset=ut
 }
 
 export default function Page() {
-  const [inputs, setInputs] = useState<Inputs>({
-    targetReliability: 0.999,
-    priorReliability: 0.6,
-    testCoverage: 80,
-    reviewCoverage: 70,
-    codeComplexity: "Moderate",
-    loc: 100,
-    defectDensityPrior: 0.8,
-    teamExperience: "Medium",
-    processMaturity: 3,
-  });
+  const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS);
 
   const result = useMemo(() => posteriorReliability(inputs), [inputs]);
   const residual = useMemo(
@@ -310,7 +321,6 @@ export default function Page() {
         Value: result.p.toFixed(4),
       },
       { Metric: "Estimated Residual Defects", Value: residual.toFixed(2) },
-      { Metric: "Target Reliability", Value: inputs.targetReliability },
       { Metric: "Prior Reliability", Value: inputs.priorReliability },
       { Metric: "Test Coverage %", Value: inputs.testCoverage },
       { Metric: "Review Coverage %", Value: inputs.reviewCoverage },
@@ -323,19 +333,7 @@ export default function Page() {
     download("bayesian_reliability_predictor.csv", toCSV(rows));
   };
 
-  const reset = () => {
-    setInputs({
-      targetReliability: 0.999,
-      priorReliability: 0.6,
-      testCoverage: 80,
-      reviewCoverage: 70,
-      codeComplexity: "Moderate",
-      loc: 100,
-      defectDensityPrior: 0.8,
-      teamExperience: "Medium",
-      processMaturity: 3,
-    });
-  };
+  const reset = () => setInputs(DEFAULT_INPUTS);
 
   // What-if simulator — vary a single factor and plot resulting probability
   const [whatIfKey, setWhatIfKey] = useState<FactorKey>("testCoverage");
@@ -435,24 +433,9 @@ export default function Page() {
           <div className="rounded-2xl border p-5 bg-white">
             <h2 className="text-xl font-semibold mb-4">Inputs</h2>
             <div className="grid sm:grid-cols-2 gap-4">
-              {/* Target reliability */}
-              <div className="space-y-1">
-                <label className="text-sm text-gray-600">Target Reliability (R)</label>
-                <input
-                  type="number"
-                  step={0.0001}
-                  min={0.9}
-                  max={0.999999}
-                  value={inputs.targetReliability}
-                  onChange={(e) => setInputs({ ...inputs, targetReliability: parseFloat(e.target.value || "0") })}
-                  className="w-full rounded-lg border px-3 py-2"
-                />
-                <p className="text-xs text-gray-500">e.g., 0.999 = ≤1 failure per 1000 hours</p>
-              </div>
-
               {/* Prior */}
               <div className="space-y-1">
-                <label className="text-sm text-gray-600">Prior Reliability (belief)</label>
+                <label className="text-sm text-gray-600">Starting confidence (prior)</label>
                 <input
                   type="range"
                   min={0.1}
@@ -462,7 +445,10 @@ export default function Page() {
                   onChange={(e) => setInputs({ ...inputs, priorReliability: parseFloat(e.target.value) })}
                   className="w-full"
                 />
-                <div className="text-sm">{inputs.priorReliability.toFixed(2)}</div>
+                <div className="text-sm">{Math.round(inputs.priorReliability * 100)}%</div>
+                <p className="text-xs text-gray-500">
+                  How likely you thought the software was to be reliable before looking at the evidence below.
+                </p>
               </div>
 
               {/* Coverage */}
@@ -507,7 +493,9 @@ export default function Page() {
                   <option>Moderate</option>
                   <option>High</option>
                 </select>
-                <p className="text-xs text-gray-500">Use cyclomatic complexity bands</p>
+                <p className="text-xs text-gray-500">
+                  Typical cyclomatic complexity per function: Low under 10, Moderate 10–20, High over 20.
+                </p>
               </div>
 
               {/* Size */}
@@ -576,18 +564,16 @@ export default function Page() {
             <h2 className="text-xl font-semibold mb-4">Results</h2>
             <div className="space-y-3">
               <div className="p-4 rounded-xl bg-gray-50 border">
-                <div className="text-sm text-gray-600">Posterior P(High Reliability)</div>
+                <div className="text-sm text-gray-600">Probability the software is highly reliable</div>
                 <div className="text-3xl font-bold">{(result.p * 100).toFixed(1)}%</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  Started at {Math.round(inputs.priorReliability * 100)}% and was{" "}
+                  {result.p >= inputs.priorReliability ? "raised" : "lowered"} by the evidence you entered.
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-gray-50 border">
-                  <div className="text-xs text-gray-600">Estimated Residual Defects</div>
-                  <div className="text-xl font-semibold">{residual.toFixed(1)}</div>
-                </div>
-                <div className="p-3 rounded-xl bg-gray-50 border">
-                  <div className="text-xs text-gray-600">Target R</div>
-                  <div className="text-xl font-semibold">{inputs.targetReliability}</div>
-                </div>
+              <div className="p-3 rounded-xl bg-gray-50 border">
+                <div className="text-xs text-gray-600">Estimated defects remaining</div>
+                <div className="text-xl font-semibold">{residual.toFixed(1)}</div>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {infoChip("Prior", inputs.priorReliability.toFixed(2))}
@@ -604,20 +590,23 @@ export default function Page() {
       {/* Sensitivity (Tornado) */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-2xl border p-5 bg-white">
-          <h3 className="text-lg font-semibold mb-4">Sensitivity (Tornado)</h3>
+          <h3 className="text-lg font-semibold mb-4">What would help most</h3>
           <div style={{ width: "100%", height: 280 }}>
             <ResponsiveContainer>
               <BarChart data={tornado.map((d) => ({ name: d.name, Delta: +(d.delta * 100).toFixed(2) }))}>
                 <CartesianGrid vertical={false} />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} tick={{ fontSize: 11 }} />
                 <YAxis unit="%" />
                 <Tooltip formatter={(v: any) => `${v}%`} />
                 <ReferenceLine y={0} strokeDasharray="3 3" />
-                <Bar dataKey="Delta" />
+                <Bar dataKey="Delta" name="Change" fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Bars show % change in posterior reliability if each factor is improved to a strong level.</p>
+          <p className="text-xs text-gray-500 mt-2">
+            Each bar shows how many percentage points the result would rise if that one factor were improved to a strong
+            level. The tallest bars are where improvement pays off most.
+          </p>
         </div>
 
         {/* What-if */}
@@ -646,7 +635,7 @@ export default function Page() {
                 <XAxis dataKey="x" />
                 <YAxis tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} domain={[0, 1]} />
                 <Tooltip formatter={(v: any) => `${(v * 100).toFixed(1)}%`} />
-                <Line type="monotone" dataKey="p" dot />
+                <Line type="monotone" dataKey="p" name="Probability" stroke="#2563eb" strokeWidth={2} dot />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -658,7 +647,11 @@ export default function Page() {
         <h4 className="font-semibold mb-2">Notes & Assumptions</h4>
         <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600">
           <li>Naive-Bayes style independence is assumed across factors for tractability.</li>
-          <li>Likelihood ratio mappings are calibrated for reasonable ranges; tune in code for your domain.</li>
+          <li>
+            The weight given to each factor is a general-purpose engineering estimate, not fitted to your organisation&apos;s
+            defect history. Treat the percentage as a relative indicator for comparing options, not as a measured
+            reliability.
+          </li>
           <li>Use this tool to prioritize improvements (coverage, reviews, process), then validate with failure data.</li>
         </ul>
       </div>

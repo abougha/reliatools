@@ -3,118 +3,101 @@
 
 import React, { useMemo } from "react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, Area, ReferenceArea
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceDot,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
-
-const k = 8.617e-5; // Boltzmann constant in eV/K
+import { kB_eV } from "@/lib/constants";
+import { formatSig } from "@/lib/format";
 
 type BurnInGraphProps = {
-  Ea: number; // Activation Energy (default or custom)
-  useTemp: number; // Use temperature in °C
-  ovenTemp: number; // Recommended oven temperature (°C)
-  durations?: string[]; // Min/Max durations
-  EaRange?: string; // Ea range text (optional)
+  /** Activation energies to plot, one curve each (eV). */
+  EaValues: number[];
+  /** Use temperature (°C). */
+  useTemp: number;
+  /** Device temperature during burn-in (°C): oven temperature plus self-heating. */
+  deviceTemp: number;
+  /** Hours of field life the burn-in should consume. */
+  simulatedLife: number;
 };
 
-export const BurnInGraph: React.FC<BurnInGraphProps> = ({ Ea, useTemp, ovenTemp, durations = [], EaRange = "" }) => {
-  const useTempK = useTemp + 273.15;
-  const targetLifeHours = 50000 * 0.1; // Default simulated life (10% of 50,000 hours)
+const COLORS = ["#2563eb", "#0891b2"];
 
+function burnInHours(Ea: number, useTempC: number, deviceTempC: number, simulatedLife: number) {
+  const af = Math.exp((Ea / kB_eV) * (1 / (useTempC + 273.15) - 1 / (deviceTempC + 273.15)));
+  return simulatedLife / af;
+}
+
+export const BurnInGraph: React.FC<BurnInGraphProps> = ({ EaValues, useTemp, deviceTemp, simulatedLife }) => {
   const data = useMemo(() => {
-    const points = [];
-    for (let T = 100; T <= 150; T += 5) {
-      const T_K = T + 273.15;
-      const AF = Math.exp(Ea / k * (1 / useTempK - 1 / T_K));
-      const duration = targetLifeHours / AF;
-      points.push({
-        temperature: T,
-        duration: duration,
-        durationLow: duration * 0.9,
-        durationHigh: duration * 1.1,
+    // Window around the chosen burn-in temperature, never below the use temperature.
+    const start = Math.max(Math.ceil((useTemp + 5) / 5) * 5, Math.floor((deviceTemp - 40) / 5) * 5);
+    const end = Math.ceil((deviceTemp + 20) / 5) * 5;
+    const points: Array<Record<string, number>> = [];
+    for (let T = start; T <= end; T += 5) {
+      const row: Record<string, number> = { temperature: T };
+      EaValues.forEach((Ea, i) => {
+        row[`d${i}`] = burnInHours(Ea, useTemp, T, simulatedLife);
       });
+      points.push(row);
     }
     return points;
-  }, [Ea, useTemp]);
-
-  // Determine Ea for the dot (median Ea if range, custom Ea otherwise)
-  let selectedEa = Ea;
-  if (durations.length > 1) {
-    const minDur = parseFloat(durations[0]);
-    const maxDur = parseFloat(durations[1]);
-    // Reverse-calculate median Ea estimate
-    selectedEa = (EaRange.includes("–"))
-      ? (parseFloat(EaRange.split("–")[0]) + parseFloat(EaRange.split("–")[1])) / 2
-      : Ea;
-  }
-
-  // Calculate dot position at ovenTemp
-  const T_K = ovenTemp + 273.15;
-  const AF = Math.exp(selectedEa / k * (1 / useTempK - 1 / T_K));
-  const dotDuration = targetLifeHours / AF;
-
-  const point = { temperature: ovenTemp, duration: dotDuration };
-
-  const minDuration = durations.length > 1 ? parseFloat(durations[0]) : parseFloat(durations[0] || "0");
-  const maxDuration = durations.length > 1 ? parseFloat(durations[1]) : parseFloat(durations[0] || "0");
+  }, [EaValues, useTemp, deviceTemp, simulatedLife]);
 
   return (
-    <div className="mt-6 h-64">
+    <div className="mt-6 h-72">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
+        <LineChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="temperature"
-            label={{ value: "Burn-In Temperature (°C)", position: "insideBottomRight", offset: -5 }}
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            label={{ value: "Device temperature during burn-in (°C)", position: "insideBottom", offset: -10 }}
           />
           <YAxis
             scale="log"
-            domain={['auto', 'auto']}
-            allowDataOverflow={true}
-            label={{
-              value: "Test Duration (hours)",
-              angle: -90,
-              position: "insideLeft",
-              offset: 10,
-              style: { textAnchor: "middle" },
-            }}
-            width={100}
-            tickFormatter={(tick) => tick.toFixed(1)}
+            domain={["auto", "auto"]}
+            width={80}
+            tickFormatter={(tick: number) => formatSig(tick, 2)}
+            label={{ value: "Burn-in duration (hours)", angle: -90, position: "insideLeft", style: { textAnchor: "middle" } }}
           />
-          <Tooltip formatter={(value: number) => `${value.toFixed(1)} hours`} />
-          <Area type="monotone" dataKey="durationLow" stroke="none" fill="#cce5ff" fillOpacity={0.3} dot={false} />
-          <Area type="monotone" dataKey="durationHigh" stroke="none" fill="#cce5ff" fillOpacity={0.3} dot={false} />
-          <Line type="monotone" dataKey="duration" stroke="#007bff" strokeWidth={2} dot={false} />
-
-          {/* Shaded Duration Range */}
-          {durations.length > 1 && (
-            <ReferenceArea
-              y1={minDuration}
-              y2={maxDuration}
-              fill="#00C49F"
-              fillOpacity={0.2}
-              label={{
-                value: "Recommended Duration Range",
-                position: "insideTopLeft",
-                fontSize: 12,
-                fill: "#00C49F",
-              }}
+          <Tooltip
+            formatter={(value: number, name: string) => [`${formatSig(value, 3)} hours`, name]}
+            labelFormatter={(value) => `${value} °C`}
+          />
+          <Legend verticalAlign="top" height={28} />
+          {EaValues.map((Ea, i) => (
+            <Line
+              key={Ea}
+              type="monotone"
+              dataKey={`d${i}`}
+              name={`Ea = ${Ea.toFixed(2)} eV`}
+              stroke={COLORS[i % COLORS.length]}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
             />
-          )}
-
-          {/* Dot at recommended oven temperature */}
-          <ReferenceDot
-            x={point.temperature}
-            y={point.duration}
-            r={6}
-            fill="black"
-            stroke="white"
-            strokeWidth={2}
-            label={{
-              value: `${point.duration.toFixed(1)} hrs`,
-              position: "top",
-              fontSize: 12,
-            }}
-          />
+          ))}
+          <ReferenceLine x={deviceTemp} stroke="#111827" strokeDasharray="3 3" />
+          {EaValues.map((Ea) => (
+            <ReferenceDot
+              key={`dot-${Ea}`}
+              x={deviceTemp}
+              y={burnInHours(Ea, useTemp, deviceTemp, simulatedLife)}
+              r={5}
+              fill="#111827"
+              stroke="white"
+              strokeWidth={2}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </div>

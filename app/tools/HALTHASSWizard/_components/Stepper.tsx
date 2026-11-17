@@ -3,9 +3,9 @@ type StepperProps = {
 };
 
 const STEPS = [
-  { id: 1, label: "Step A", subtitle: "Entry strategy" },
-  { id: 2, label: "Step B", subtitle: "HALT style" },
-  { id: 3, label: "Step C", subtitle: "Profile builder" },
+  { id: 1, label: "Step 1", subtitle: "Starting point" },
+  { id: 2, label: "Step 2", subtitle: "HALT style" },
+  { id: 3, label: "Step 3", subtitle: "Profile builder" },
 ];
 
 export default function Stepper({ currentStep }: StepperProps) {

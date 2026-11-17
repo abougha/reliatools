@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import Link from "next/link";
 import ContactCTA from "@/components/ContactCTA";
 
 // =============================
@@ -185,13 +186,32 @@ export default function PsychrometricsCalculator() {
     return humidityRatioFromPw(pws_kpa(Tc), PkPa) * 1000;
   };
 
+  // Input validation. Ranges follow the validity of the Magnus approximation
+  // and realistic atmospheric pressures (roughly sea level to 5,000 m).
+  const fieldErrors = useMemo(() => {
+    const errors: { T?: string; RH?: string; P?: string } = {};
+    const Tc = toC(parseFloat(Tdb));
+    const rh = parseFloat(RH);
+    if (!isFinite(Tc)) errors.T = "Enter a dry-bulb temperature.";
+    else if (Tc < -40 || Tc > 60) {
+      errors.T = tempUnit === "C" ? "Use a temperature between -40 and 60 °C." : "Use a temperature between -40 and 140 °F.";
+    }
+    if (!isFinite(rh)) errors.RH = "Enter a relative humidity.";
+    else if (rh < 0 || rh > 100) errors.RH = "Relative humidity must be between 0 and 100%.";
+    if (!isFinite(PkPa)) errors.P = "Enter a pressure.";
+    else if (PkPa < 50 || PkPa > 110) errors.P = "Use a pressure between 50 and 110 kPa (sea level is 101.325).";
+    return errors;
+  }, [Tdb, RH, PkPa, tempUnit]);
+
+  const hasErrors = Object.keys(fieldErrors).length > 0;
+
   // Live computation
   const computed = useMemo(() => {
     const TinDisp = parseFloat(Tdb);
     const Tc = toC(TinDisp);
     const RH_pct = parseFloat(RH);
 
-    if (!isFinite(Tc) || !isFinite(RH_pct) || !isFinite(PkPa) || PkPa <= 0) return null;
+    if (hasErrors || !isFinite(Tc) || !isFinite(RH_pct) || !isFinite(PkPa) || PkPa <= 0) return null;
 
     const phi = clamp(RH_pct / 100, 0, 1);
     const pws = pws_kpa(Tc);
@@ -202,8 +222,11 @@ export default function PsychrometricsCalculator() {
     const v = specificVolume_m3_per_kgda(Tc, W, PkPa);
     const TdpC = dewPointFromPw_C(Pw);
 
-    const TwbC = wetBulb_C_Stull(Tc, RH_pct);
+    // Wet bulb from the psychrometer relation: it accounts for pressure and is
+    // the same relation the wet-bulb lines on the chart use. The Stull sea-level
+    // fit is only a fallback when the solver finds no root (e.g. 0% RH).
     const TwbPsychC = solveTwbFromPsychrometer_C(Tc, Pw, PkPa);
+    const TwbC = isFinite(TwbPsychC) ? TwbPsychC : wetBulb_C_Stull(Tc, RH_pct);
 
     return {
       Tc,
@@ -217,31 +240,24 @@ export default function PsychrometricsCalculator() {
       h_kj,
       h_ip: h_kj * KJ_PER_KG_TO_BTU_PER_LB,
       v,
+      v_ip: v * 16.018463, // m³/kg -> ft³/lb
       TdpDisp: toDisp(TdpC),
       TwbDisp: toDisp(TwbC),
-      TwbPsychDisp: toDisp(TwbPsychC),
-      TwbDeltaDisp: toDisp(TwbPsychC) - toDisp(TwbC),
     };
-  }, [Tdb, RH, PkPa, tempUnit]);
+  }, [Tdb, RH, PkPa, tempUnit, hasErrors]);
 
-  const [results, setResults] = useState<null | typeof computed>(null);
-  const onCalculate = () => setResults(computed);
-  const onClear = () => setResults(null);
+  // Results update as the inputs change; there is no separate Calculate step.
+  const results = computed;
 
   const toggleUnit = (next: "C" | "F") => {
     if (next === tempUnit) return;
 
     const val = parseFloat(Tdb);
-    if (!isFinite(val)) {
-      setTempUnit(next);
-      setResults(null);
-      return;
-    }
+    setTempUnit(next);
+    if (!isFinite(val)) return;
 
     const newVal = next === "F" ? CtoF(val) : FtoC(val);
-    setTempUnit(next);
-    setTdb(newVal.toFixed(2));
-    setResults(null);
+    setTdb(String(Number(newVal.toFixed(1))));
   };
 
   // Chart rows: saturation + RH families (strictly clipped to saturation)
@@ -608,9 +624,9 @@ export default function PsychrometricsCalculator() {
                 <strong>W</strong> = Humidity ratio (kg/kg dry air)
               </li>
             </ul>
-            <p className="text-xs text-gray-500 mt-2 italic">
-              Chart hierarchy: Saturation &gt; Enthalpy &gt; RH &gt; Wet-bulb. RH is strictly clipped to saturation.
-              Wet-bulb lines are computed via the psychrometer relation (curved Twb=const) and drawn dotted.
+            <p className="text-xs text-gray-500 mt-2">
+              On the chart: the thick curve is saturation (100% RH), thin curves are relative humidity, diagonal lines
+              are enthalpy, and dotted lines are wet-bulb temperature.
             </p>
           </div>
         </div>
@@ -635,65 +651,70 @@ export default function PsychrometricsCalculator() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        {[{ l: `Dry-bulb (°${tempUnit})`, v: Tdb, s: setTdb }, { l: "RH (%)", v: RH, s: setRH }, { l: "Pressure (kPa)", v: P, s: setP }].map(
-          ({ l, v, s }) => (
-            <label key={l} className="block text-sm">
-              {l}
-              <input value={v} onChange={(e) => s(e.target.value)} type="number" className="w-full p-2 border rounded mt-1" />
-            </label>
-          )
+        {[
+          { l: `Dry-bulb temperature (°${tempUnit})`, v: Tdb, s: setTdb, e: fieldErrors.T, h: "" },
+          { l: "Relative humidity (%)", v: RH, s: setRH, e: fieldErrors.RH, h: "" },
+          { l: "Pressure (kPa)", v: P, s: setP, e: fieldErrors.P, h: "Sea level is 101.325 kPa." },
+        ].map(({ l, v, s, e, h }) => (
+          <label key={l} className="block text-sm">
+            {l}
+            <input
+              value={v}
+              onChange={(event) => s(event.target.value)}
+              type="number"
+              className={`w-full p-2 border rounded mt-1 ${e ? "border-red-500" : ""}`}
+            />
+            {e ? <span className="mt-1 block text-xs text-red-700">{e}</span> : null}
+            {!e && h ? <span className="mt-1 block text-xs text-gray-500">{h}</span> : null}
+          </label>
+        ))}
+      </div>
+
+      <div className="mt-2 p-4 border-l-4 border-blue-500 bg-blue-50 text-blue-800 rounded">
+        {results ? (
+          <>
+            <p className="font-semibold">
+              Air at {results.Tdisp.toFixed(1)} °{tempUnit} and {results.RH_pct.toFixed(0)}% RH
+            </p>
+            <dl className="mt-2 grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
+              {[
+                ["Dew point", `${isFinite(results.TdpDisp) ? results.TdpDisp.toFixed(1) : "—"} °${tempUnit}`],
+                ["Wet-bulb temperature", `${isFinite(results.TwbDisp) ? results.TwbDisp.toFixed(1) : "—"} °${tempUnit}`],
+                ["Humidity ratio", `${results.W_gpkg.toFixed(2)} g/kg (${results.W.toFixed(5)} kg/kg)`],
+                [
+                  "Enthalpy",
+                  tempUnit === "C" ? `${results.h_kj.toFixed(1)} kJ/kg dry air` : `${results.h_ip.toFixed(1)} Btu/lb dry air`,
+                ],
+                [
+                  "Specific volume",
+                  tempUnit === "C" ? `${results.v.toFixed(3)} m³/kg dry air` : `${results.v_ip.toFixed(2)} ft³/lb dry air`,
+                ],
+                ["Vapor pressure", `${results.Pw.toFixed(3)} kPa`],
+                ["Saturation pressure", `${results.pws.toFixed(3)} kPa`],
+              ].map(([name, value]) => (
+                <div key={name} className="flex justify-between gap-4 border-b border-blue-100 py-0.5">
+                  <dt>{name}</dt>
+                  <dd className="font-medium tabular-nums">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {results.Tdisp < TminDisp || results.Tdisp > TmaxDisp || results.W_gpkg > Wmax ? (
+              <p className="mt-2 text-xs">
+                This point is outside the range drawn on the chart below, so it is not plotted. The values above are still
+                valid.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-sm">Fix the highlighted inputs above to see the results.</p>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <button
-          onClick={onCalculate}
-          disabled={!computed}
-          className={`px-4 py-2 rounded font-medium border shadow-sm ${computed ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-500"}`}
-        >
-          Calculate
+      <div className="mt-4">
+        <button type="button" onClick={exportSvg} className="px-4 py-2 rounded font-medium border shadow-sm bg-white hover:bg-gray-50">
+          Download chart (SVG)
         </button>
-        <button
-          onClick={onClear}
-          disabled={!results}
-          className={`px-4 py-2 rounded font-medium border shadow-sm ${results ? "bg-white text-gray-800 hover:bg-gray-50" : "bg-gray-100 text-gray-400"}`}
-        >
-          Clear
-        </button>
-        <button onClick={exportSvg} className="px-4 py-2 rounded font-medium border shadow-sm bg-white hover:bg-gray-50">
-          Export SVG
-        </button>
-        <div className="text-sm text-gray-600">
-          {results ? (
-            <span>
-              Plotted: <strong>{results.Tdisp.toFixed(1)}°{tempUnit}</strong>, <strong>{results.RH_pct.toFixed(0)}%</strong>
-            </span>
-          ) : (
-            <span>
-              Enter inputs and click <strong>Calculate</strong> to plot.
-            </span>
-          )}
-        </div>
       </div>
-
-      {results && (
-        <div className="mt-2 p-4 border-l-4 border-blue-500 bg-blue-50 text-blue-800 rounded">
-          <p className="font-semibold">Humidity ratio: {results.W.toExponential(3)} kg/kg ({results.W_gpkg.toFixed(2)} g/kg)</p>
-          <p className="text-sm">Enthalpy: {tempUnit === "C" ? `${results.h_kj.toFixed(1)} kJ/kgda` : `${results.h_ip.toFixed(1)} Btu/lbda`}</p>
-          <p className="text-sm">Specific volume: {results.v.toFixed(3)} m³/kgda</p>
-          <p className="text-sm">Saturation pressure pws: {results.pws.toFixed(3)} kPa</p>
-          <p className="text-sm">Vapor pressure pw: {results.Pw.toFixed(3)} kPa</p>
-          <p className="text-sm">Dew point: {isFinite(results.TdpDisp) ? results.TdpDisp.toFixed(1) : "—"} °{tempUnit}</p>
-          <p className="text-sm">Wet-bulb (Stull): {isFinite(results.TwbDisp) ? results.TwbDisp.toFixed(1) : "—"} °{tempUnit}</p>
-
-          <div className="mt-3 p-3 bg-white/60 border border-blue-200 rounded">
-            <p className="text-sm font-semibold text-blue-900">Wet-bulb validation</p>
-            <p className="text-sm text-blue-900">Psychrometer-inverted Twb: {isFinite(results.TwbPsychDisp) ? results.TwbPsychDisp.toFixed(1) : "—"} °{tempUnit}</p>
-            <p className="text-sm text-blue-900">Δ (Psych − Stull): {isFinite(results.TwbDeltaDisp) ? results.TwbDeltaDisp.toFixed(2) : "—"} °{tempUnit}</p>
-            <p className="text-xs text-blue-800 opacity-80 mt-1">Solve uses pw = pws(Twb) − A·P·(Tdb − Twb), A = 0.00066(1 + 0.00115·Twb).</p>
-          </div>
-        </div>
-      )}
 
       <div ref={chartWrapRef} className="mt-8 h-[680px] bg-white p-4 border rounded shadow">
         <ResponsiveContainer width="100%" height="100%">
@@ -732,6 +753,38 @@ export default function PsychrometricsCalculator() {
         </ResponsiveContainer>
       </div>
       <ContactCTA variant="tool" />
+
+      <section className="mt-12 border-t pt-8 text-sm text-gray-600">
+        <h2 className="mb-3 text-xl font-semibold text-gray-800">How it works</h2>
+        <p className="mb-4">
+          Psychrometrics describes moist air. Give this calculator a dry-bulb temperature, a relative humidity and the
+          atmospheric pressure, and it returns the dew point, wet-bulb temperature, humidity ratio, enthalpy and
+          specific volume, and marks the point on a psychrometric chart.
+        </p>
+        <p className="mb-4">
+          Saturation vapor pressure comes from the Magnus equation. The actual vapor pressure is that value multiplied
+          by relative humidity, and the humidity ratio is W&nbsp;=&nbsp;0.62198&nbsp;&middot;&nbsp;p<sub>w</sub>
+          &nbsp;/&nbsp;(P&nbsp;&minus;&nbsp;p<sub>w</sub>). Dew point is the temperature at which that vapor pressure
+          would be saturated, which is the surface temperature where condensation starts.
+        </p>
+        <p className="mb-4">
+          <strong>Example:</strong> air at 25&nbsp;&deg;C (77&nbsp;&deg;F) and 50% relative humidity at sea level holds
+          about 9.9&nbsp;g of water per kg of dry air and has a dew point near 13.9&nbsp;&deg;C (57&nbsp;&deg;F). Any
+          surface colder than that will collect condensation.
+        </p>
+        <p>
+          In reliability work this matters for humidity and condensation risk in storage, shipping and test chambers.
+          To capture the temperature and humidity conditions a product sees over its life, use the{" "}
+          <Link href="/tools/MissionProfile/" className="text-blue-600 hover:underline">
+            Mission Profile tool
+          </Link>
+          .
+        </p>
+        <p className="mt-4 text-xs text-gray-500">
+          Accuracy is suitable for engineering estimates between about &minus;40 and 60&nbsp;&deg;C. For certified HVAC
+          or metrology work, use ASHRAE reference formulations.
+        </p>
+      </section>
     </div>
   );
 }

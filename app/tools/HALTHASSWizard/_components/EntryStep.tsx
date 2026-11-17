@@ -1,7 +1,6 @@
 "use client";
 
 import { ExternalLink, Plus, Radar, Trash2, Workflow } from "lucide-react";
-import { DUTY_CYCLE_ROUTE } from "@/lib/haltHass/types";
 import type { DetectionConfig, EntryMode, FailureEventType, ThresholdType } from "./types";
 import { createDefaultSignal, getScoreTone, parseNumericInput } from "./utils";
 
@@ -77,10 +76,10 @@ export default function EntryStep({
         >
           <div className="mb-3 flex items-center gap-2">
             <Workflow className="h-5 w-5 text-blue-600" />
-            <h3 className="text-base font-semibold text-gray-900">Duty-cycle driven</h3>
+            <h3 className="text-base font-semibold text-gray-900">Mission-profile driven</h3>
           </div>
           <ul className="space-y-1 text-sm text-gray-700">
-            <li>Import stress ranges from the Duty Cycle Wizard.</li>
+            <li>Import stress ranges from the Mission Profile tool.</li>
             <li>Auto-propose HALT envelope and stepping heuristics.</li>
             <li>Good fit for mission-profile-led planning.</li>
           </ul>
@@ -245,7 +244,7 @@ export default function EntryStep({
         <div className="rounded-2xl border bg-white p-4">
           {hasImportedDutyCycle ? (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-              <span>Imported duty cycle detected and HALT suggestions were applied.</span>
+              <span>Stress ranges from your mission profile were imported and used to suggest the HALT limits.</span>
               <button type="button" onClick={onDismissImportedBanner} className="rounded border border-green-300 px-2 py-1 text-xs">
                 Dismiss
               </button>
@@ -253,7 +252,8 @@ export default function EntryStep({
           ) : null}
 
           <div className="mb-3 rounded-lg border bg-gray-50 p-3 text-sm text-gray-700">
-            Import mission-profile stress ranges, then refine the proposed HALT envelope and step pacing.
+            Open the Mission Profile tool, fill in your stresses, and choose &ldquo;Export to HALT Wizard&rdquo; there. You will
+            be brought back here with the ranges filled in. You can also skip this and enter limits by hand in step 3.
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -262,15 +262,9 @@ export default function EntryStep({
               onClick={onOpenDutyCycle}
               className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
-              Open Duty Cycle Wizard
+              Open Mission Profile tool
               <ExternalLink className="h-4 w-4" />
             </button>
-            <a
-              href={DUTY_CYCLE_ROUTE}
-              className="inline-flex items-center rounded-lg border px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Go to Mission Profile Builder
-            </a>
           </div>
         </div>
       )}

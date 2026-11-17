@@ -30,7 +30,12 @@ function rowToRule(row, idx) {
 
   if (!id || !componentType || !parameterDerated || !applicationCategory || !qualityClass) return null;
 
-  const deratingFactor = asNullableNumber01(row.deratingFactor ?? row["Derating Factor"]);
+  // The source sheet heads this column "Derating Factor (%)". Reading only
+  // "Derating Factor" silently dropped every factor, so parts were checked
+  // against 100% of their rating instead of the derated limit.
+  const deratingFactor = asNullableNumber01(
+    row.deratingFactor ?? row["Derating Factor"] ?? row["Derating Factor (%)"]
+  );
   const maxOperatingLimitExpr = asNullableString(row.maxOperatingLimitExpr ?? row["Max Operating Limit"]);
   const typicalFailureMode = asNullableString(row.typicalFailureMode ?? row["Typical Failure Mode"]);
 

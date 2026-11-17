@@ -18,6 +18,7 @@ import type {
   PressureUnit,
 } from "@/lib/derating/models";
 import { defaultInputsForComponentType } from "@/lib/derating/factories";
+import { formatSig } from "@/lib/format";
 
 type Props = {
   component: ComponentRecord;
@@ -218,21 +219,123 @@ export function ComponentEditor({ component, allComponentTypes, onPatch, onRemov
         )}
       </div>
 
-      <div className="mt-4 rounded-lg border bg-neutral-50 p-3">
-        <div className="text-xs font-medium text-neutral-700">Computed (read-only)</div>
-        <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-neutral-700 lg:grid-cols-3">
-          <div>
-            <span className="text-neutral-500">Parameter:</span>{" "}
-            {component.results?.parameterDerated ?? component.rule.effectiveRule?.parameterDerated ?? "—"}
-          </div>
-          <div>
-            <span className="text-neutral-500">Limiting:</span> {component.results?.worst?.limitingCheckKey ?? "—"}
-          </div>
-          <div>
-            <span className="text-neutral-500">Messages:</span> {component.results?.messages?.length ?? 0}
-          </div>
+      <ComponentResultPanel component={component} />
+    </div>
+  );
+}
+
+/* =========================
+   Result panel
+   ========================= */
+
+const num = (v: number | null | undefined, sig = 4) =>
+  typeof v === "number" && Number.isFinite(v) ? formatSig(v, sig) : "—";
+
+const pct = (v: number | null | undefined) =>
+  typeof v === "number" && Number.isFinite(v) ? `${(v * 100).toFixed(1)}%` : "—";
+
+const statusTextClass = (status: string) =>
+  status === "Pass" ? "text-emerald-700" : status === "Fail" ? "text-red-700" : "text-amber-700";
+
+/** Shows why a component passes or fails: each check with its numbers, plus any messages. */
+function ComponentResultPanel({ component }: { component: ComponentRecord }) {
+  const results = component.results;
+  const checks = Object.entries(results?.checks ?? {});
+  const thermal = results?.thermal;
+  const messages = results?.messages ?? [];
+  const hasThermal = !!thermal && thermal.model !== "None" && typeof thermal.estimatedTempC === "number";
+
+  return (
+    <div className="mt-4 rounded-lg border bg-neutral-50 p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-sm font-medium text-neutral-800">Result</div>
+        <div className="text-xs text-neutral-500">
+          Derated parameter:{" "}
+          <span className="text-neutral-700">
+            {results?.parameterDerated ?? component.rule.effectiveRule?.parameterDerated ?? "—"}
+          </span>
         </div>
       </div>
+
+      {checks.length === 0 && !hasThermal ? (
+        <p className="mt-2 text-xs text-neutral-600">
+          No result yet. Enter the rated and applied values above.
+        </p>
+      ) : null}
+
+      {checks.length > 0 ? (
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full min-w-[520px] text-left text-xs text-neutral-700">
+            <thead className="text-neutral-500">
+              <tr>
+                <th className="py-1 pr-3 font-medium">Check</th>
+                <th className="py-1 pr-3 font-medium">Applied</th>
+                <th className="py-1 pr-3 font-medium">Rated</th>
+                <th className="py-1 pr-3 font-medium">Allowed after derating</th>
+                <th className="py-1 pr-3 font-medium">Margin left</th>
+                <th className="py-1 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {checks.map(([key, check]) => (
+                <tr key={key} className="border-t border-neutral-200">
+                  <td className="py-1 pr-3">
+                    {key}
+                    {check.note ? <div className="text-neutral-500">{check.note}</div> : null}
+                  </td>
+                  <td className="py-1 pr-3 tabular-nums">{num(check.applied)}</td>
+                  <td className="py-1 pr-3 tabular-nums">{num(check.rated)}</td>
+                  <td className="py-1 pr-3 tabular-nums">
+                    {check.derated ? num(check.derated.allowed) : "no derating rule"}
+                    {check.derated && typeof check.df === "number" ? (
+                      <span className="text-neutral-500"> ({pct(check.df)} of rated)</span>
+                    ) : null}
+                  </td>
+                  <td className="py-1 pr-3 tabular-nums">{pct(check.derated?.dmDerated ?? check.margin?.dm)}</td>
+                  <td className={`py-1 font-medium ${statusTextClass(check.status)}`}>{check.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {results && results.status !== "Pass" && checks.length > 0 && checks.every(([, check]) => check.status === "Pass") ? (
+        <p className="mt-2 text-xs text-amber-700">
+          Each check is within its derated limit, but the margin left is smaller than the pass targets on the Setup tab,
+          so this part is marked {results.status}.
+        </p>
+      ) : null}
+
+      {hasThermal && thermal ? (
+        <p className="mt-2 text-xs text-neutral-700">
+          Estimated temperature {num(thermal.estimatedTempC)}°C
+          {typeof thermal.limitC === "number" ? `, limit ${num(thermal.limitC)}°C` : ""}
+          {typeof thermal.marginC === "number" ? `, margin ${num(thermal.marginC)}°C` : ""}
+          {thermal.status ? (
+            <span className={`ml-1 font-medium ${statusTextClass(thermal.status)}`}>({thermal.status})</span>
+          ) : null}
+        </p>
+      ) : null}
+
+      {messages.length > 0 ? (
+        <ul className="mt-2 space-y-1 text-xs">
+          {messages.map((message, index) => (
+            <li
+              key={`${index}-${message.text}`}
+              className={
+                message.level === "error"
+                  ? "text-red-700"
+                  : message.level === "warning"
+                    ? "text-amber-700"
+                    : "text-neutral-600"
+              }
+            >
+              {message.text}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -398,8 +501,6 @@ function PowerEditor(props: { inputs: PowerInputs; onChange: (v: PowerInputs) =>
         onChange={(p) => props.onChange({ ...inp, power: p })}
       />
 
-      {/* (rest unchanged) */}
-      {/* Keep your existing blocks exactly as you had them */}
     </div>
   );
 }

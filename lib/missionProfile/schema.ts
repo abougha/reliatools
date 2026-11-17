@@ -363,6 +363,9 @@ export function summarizeLifetimeByStress(
 
     for (const phase of PHASES) {
       const cell = matrix[stress.key][phase.key];
+      // A cell marked "not likely" contributes nothing, even if it still holds
+      // exposure values from before it was switched off.
+      if (cell.likelihood === "not_likely") continue;
       const exposureHours = computeCellExposureHours(cell, lifeHours);
       if (typeof exposureHours === "number" && Number.isFinite(exposureHours)) {
         totalExposureHours += exposureHours;

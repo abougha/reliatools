@@ -62,13 +62,16 @@ export default function SuccessRunMethod() {
     if (!Number.isInteger(parsed.f) || parsed.f < 0) {
       errors.f = "Failures must be a non-negative integer.";
     }
-    if (!Number.isFinite(parsed.clPct) || parsed.clPct <= 0 || parsed.clPct >= 100) {
+    // The field being solved for is an output, so whatever it currently holds is
+    // never validated. Otherwise a stale value there blocks Calculate with an
+    // error on a field the user cannot edit.
+    if (solveFor !== "CL" && (!Number.isFinite(parsed.clPct) || parsed.clPct <= 0 || parsed.clPct >= 100)) {
       errors.CL = "Confidence must be between 0 and 100 (exclusive).";
     }
-    if (!Number.isFinite(parsed.rPct) || parsed.rPct <= 0 || parsed.rPct >= 100) {
+    if (solveFor !== "R" && (!Number.isFinite(parsed.rPct) || parsed.rPct <= 0 || parsed.rPct >= 100)) {
       errors.R = "Reliability must be between 0 and 100 (exclusive).";
     }
-    if (!Number.isInteger(parsed.n) || parsed.n <= 0) {
+    if (solveFor !== "n" && (!Number.isInteger(parsed.n) || parsed.n <= 0)) {
       errors.n = "Sample size must be a positive integer.";
     }
     if (Number.isInteger(parsed.f) && Number.isInteger(parsed.n) && parsed.f >= parsed.n && solveFor !== "n") {

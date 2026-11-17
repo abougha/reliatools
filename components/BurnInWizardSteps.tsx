@@ -1,7 +1,18 @@
 import React, { useMemo } from "react";
 import { BurnInGraph } from "./BurnInGraph";
+import { kB_eV } from "@/lib/constants";
+import { formatSig } from "@/lib/format";
 
-const k = 8.617e-5; // Boltzmann constant in eV/K
+/** Share of the product's operating life that burn-in is allowed to consume. */
+const LIFE_FRACTION = 0.1;
+
+const FAILURE_MODES = [
+  { mode: "Electromigration", img: "/icons/electromigration.png", Ea: [0.7, 1.2], desc: "Metal atom movement under current flow." },
+  { mode: "TDDB", img: "/icons/tddb.png", Ea: [0.6, 0.9], desc: "Breakdown of gate oxide under electric field stress." },
+  { mode: "NBTI", img: "/icons/nbti.png", Ea: [0.3, 0.4], desc: "Threshold voltage shift in PMOS transistors." },
+  { mode: "HCI", img: "/icons/hci.png", Ea: [0.3, 0.4], desc: "Hot carrier injection causing gate oxide damage." },
+  { mode: "Not Sure", img: "/icons/question.png", Ea: [0.7], desc: "A general-purpose 0.7 eV is used." },
+];
 
 type WizardProps = {
   step: number;
@@ -9,6 +20,10 @@ type WizardProps = {
   formData: any;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
 };
+
+/** Value for a numeric input: blank instead of NaN, and 0 stays visible. */
+const fieldValue = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : "");
+const parseField = (raw: string) => (raw.trim() === "" ? NaN : Number(raw));
 
 export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formData, setFormData }) => {
   const handleNext = () => setStep(step + 1);
@@ -18,57 +33,78 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  const recommendations = useMemo(() => {
-    let EaValues: number[] = [];
+  const plan = useMemo(() => {
+    const problems: string[] = [];
 
-    if (formData.failureMode === "Custom Ea" && formData.customEa) {
-      EaValues = [formData.customEa];
-    } else if (formData.failureMode === "Electromigration") {
-      EaValues = [0.7, 1.2];
-    } else if (formData.failureMode === "TDDB") {
-      EaValues = [0.6, 0.9];
-    } else if (formData.failureMode === "NBTI" || formData.failureMode === "HCI") {
-      EaValues = [0.3, 0.4];
+    let EaValues: number[];
+    if (formData.failureMode === "Custom Ea") {
+      EaValues = [Number(formData.customEa)];
+      if (!(EaValues[0] >= 0.1 && EaValues[0] <= 2.5)) {
+        problems.push("Step 2: enter a custom activation energy between 0.1 and 2.5 eV.");
+      }
     } else {
-      EaValues = [0.7]; // Default for "Not Sure"
+      EaValues = FAILURE_MODES.find((m) => m.mode === formData.failureMode)?.Ea ?? [0.7];
     }
 
-    const useTempK = formData.useTemp + 273.15;
-    const maxSafeTemp = formData.maxBurnTemp;
-    const deltaT = formData.testMode === "Powered" ? formData.deltaT || 0 : 0;
-    const adjustedOvenTemp = formData.testMode === "Powered" ? Math.max(0, maxSafeTemp - deltaT) : maxSafeTemp;
-    const deviceTempK = adjustedOvenTemp + deltaT + 273.15;
+    const life = Number(formData.productLife);
+    const useTemp = Number(formData.useTemp);
+    const maxTemp = Number(formData.maxBurnTemp);
+    const powered = formData.testMode === "Powered";
+    const deltaT = powered ? Number(formData.deltaT) : 0;
 
-    const simulatedLife = 0.1 * (formData.productLife || 50000); // Life in hours
+    if (!(life > 0)) problems.push("Step 3: enter the product operating life in hours.");
+    if (!Number.isFinite(useTemp)) problems.push("Step 3: enter the typical use temperature.");
+    if (!Number.isFinite(maxTemp)) problems.push("Step 3: enter the maximum safe burn-in temperature.");
+    if (Number.isFinite(useTemp) && Number.isFinite(maxTemp) && maxTemp <= useTemp) {
+      problems.push("Step 3: the maximum burn-in temperature must be higher than the use temperature, otherwise nothing is accelerated.");
+    }
+    if (powered && !(deltaT >= 0)) problems.push("Step 3: enter the temperature rise due to power (0 or more).");
+    if (powered && deltaT >= 0 && Number.isFinite(maxTemp) && Number.isFinite(useTemp) && maxTemp - deltaT < -55) {
+      problems.push("Step 3: the temperature rise due to power is larger than the burn-in limit allows.");
+    }
 
-    const durations = EaValues.map(ea => {
-      const AF = Math.exp(ea / k * (1 / useTempK - 1 / deviceTempK));
-      return (simulatedLife / AF).toFixed(1);
+    if (problems.length > 0) return { problems };
+
+    // The device may not exceed the safe limit, so a powered part needs a cooler oven.
+    const deviceTemp = maxTemp;
+    const ovenTemp = maxTemp - deltaT;
+    const simulatedLife = LIFE_FRACTION * life;
+    const useTempK = useTemp + 273.15;
+    const deviceTempK = deviceTemp + 273.15;
+
+    const cases = EaValues.map((Ea) => {
+      const AF = Math.exp((Ea / kB_eV) * (1 / useTempK - 1 / deviceTempK));
+      return { Ea, AF, hours: simulatedLife / AF };
     });
-
-    const AFValues = EaValues.map(ea => {
-      const AF = Math.exp(ea / k * (1 / useTempK - 1 / deviceTempK));
-      return AF.toFixed(2);
-    });
+    const hours = cases.map((c) => c.hours);
+    const afs = cases.map((c) => c.AF);
 
     return {
-      EaRange: EaValues.map(ea => ea.toFixed(2)).join(" – "),
-      durations,
-      AFValues,
-      simulatedLife: simulatedLife.toFixed(0),
-      ovenTemp: adjustedOvenTemp.toFixed(1),
-      deviceTemp: (adjustedOvenTemp + deltaT).toFixed(1),
+      problems,
+      EaValues,
+      powered,
       deltaT,
-      testMode: formData.testMode,
+      useTemp,
+      deviceTemp,
+      ovenTemp,
+      simulatedLife,
+      minHours: Math.min(...hours),
+      maxHours: Math.max(...hours),
+      minAF: Math.min(...afs),
+      maxAF: Math.max(...afs),
     };
   }, [formData]);
+
+  const range = (lo: number, hi: number, digits = 3) =>
+    Math.abs(hi - lo) < 1e-9 * Math.max(1, Math.abs(hi)) ? formatSig(lo, digits) : `${formatSig(lo, digits)} – ${formatSig(hi, digits)}`;
 
   return (
     <div className="space-y-6">
       {/* Step 1: Device Type */}
       {step === 1 && (
         <div>
-          <h2 className="text-xl font-semibold mb-4">Step 1: Select Device Type</h2>
+          <h2 className="text-xl font-semibold mb-1">Step 1: Select Device Type</h2>
+          <p className="mb-4 text-sm text-gray-600">For your records only. It does not change the calculation.</p>
           <div className="grid grid-cols-2 gap-4">
             {[
               { type: "Logic IC", img: "/icons/logic.png" },
@@ -79,10 +115,12 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
             ].map(({ type, img }) => (
               <button
                 key={type}
-                className={`flex items-center space-x-2 border p-3 rounded ${formData.deviceType === type ? "bg-blue-200" : ""}`}
+                type="button"
+                aria-pressed={formData.deviceType === type}
+                className={`flex items-center space-x-2 border p-3 rounded ${formData.deviceType === type ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}
                 onClick={() => handleChange("deviceType", type)}
               >
-                <img src={img} alt={type} className="w-6 h-6" />
+                <img src={img} alt="" className="w-6 h-6" />
                 <span>{type}</span>
               </button>
             ))}
@@ -93,29 +131,31 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
       {/* Step 2: Failure Mode */}
       {step === 2 && (
         <div>
-          <h2 className="text-xl font-semibold mb-4">Step 2: Select Known Failure Mechanism</h2>
+          <h2 className="text-xl font-semibold mb-1">Step 2: Select Known Failure Mechanism</h2>
+          <p className="mb-4 text-sm text-gray-600">
+            This sets the activation energy (Ea). If you do not know the mechanism, choose &ldquo;Not Sure&rdquo;.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { mode: "Electromigration", img: "/icons/electromigration.png", Ea: "0.7–1.2", desc: "Metal atom movement under current flow." },
-              { mode: "TDDB", img: "/icons/tddb.png", Ea: "0.6–0.9", desc: "Breakdown of gate oxide under electric field stress." },
-              { mode: "NBTI", img: "/icons/nbti.png", Ea: "0.3–0.4", desc: "Threshold voltage shift in PMOS transistors." },
-              { mode: "HCI", img: "/icons/hci.png", Ea: "0.3–0.4", desc: "Hot carrier injection causing gate oxide damage." },
-              { mode: "Not Sure", img: "/icons/question.png", Ea: "0.7", desc: "General test conditions will apply." },
-            ].map(({ mode, img, Ea, desc }) => (
+            {FAILURE_MODES.map(({ mode, img, Ea, desc }) => (
               <button
                 key={mode}
-                className={`flex items-start space-x-3 border p-3 rounded ${formData.failureMode === mode ? "bg-green-200" : ""}`}
+                type="button"
+                aria-pressed={formData.failureMode === mode}
+                className={`flex items-start space-x-3 border p-3 rounded text-left ${formData.failureMode === mode ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"}`}
                 onClick={() => setFormData((prev: any) => ({ ...prev, failureMode: mode, customEa: null }))}
               >
-                <img src={img} alt={mode} className="w-8 h-8 mt-1" />
+                {/* "Not Sure" has no icon file; hide a missing image instead of showing a broken one. */}
+                <img src={img} alt="" className="w-8 h-8 mt-1" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
                 <div>
-                  <div className="font-medium">{mode} <span className="text-xs text-gray-500 italic">(Ea {Ea} eV)</span></div>
+                  <div className="font-medium">
+                    {mode} <span className="text-xs text-gray-500 italic">(Ea {Ea.map((v) => v.toFixed(1)).join("–")} eV)</span>
+                  </div>
                   <div className="text-xs text-gray-600">{desc}</div>
                 </div>
               </button>
             ))}
 
-            <div className="border p-3 rounded flex flex-col space-y-2">
+            <div className={`border p-3 rounded flex flex-col space-y-2 ${formData.failureMode === "Custom Ea" ? "border-blue-500 bg-blue-50" : ""}`}>
               <label className="font-medium flex items-center space-x-2">
                 <input
                   type="radio"
@@ -129,9 +169,10 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
               <input
                 type="number"
                 step="0.01"
+                aria-label="Custom activation energy (eV)"
                 placeholder="Enter custom Ea (eV)"
-                value={formData.customEa || ""}
-                onChange={(e) => setFormData((prev: any) => ({ ...prev, customEa: parseFloat(e.target.value) || 0 }))}
+                value={fieldValue(formData.customEa)}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, customEa: parseField(e.target.value) }))}
                 className="border p-2 rounded w-full text-sm"
                 disabled={formData.failureMode !== "Custom Ea"}
               />
@@ -146,40 +187,44 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
           <h2 className="text-xl font-semibold mb-4">Step 3: Operational Context</h2>
 
           <div className="mb-4">
-            <label className="block mb-2 font-medium">Intended Product Operating Life (hours)</label>
+            <label className="block mb-2 font-medium" htmlFor="burnin-life">Intended Product Operating Life (hours)</label>
             <input
+              id="burnin-life"
               type="number"
-              value={formData.productLife || ""}
-              onChange={(e) => handleChange("productLife", parseFloat(e.target.value))}
+              value={fieldValue(formData.productLife)}
+              onChange={(e) => handleChange("productLife", parseField(e.target.value))}
               className="border p-2 rounded w-full"
               placeholder="e.g., 50000"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 font-medium">Typical Use Temperature (°C)</label>
+            <label className="block mb-2 font-medium" htmlFor="burnin-use-temp">Typical Use Temperature (°C)</label>
             <input
+              id="burnin-use-temp"
               type="number"
-              value={formData.useTemp || ""}
-              onChange={(e) => handleChange("useTemp", parseFloat(e.target.value))}
+              value={fieldValue(formData.useTemp)}
+              onChange={(e) => handleChange("useTemp", parseField(e.target.value))}
               className="border p-2 rounded w-full"
-              placeholder="e.g., 85°C"
+              placeholder="e.g., 65"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 font-medium">Maximum Safe Burn-In Temperature (°C)</label>
+            <label className="block mb-2 font-medium" htmlFor="burnin-max-temp">Maximum Safe Burn-In Temperature (°C)</label>
             <input
+              id="burnin-max-temp"
               type="number"
-              value={formData.maxBurnTemp || ""}
-              onChange={(e) => handleChange("maxBurnTemp", parseFloat(e.target.value))}
+              value={fieldValue(formData.maxBurnTemp)}
+              onChange={(e) => handleChange("maxBurnTemp", parseField(e.target.value))}
               className="border p-2 rounded w-full"
-              placeholder="e.g., 125°C"
+              placeholder="e.g., 125"
             />
+            <p className="mt-1 text-xs text-gray-500">The hottest the device itself may get, usually from the datasheet.</p>
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 font-medium">Burn-In Test Mode</label>
+            <div className="block mb-2 font-medium">Burn-In Test Mode</div>
             <div className="flex space-x-4">
               {["Powered", "Unpowered"].map((mode) => (
                 <label key={mode} className="flex items-center space-x-2">
@@ -198,14 +243,16 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
 
           {formData.testMode === "Powered" && (
             <div className="mb-4">
-              <label className="block mb-2 font-medium">ΔT Due to Power (°C)</label>
+              <label className="block mb-2 font-medium" htmlFor="burnin-delta-t">Temperature Rise Due to Power, ΔT (°C)</label>
               <input
+                id="burnin-delta-t"
                 type="number"
-                value={formData.deltaT || ""}
-                onChange={(e) => handleChange("deltaT", parseFloat(e.target.value))}
+                value={fieldValue(formData.deltaT)}
+                onChange={(e) => handleChange("deltaT", parseField(e.target.value))}
                 className="border p-2 rounded w-full"
-                placeholder="e.g., 10°C"
+                placeholder="e.g., 10"
               />
+              <p className="mt-1 text-xs text-gray-500">How much hotter the powered device runs than the oven air. The oven is set cooler by this amount.</p>
             </div>
           )}
         </div>
@@ -216,51 +263,62 @@ export const BurnInWizardSteps: React.FC<WizardProps> = ({ step, setStep, formDa
         <div>
           <h2 className="text-xl font-semibold mb-4">Step 4: Burn-In Test Recommendations</h2>
 
-          <div className="border p-4 rounded bg-gray-100 space-y-2 text-sm">
-            <p><strong>Recommended Oven Temperature:</strong> {recommendations.ovenTemp}°C</p>
-            {recommendations.testMode === "Powered" && (
-              <p><strong>Device Temperature (Oven + ΔT):</strong> {recommendations.deviceTemp}°C</p>
-            )}
-            <p>
-              <strong>Recommended Burn-In Duration:</strong>{" "}
-              {recommendations.durations.length === 1
-                ? `${recommendations.durations[0]} hours`
-                : `${recommendations.durations[0]} – ${recommendations.durations[1]} hours`}
-            </p>
-            <p><strong>Simulated Life (10% of target life):</strong> {recommendations.simulatedLife} hours</p>
-            <p>
-              <strong>Acceleration Factor (AF):</strong>{" "}
-              {recommendations.AFValues.length === 1
-                ? recommendations.AFValues[0]
-                : `${recommendations.AFValues[0]} – ${recommendations.AFValues[1]}`}
-            </p>
-            <p><strong>Activation Energy (Ea):</strong> {recommendations.EaRange} eV</p>
-            <p><strong>Test Mode:</strong> {recommendations.testMode}</p>
-          </div>
+          {"EaValues" in plan && plan.EaValues ? (
+            <>
+              <div className="rounded border-l-4 border-blue-500 bg-blue-50 p-4 text-blue-900">
+                <p className="text-lg font-semibold">
+                  Burn in for {range(plan.minHours, plan.maxHours)} hours at an oven temperature of {formatSig(plan.ovenTemp, 4)}°C
+                </p>
+                <p className="mt-1 text-sm">
+                  That consumes about {Math.round(LIFE_FRACTION * 100)}% of the product&apos;s operating life (
+                  {formatSig(plan.simulatedLife, 4)} equivalent use hours).
+                  {plan.EaValues.length > 1 ? " The range comes from the spread in activation energy for this mechanism; the longer time is the conservative choice." : ""}
+                </p>
+              </div>
 
-          <BurnInGraph
-            Ea={formData.customEa || (formData.failureMode === "Electromigration" ? 0.7 : 0.7)}
-            useTemp={formData.useTemp}
-            ovenTemp={parseFloat(recommendations.ovenTemp)}
-            durations={recommendations.durations}
-            EaRange={recommendations.EaRange}
-          />
+              <div className="mt-4 border p-4 rounded bg-gray-50 space-y-2 text-sm">
+                {plan.powered && (
+                  <p><strong>Device temperature (oven + ΔT):</strong> {formatSig(plan.deviceTemp, 4)}°C</p>
+                )}
+                <p><strong>Acceleration factor (AF):</strong> {range(plan.minAF, plan.maxAF)}</p>
+                <p><strong>Activation energy (Ea):</strong> {plan.EaValues.map((v) => v.toFixed(2)).join(" – ")} eV</p>
+                <p><strong>Use temperature:</strong> {formatSig(plan.useTemp, 4)}°C</p>
+                <p><strong>Test mode:</strong> {plan.powered ? "Powered" : "Unpowered"}</p>
+              </div>
 
-          <p className="text-xs text-gray-600 mt-2">
-            📊 The graph shows how Burn-In Temperature affects the required test duration. The shaded band represents ±10% variation around the recommended point.
-          </p>
+              <BurnInGraph
+                EaValues={plan.EaValues}
+                useTemp={plan.useTemp}
+                deviceTemp={plan.deviceTemp}
+                simulatedLife={plan.simulatedLife}
+              />
+
+              <p className="text-xs text-gray-600 mt-2">
+                The chart shows how the required burn-in time falls as the device gets hotter. The dashed line marks your burn-in temperature.
+              </p>
+            </>
+          ) : (
+            <div className="rounded border-l-4 border-amber-500 bg-amber-50 p-4 text-sm text-amber-900">
+              <p className="font-semibold">A few inputs are needed before a recommendation can be made:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {plan.problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
       {/* Navigation Buttons */}
       <div className="flex justify-between mt-6">
-        {step > 1 && (
-          <button className="bg-gray-300 px-4 py-2 rounded" onClick={handleBack}>
+        {step > 1 ? (
+          <button type="button" className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300" onClick={handleBack}>
             Back
           </button>
-        )}
+        ) : <span />}
         {step < 4 && (
-          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleNext}>
+          <button type="button" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onClick={handleNext}>
             Next
           </button>
         )}

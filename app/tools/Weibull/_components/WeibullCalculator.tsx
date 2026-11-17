@@ -163,7 +163,7 @@ export default function WeibullCalculator() {
         ...prev,
         {
           id: createId(),
-          name: payload.name,
+          name: payload.name || `Dataset ${prev.length + 1}`,
           colorKey,
           data: payload.data,
           visible: true,

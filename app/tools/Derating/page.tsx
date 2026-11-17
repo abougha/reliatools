@@ -167,7 +167,16 @@ export default function DeratingToolPage() {
     return (
         <div className="mx-auto w-full max-w-6xl px-4 py-8">
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold">Component Derating Navigator</h1>
+                <h1 className="text-3xl font-bold">Component Derating Navigator</h1>
+                <p className="mt-2 text-sm text-neutral-600">
+                    Check whether each part is loaded safely below its rating. Derating means running a part at less
+                    than its rated voltage, power, current or temperature so it lasts longer.
+                </p>
+                <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-neutral-700">
+                    <li><strong>Setup</strong>: choose the application category. The defaults are fine to start.</li>
+                    <li><strong>Components</strong>: add each part and enter its rated and applied values.</li>
+                    <li><strong>Summary</strong>: see which parts pass, need attention or fail, then export.</li>
+                </ol>
             </div>
 
             <Tabs active={tab} onChange={setTab} items={tabItems} />
@@ -200,7 +209,7 @@ export default function DeratingToolPage() {
                             <div className="font-medium">Rule load error</div>
                             <div className="mt-1">{ruleLoadError}</div>
                             <div className="mt-2 text-xs text-red-700">
-                                Confirm the rule file exists at <code>lib/derating/data/Table.xlsx</code>.
+                                Reload the page to try again. If it keeps happening, please contact us.
                             </div>
                         </div>
                     )}
@@ -209,7 +218,7 @@ export default function DeratingToolPage() {
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {/* Meta */}
                     <div className="rounded-xl border bg-white p-4">
-                        <div className="mb-3 text-sm font-medium">Project Meta</div>
+                        <div className="mb-3 text-sm font-medium">Project details (optional)</div>
 
                         <label className="block text-xs text-neutral-600">Project Name</label>
                         <input
@@ -235,18 +244,18 @@ export default function DeratingToolPage() {
                             placeholder="e.g., Your Name"
                         />
 
-                        <label className="block text-xs text-neutral-600">Date (ISO)</label>
+                        <label className="block text-xs text-neutral-600">Date</label>
                         <input
                             className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                            type="date"
                             value={state.meta.dateISO ?? ""}
                             onChange={(e) => onUpdateMeta("dateISO", e.target.value)}
-                            placeholder="YYYY-MM-DD"
                         />
                     </div>
 
                     {/* Settings */}
                     <div className="rounded-xl border bg-white p-4">
-                        <div className="mb-3 text-sm font-medium">Global Settings</div>
+                        <div className="mb-3 text-sm font-medium">Settings</div>
 
                         <label className="block text-xs text-neutral-600">Application Category</label>
                         <select
@@ -306,15 +315,19 @@ export default function DeratingToolPage() {
                                 checked={state.settings.requireExactRuleMatch}
                                 onChange={(e) => onUpdateSettings("requireExactRuleMatch", e.target.checked as any)}
                             />
-                            Require exact rule match (no conservative fallback)
+                            Only use an exact rule match
                         </label>
+                        <p className="mt-1 text-xs text-neutral-500">
+                            When off, a part with no exact rule for your category and quality class uses the closest
+                            stricter rule instead.
+                        </p>
                     </div>
 
                     {/* Targets */}
                     <div className="rounded-xl border bg-white p-4">
-                        <div className="mb-3 text-sm font-medium">Targets</div>
+                        <div className="mb-3 text-sm font-medium">Pass targets</div>
 
-                        <label className="block text-xs text-neutral-600">Min Derated DM</label>
+                        <label className="block text-xs text-neutral-600">Minimum design margin after derating (DM)</label>
                         <input
                             className="mb-3 mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                             type="number"
@@ -324,8 +337,11 @@ export default function DeratingToolPage() {
                             value={state.targets.minDeratedDM}
                             onChange={(e) => onUpdateTargets("minDeratedDM", Number(e.target.value))}
                         />
+                        <p className="-mt-2 mb-3 text-xs text-neutral-500">
+                            As a fraction: 0.2 means the applied stress must sit at least 20% below the derated limit.
+                        </p>
 
-                        <label className="block text-xs text-neutral-600">Min Derated FOS</label>
+                        <label className="block text-xs text-neutral-600">Minimum factor of safety (FOS)</label>
                         <input
                             className="mb-3 mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                             type="number"
@@ -341,10 +357,10 @@ export default function DeratingToolPage() {
                                 checked={state.targets.decoupleDMFOS}
                                 onChange={(e) => onUpdateTargets("decoupleDMFOS", e.target.checked)}
                             />
-                            Decouple DM and FOS
+                            Set factor of safety separately from margin
                         </label>
 
-                        <label className="block text-xs text-neutral-600">Min Temp Margin (°C)</label>
+                        <label className="block text-xs text-neutral-600">Minimum temperature margin (°C)</label>
                         <input
                             className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                             type="number"
@@ -401,7 +417,9 @@ export default function DeratingToolPage() {
 
                 <div className="grid grid-cols-1 gap-4">
                     {state.components.length === 0 ? (
-                        <div className="rounded-xl border bg-white p-6 text-sm text-neutral-600">No components yet. Add one above.</div>
+                        <div className="rounded-xl border bg-white p-6 text-sm text-neutral-600">
+                            No components yet. Choose a component type above and select &ldquo;Add component&rdquo;.
+                        </div>
                     ) : (
                         state.components.map((c) => (
                             <div

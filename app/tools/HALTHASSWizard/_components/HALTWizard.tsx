@@ -26,6 +26,9 @@ export default function HALTWizard() {
     if (typeof window === "undefined") return;
     const payload = parseDutyCyclePayload(window.localStorage.getItem(DUTY_CYCLE_EXPORT_KEY));
     if (!payload) return;
+    // An export is a one-time hand-off. Clear it once used, otherwise every
+    // later visit would silently overwrite the defaults with the old profile.
+    window.localStorage.removeItem(DUTY_CYCLE_EXPORT_KEY);
     setState((prev) => applyDutyCycleImport(prev, payload));
     setShowImportedBanner(true);
   }, []);
@@ -49,10 +52,11 @@ export default function HALTWizard() {
       <div className="mb-6">
         <h1 className="text-3xl font-semibold">HALT/HASS Test Plan Builder</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Build HALT step-stress timelines with a detection-first or duty-cycle-driven entry path, then export CSV for chamber execution.
+          Build a HALT step-stress profile in three steps, see it as a timeline chart, and export it as CSV for the test chamber.
         </p>
         <div className="mt-3 rounded-xl border bg-gray-50 p-4 text-sm text-gray-700">
-          MVP scope: HALT profile builder + chart + CSV export. HASS derivation is intentionally stubbed and will be expanded next.
+          This tool builds the HALT profile. Deriving a production HASS screen from your HALT limits depends on your product
+          and results, so it is not automated here.
         </div>
       </div>
 
@@ -101,7 +105,7 @@ export default function HALTWizard() {
               onClick={() => setStep(1)}
               className="rounded-lg border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
-              Restart at Step A
+              Back to step 1
             </button>
           )}
         </div>

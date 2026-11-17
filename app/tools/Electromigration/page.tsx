@@ -18,6 +18,7 @@ import {
 import { computeElectromigrationMTTF } from "@/lib/reliabilityMath";
 import { kB_eV } from "@/lib/constants";
 import { toKelvinFromCelsius } from "@/lib/units";
+import { formatSig } from "@/lib/format";
 import ContactCTA from "@/components/ContactCTA";
 
 type SolveTarget = "MTTF" | "j" | "T";
@@ -77,12 +78,6 @@ function toDisplayCurrentDensity(valueAcm2: number, unit: CurrentDensityUnit): n
   return valueAcm2;
 }
 
-function formatValue(value: number, mode: "decimal" | "exp" = "decimal"): string {
-  if (!Number.isFinite(value)) return "";
-  if (mode === "exp") return value.toExponential(4);
-  return value.toFixed(4).replace(/\.?0+$/, "");
-}
-
 export default function ElectromigrationCalculator() {
   const [solveFor, setSolveFor] = useState<SolveTarget>(DEFAULTS.solveFor);
   const [Ea, setEa] = useState(DEFAULTS.Ea);
@@ -102,21 +97,23 @@ export default function ElectromigrationCalculator() {
   const currentDensityAcm2 = fromDisplayCurrentDensity(currentDensityDisplay, currentDensityUnit);
   const nPositive = Math.abs(nNum);
 
+  // The solved field is an output, so it is never validated: a stale value in
+  // it must not block the calculation.
   const fieldErrors = useMemo(() => {
     const errors: Partial<Record<"Ea" | "j" | "T" | "n" | "A" | "MTTF", string>> = {};
 
-    if (!Number.isFinite(EaNum)) {
+    if (Ea.trim() === "" || !Number.isFinite(EaNum)) {
       errors.Ea = "Activation energy is required.";
     } else if (EaNum < 0.1 || EaNum > 2.5) {
       errors.Ea = "Activation energy must be between 0.1 and 2.5 eV.";
     }
 
-    if (!Number.isFinite(currentDensityDisplay) || currentDensityDisplay <= 0) {
+    if (solveFor !== "j" && (!Number.isFinite(currentDensityDisplay) || currentDensityDisplay <= 0)) {
       errors.j = "Current density must be > 0.";
     }
 
-    if (!Number.isFinite(tempC) || tempC < -80 || tempC > 300) {
-      errors.T = "Temperature must be between -80 and 300 C.";
+    if (solveFor !== "T" && (temperatureC.trim() === "" || !Number.isFinite(tempC) || tempC < -80 || tempC > 300)) {
+      errors.T = "Temperature must be between -80 and 300 °C.";
     }
 
     if (!Number.isFinite(nNum) || nNum === 0) {
@@ -127,24 +124,26 @@ export default function ElectromigrationCalculator() {
       errors.A = "A must be > 0.";
     }
 
-    if (!Number.isFinite(mttfNum) || mttfNum <= 0) {
+    if (solveFor !== "MTTF" && (!Number.isFinite(mttfNum) || mttfNum <= 0)) {
       errors.MTTF = "MTTF must be > 0.";
     }
 
     return errors;
-  }, [EaNum, currentDensityDisplay, tempC, nNum, AVal, mttfNum]);
+  }, [Ea, EaNum, currentDensityDisplay, temperatureC, tempC, nNum, AVal, mttfNum, solveFor]);
 
   const hasErrors = Object.keys(fieldErrors).length > 0;
 
-  const solved = useMemo(() => {
+  const solved = useMemo((): { label: string; value: string; num: number; error: string } => {
+    const label =
+      solveFor === "MTTF" ? "MTTF (hrs)" : solveFor === "j" ? `Current Density (${currentDensityUnit})` : "Temperature (°C)";
     if (hasErrors) {
-      return { label: "", value: "", error: "Please fix input validation errors." };
+      return { label, value: "", num: NaN, error: "Fix the highlighted inputs above to see the result." };
     }
 
     try {
       if (solveFor === "MTTF") {
         const value = computeElectromigrationMTTF(AVal, currentDensityAcm2, nPositive, EaNum, tempC);
-        return { label: "MTTF (hrs)", value: formatValue(value), error: "" };
+        return { label, value: formatSig(value), num: value, error: "" };
       }
 
       if (solveFor === "j") {
@@ -152,31 +151,69 @@ export default function ElectromigrationCalculator() {
         const numerator = AVal * Math.exp(EaNum / (kB_eV * tK));
         const valueAcm2 = Math.pow(numerator / mttfNum, 1 / nPositive);
         const displayValue = toDisplayCurrentDensity(valueAcm2, currentDensityUnit);
-        return { label: `Current Density (${currentDensityUnit})`, value: formatValue(displayValue, "exp"), error: "" };
+        if (!Number.isFinite(displayValue) || displayValue <= 0) {
+          return { label, value: "", num: NaN, error: "Cannot solve current density with these inputs." };
+        }
+        return { label, value: formatSig(displayValue), num: displayValue, error: "" };
       }
 
       const lnPart = Math.log(mttfNum / (AVal * Math.pow(currentDensityAcm2, -nPositive)));
       if (!Number.isFinite(lnPart) || lnPart <= 0) {
-        return { label: "Temperature (C)", value: "", error: "Cannot solve temperature with current inputs." };
+        return {
+          label,
+          value: "",
+          num: NaN,
+          error: "No temperature gives that MTTF at this current density. Try a longer MTTF or a lower current density.",
+        };
       }
       const solvedTempC = EaNum / (kB_eV * lnPart) - 273.15;
-      return { label: "Temperature (C)", value: formatValue(solvedTempC), error: "" };
+      return { label, value: formatSig(solvedTempC), num: solvedTempC, error: "" };
     } catch (error) {
-      return { label: "", value: "", error: error instanceof Error ? error.message : "Calculation failed." };
+      return { label, value: "", num: NaN, error: error instanceof Error ? error.message : "Calculation failed." };
     }
   }, [hasErrors, solveFor, AVal, currentDensityAcm2, nPositive, EaNum, tempC, mttfNum, currentDensityUnit]);
 
+  // Effective operating point: typed inputs plus whichever value was solved.
+  const ready = !hasErrors && Number.isFinite(solved.num);
+  const effTempC = solveFor === "T" ? solved.num : tempC;
+  const effMttf = solveFor === "MTTF" ? solved.num : mttfNum;
+  const effJAcm2 = solveFor === "j" ? fromDisplayCurrentDensity(solved.num, currentDensityUnit) : currentDensityAcm2;
+
   const graphData = useMemo(() => {
-    if (hasErrors) return [];
+    if (!ready) return [];
+    const start = Math.min(50, Math.floor(effTempC / 5) * 5 - 10);
+    const end = Math.max(200, Math.ceil(effTempC / 5) * 5 + 10);
     const data: Array<{ temp: number; mttf: number }> = [];
-    for (let temp = 50; temp <= 200; temp += 5) {
-      const mttf = computeElectromigrationMTTF(AVal, currentDensityAcm2, nPositive, EaNum, temp);
+    for (let temp = start; temp <= end; temp += 5) {
+      const mttf = AVal * Math.pow(effJAcm2, -nPositive) * Math.exp(EaNum / (kB_eV * toKelvinFromCelsius(temp)));
       if (Number.isFinite(mttf) && mttf > 0) {
         data.push({ temp, mttf });
       }
     }
     return data;
-  }, [hasErrors, AVal, currentDensityAcm2, nPositive, EaNum]);
+  }, [ready, AVal, effJAcm2, nPositive, EaNum, effTempC]);
+
+  const changeSolveFor = (next: SolveTarget) => {
+    if (next === solveFor) return;
+    // Keep the answer just computed as the starting value of the field it was in.
+    // Carried at higher precision than displayed so the next answer does not drift.
+    if (solved.value) {
+      const carried = formatSig(solved.num, 10);
+      if (solveFor === "MTTF") setMTTF(carried);
+      if (solveFor === "j") setCurrentDensity(carried);
+      if (solveFor === "T") setTemperatureC(carried);
+    }
+    setSolveFor(next);
+  };
+
+  const changeUnit = (next: CurrentDensityUnit) => {
+    if (next === currentDensityUnit) return;
+    // Convert the typed value so the physical current density stays the same.
+    if (Number.isFinite(currentDensityDisplay) && currentDensity.trim() !== "") {
+      setCurrentDensity(formatSig(toDisplayCurrentDensity(currentDensityAcm2, next), 8));
+    }
+    setCurrentDensityUnit(next);
+  };
 
   const downloadCSV = () => {
     let csv = "Temperature (C),MTTF (hours)\n";
@@ -204,7 +241,6 @@ export default function ElectromigrationCalculator() {
   };
 
   const nWasNegative = Number.isFinite(nNum) && nNum < 0;
-  const showUnitWarning = currentDensityUnit === "A/m2";
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -228,10 +264,10 @@ export default function ElectromigrationCalculator() {
                 <strong>MTTF</strong> = Mean Time To Failure (hours)
               </li>
               <li>
-                <strong>A</strong> = Constant (relative unless calibrated)
+                <strong>A</strong> = Process constant (results are relative unless A is calibrated)
               </li>
               <li>
-                <strong>j</strong> = Current density (consistent units)
+                <strong>j</strong> = Current density
               </li>
               <li title="n (positive); typical 1-2">
                 <strong>n</strong> = Current density exponent (positive)
@@ -258,7 +294,7 @@ export default function ElectromigrationCalculator() {
           Current Density Unit
           <select
             value={currentDensityUnit}
-            onChange={(event) => setCurrentDensityUnit(event.target.value as CurrentDensityUnit)}
+            onChange={(event) => changeUnit(event.target.value as CurrentDensityUnit)}
             className="mt-1 w-full rounded border p-2 sm:w-48"
           >
             <option value="A/cm2">A/cm²</option>
@@ -279,7 +315,7 @@ export default function ElectromigrationCalculator() {
             solveId: "j" as const,
           },
           {
-            label: "Temperature (C)",
+            label: "Temperature (°C)",
             value: temperatureC,
             setter: setTemperatureC,
             id: "T" as const,
@@ -287,8 +323,8 @@ export default function ElectromigrationCalculator() {
             solveId: "T" as const,
           },
           { label: "Activation Energy (eV)", value: Ea, setter: setEa, id: "Ea" as const, errorKey: "Ea" as const },
-          { label: "n (positive)", value: n, setter: setN, id: "n" as const, errorKey: "n" as const },
-          { label: "A (relative unless calibrated)", value: A, setter: setA, id: "A" as const, errorKey: "A" as const },
+          { label: "Current density exponent (n)", value: n, setter: setN, id: "n" as const, errorKey: "n" as const },
+          { label: "Constant A (leave at 1 to compare cases)", value: A, setter: setA, id: "A" as const, errorKey: "A" as const },
         ].map(({ label, value, setter, id, errorKey, solveId }) => (
           <label key={id} className={`block text-sm ${solveFor === id ? "rounded border-l-4 border-yellow-400 bg-yellow-50 p-2" : ""}`}>
             {solveId ? (
@@ -297,7 +333,7 @@ export default function ElectromigrationCalculator() {
                 name="solveFor"
                 value={solveId}
                 checked={solveFor === solveId}
-                onChange={(event) => setSolveFor(event.target.value as SolveTarget)}
+                onChange={() => changeSolveFor(solveId)}
                 className="mr-2"
               />
             ) : null}
@@ -318,17 +354,19 @@ export default function ElectromigrationCalculator() {
         <p className="text-lg font-semibold">
           {solved.label}: {solved.value || "N/A"}
         </p>
-        {solved.error ? <p className="mt-2 text-sm text-red-700">{solved.error}</p> : null}
+        {solved.error ? <p className="mt-1 text-sm">{solved.error}</p> : null}
+        {ready && AVal === 1 ? (
+          <p className="mt-1 text-sm">
+            With A = 1 the hours are relative, not absolute. Use them to compare one condition against another, or
+            enter a calibrated A from your process data.
+          </p>
+        ) : null}
       </div>
 
       {nWasNegative ? (
         <div className="mt-4 rounded border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">
-          Using |n| to avoid double-negation.
-        </div>
-      ) : null}
-      {showUnitWarning ? (
-        <div className="mt-4 rounded border-l-4 border-amber-500 bg-amber-50 p-3 text-sm text-amber-800">
-          Current density is entered as A/m² and internally converted to A/cm² for Black&apos;s equation.
+          The exponent was entered as a negative number; its positive value is used, since the formula already applies
+          the minus sign.
         </div>
       ) : null}
 
@@ -337,22 +375,36 @@ export default function ElectromigrationCalculator() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={graphData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="temp" label={{ value: "Temperature (C)", position: "insideBottom", offset: -5 }} />
+              <XAxis
+                dataKey="temp"
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                label={{ value: "Temperature (°C)", position: "insideBottom", offset: -5 }}
+              />
               <YAxis
                 scale="log"
                 domain={["auto", "auto"]}
-                tickFormatter={(value) => value.toFixed(0)}
+                tickFormatter={(value: number) => formatSig(value, 2)}
+                width={70}
                 label={{ value: "MTTF (hrs)", angle: -90, position: "insideLeft", offset: -5 }}
               />
-              <RechartTooltip formatter={(value: number) => `${value.toFixed(2)} hrs`} />
-              <Line type="monotone" dataKey="mttf" stroke="#2563EB" strokeWidth={2} dot={false} />
-              {Number.isFinite(tempC) && Number.isFinite(mttfNum) ? <ReferenceDot x={tempC} y={mttfNum} r={5} fill="black" /> : null}
-              {Number.isFinite(tempC) ? <ReferenceLine x={tempC} stroke="black" strokeDasharray="3 3" /> : null}
+              <RechartTooltip
+                formatter={(value: number) => [`${formatSig(value, 4)} hrs`, "MTTF"]}
+                labelFormatter={(value) => `${value} °C`}
+              />
+              <Line type="monotone" dataKey="mttf" stroke="#2563EB" strokeWidth={2} dot={false} isAnimationActive={false} />
+              {ready ? <ReferenceLine x={effTempC} stroke="black" strokeDasharray="3 3" /> : null}
+              {ready ? <ReferenceDot x={effTempC} y={effMttf} r={5} fill="black" stroke="none" /> : null}
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        <button onClick={downloadCSV} className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700">
+        <button
+          type="button"
+          onClick={downloadCSV}
+          disabled={graphData.length === 0}
+          className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:opacity-50"
+        >
           Download CSV
         </button>
       </div>

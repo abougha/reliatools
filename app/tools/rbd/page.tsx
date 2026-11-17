@@ -103,7 +103,10 @@ function fromCSV(text: string): Row[] {
   const rows: Row[] = body.map((line) => {
     const cols = parseLine(line);
     const [name = "", type = "", parent = "", reliability = "", kRequired = ""] = cols;
-    return { name, type: type as Row["type"], parent, reliability, kRequired };
+    // Accept any capitalisation of the type ("series", "KOFN", "k-of-n").
+    const typeKey = type.toLowerCase().replace(/[^a-z]/g, "");
+    const matchedType = ALLOWED_TYPES.find((t) => t.toLowerCase() === typeKey) ?? (type as Row["type"]);
+    return { name, type: matchedType, parent, reliability, kRequired };
   });
   return rows;
 }
@@ -144,6 +147,20 @@ function buildTree(rows: Row[]): { root?: Node; nodes: Record<string, Node>; err
       if ((r.reliability ?? "").trim() !== "" && Number(r.reliability) !== 0) {
         errors.push(`Row ${i + 1}: Reliability should be blank (or 0) for Series/Parallel rows.`);
       }
+    }
+  }
+
+  // Structure checks: a Block is a leaf, and a group needs something inside it.
+  // Without these a Block's children are silently ignored and an empty Series
+  // quietly counts as perfectly reliable.
+  for (const [i, r] of rows.entries()) {
+    if (!r.name || !ALLOWED_TYPES.includes(r.type as RbdType)) continue;
+    const childCount = rows.filter((other) => other !== r && (other.parent ?? "").trim() === r.name).length;
+    if (r.type === "Block" && childCount > 0) {
+      errors.push(`Row ${i + 1}: "${r.name}" is a Block but other rows use it as their Parent. Change it to Series, Parallel or KofN.`);
+    }
+    if (r.type !== "Block" && childCount === 0) {
+      errors.push(`Row ${i + 1}: "${r.name}" is a ${r.type} group with nothing inside it. Add rows that use it as their Parent, or change it to a Block.`);
     }
   }
 
@@ -241,8 +258,10 @@ function layoutTree(root: Node, xGap = 160, yGap = 120) {
   };
   assignLeaves(root);
 
+  // Keep leaves in tree order. Sorting them by name made connector lines cross
+  // whenever names were not alphabetical within their groups.
   const leafOrder = new Map<string, number>();
-  leaves.sort().forEach((nm, i) => leafOrder.set(nm, i));
+  leaves.forEach((nm, i) => leafOrder.set(nm, i));
 
   const xMap = new Map<string, number>();
   const computeX = (n: Node): number => {
@@ -286,6 +305,24 @@ function numberFmtDec(n?: number, decimals: number = 2) {
   });
 }
 
+/**
+ * Format a computed reliability with enough decimals to show the unreliability.
+ * Fixed 2-decimal rounding turned 0.9999 into "1.00", which reads as "cannot fail".
+ */
+function fmtReliability(r?: number, minDecimals = 4) {
+  if (r === undefined || !Number.isFinite(r)) return "";
+  if (r >= 1) return "1";
+  if (r <= 0) return "0";
+  const leadingNines = Math.ceil(-Math.log10(1 - r));
+  const decimals = Math.min(12, Math.max(minDecimals, leadingNines + 2));
+  return r.toFixed(decimals);
+}
+
+/** Shorten long names so they stay inside a diagram box. */
+function fitLabel(text: string, max = 20) {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
 export default function RbdGeneratorPage() {
   const [rows, setRows] = useState<Row[]>(EXAMPLE_ROWS);
 
@@ -320,7 +357,18 @@ export default function RbdGeneratorPage() {
   };
 
   const handleChange = (idx: number, key: keyof Row, val: string) => {
-    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [key]: val } : r)));
+    setRows((prev) => {
+      const oldName = (prev[idx]?.name ?? "").trim();
+      // Renaming a row carries its children along, as long as the old name was
+      // unambiguous. Otherwise they would silently lose their parent.
+      const renames =
+        key === "name" && oldName !== "" && val.trim() !== "" && prev.filter((r) => (r.name ?? "").trim() === oldName).length === 1;
+      return prev.map((r, i) => {
+        if (i === idx) return { ...r, [key]: val };
+        if (renames && (r.parent ?? "").trim() === oldName) return { ...r, parent: val };
+        return r;
+      });
+    });
     resetComputed();
   };
 
@@ -532,7 +580,16 @@ export default function RbdGeneratorPage() {
           <button onClick={downloadPng} disabled={!generated} className="px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200 disabled:opacity-50">Download Diagram PNG</button>
           <label className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer">
             Import CSV
-            <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => e.target.files && importCSV(e.target.files[0])} />
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) importCSV(e.target.files[0]);
+                // Clear the picker so choosing the same file again re-imports it.
+                e.target.value = "";
+              }}
+            />
           </label>
         </div>
       </header>
@@ -541,8 +598,13 @@ export default function RbdGeneratorPage() {
         <h2 className="mb-3 text-lg font-semibold">1) Input Table</h2>
         <p className="mb-4 text-sm text-gray-600">
           Columns (in order): <strong>Component Name</strong>, <strong>Type</strong> (Block, Series, Parallel, KofN),
-          <strong> Parent</strong> (blank for root), <strong>Reliability</strong> (0–1, only for Block),
+          <strong> Parent</strong> (blank for the top-level system), <strong>Reliability</strong> (0–1, only for Block),
           <strong> k</strong> (required for KofN — minimum successes; children must be equal-reliability Blocks).
+        </p>
+        <p className="mb-4 text-sm text-gray-600">
+          A <strong>Block</strong> is a single part with a known reliability. <strong>Series</strong> means every item
+          inside must work; <strong>Parallel</strong> means at least one must work; <strong>KofN</strong> means at least
+          k of the n identical items must work. Enter reliability as a decimal, so 95% is 0.95.
         </p>
 
         <div className="overflow-x-auto">
@@ -588,33 +650,39 @@ export default function RbdGeneratorPage() {
                       value={r.parent}
                       onChange={(e) => handleChange(i, "parent", e.target.value)}
                     >
-                      <option value="">(none — root)</option>
+                      <option value="">(none — top-level system)</option>
+                      {r.parent && !nameOrder.includes(r.parent) ? (
+                        <option value={r.parent}>{r.parent} (missing)</option>
+                      ) : null}
                       {nameOrder
                         .filter((nm) => nm !== r.name)
                         .map((nm) => {
-                          const pIdx = nameOrder.indexOf(nm);
-                          const isAfter = pIdx > i;
-                          const label = isAfter ? `${nm} (after this row)` : nm;
                           return (
-                            <option key={nm} value={nm} title={isAfter ? "Parent appears after this row" : undefined}>
-                              {label}
+                            <option key={nm} value={nm}>
+                              {nm}
                             </option>
                           );
                         })}
                     </select>
-                    {r.parent && nameOrder.indexOf(r.parent) > i && (
-                      <div className="mt-1 text-xs text-amber-700">
-                        Warning: selected parent appears <em>after</em> this row. It will be auto-reordered on Generate.
+                    {r.parent && !nameOrder.includes(r.parent) ? (
+                      <div className="mt-1 text-xs text-red-700">
+                        This parent no longer exists. Pick another one.
                       </div>
-                    )}
+                    ) : null}
                   </td>
                   <td className="border-b px-3 py-2">
-                    <input
-                      className="w-full rounded-md border px-2 py-1"
-                      value={r.reliability ?? ""}
-                      onChange={(e) => handleChange(i, "reliability", e.target.value)}
-                      placeholder={r.type === "Block" ? "0.95" : "(blank)"}
-                    />
+                    {r.type === "Block" || r.type === "" || (r.reliability ?? "").trim() !== "" ? (
+                      <input
+                        className="w-full rounded-md border px-2 py-1"
+                        value={r.reliability ?? ""}
+                        onChange={(e) => handleChange(i, "reliability", e.target.value)}
+                        placeholder="0.95"
+                        inputMode="decimal"
+                        aria-label="Reliability"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-500">calculated</span>
+                    )}
                   </td>
                   <td className="border-b px-3 py-2">
                     {r.type === "KofN" ? (
@@ -671,7 +739,7 @@ export default function RbdGeneratorPage() {
           <div className="flex items-baseline gap-4">
             <span className="text-sm text-gray-600">Overall System Reliability (root):</span>
             <span className="text-2xl font-bold tabular-nums">
-              {generated && overall !== undefined ? numberFmtDec(overall, decimals) : "—"}
+              {generated && overall !== undefined ? fmtReliability(overall) : "—"}
             </span>
           </div>
           <p className="mt-2 text-xs text-gray-500">
@@ -708,7 +776,7 @@ export default function RbdGeneratorPage() {
                             {n.type === "Block" ? numberFmtDec(n.reliability, decimals) : ""}
                           </td>
                           <td className="border-b px-3 py-1 text-right tabular-nums">
-                            {n.computed !== undefined ? numberFmtDec(n.computed, decimals) : ""}
+                            {n.computed !== undefined ? fmtReliability(n.computed) : ""}
                           </td>
                         </tr>
                       );
@@ -776,7 +844,8 @@ export default function RbdGeneratorPage() {
                             filter="url(#shadow)"
                           />
                           <text x={pos.x} y={pos.y - 4} textAnchor="middle" fontSize={12} fontWeight={600} fill="#0f172a">
-                            {n.name}
+                            <title>{n.name}</title>
+                            {fitLabel(n.name)}
                           </text>
                           <text x={pos.x} y={pos.y + 14} textAnchor="middle" fontSize={11} fill="#334155">
                             {n.type === "KofN"
@@ -784,7 +853,9 @@ export default function RbdGeneratorPage() {
                               : n.type}
                             {n.type === "Block" && n.reliability !== undefined
                               ? ` • r=${numberFmtDec(n.reliability, decimals)}`
-                              : ""}
+                              : n.type !== "Block" && n.computed !== undefined
+                                ? ` • r=${fmtReliability(n.computed)}`
+                                : ""}
                           </text>
                           {isRoot && (
                             <text x={pos.x} y={pos.y - 36} textAnchor="middle" fontSize={11} fill="#64748b">
@@ -806,7 +877,7 @@ export default function RbdGeneratorPage() {
                       <g>
                         <rect x={12} y={12} rx={8} ry={8} width={280} height={38} fill="#f8fafc" stroke="#cbd5e1" />
                         <text x={24} y={36} fontSize={14} fontWeight={600} fill="#0f172a">
-                          Overall Reliability: {numberFmtDec(overall, decimals)}
+                          Overall Reliability: {fmtReliability(overall)}
                         </text>
                       </g>
                     )}

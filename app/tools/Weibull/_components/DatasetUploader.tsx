@@ -15,8 +15,10 @@ type Mode = "MANUAL" | "CSV";
 
 function guessColumnIndex(headers: string[], patterns: string[], fallback: number): number {
   const index = headers.findIndex((header) => {
-    const normalized = header.toLowerCase();
-    return patterns.some((pattern) => normalized.includes(pattern));
+    const normalized = header.trim().toLowerCase();
+    // One-letter patterns such as "t" must match the whole header. As a
+    // substring, "t" matched "status" and swapped the two columns.
+    return patterns.some((pattern) => (pattern.length <= 1 ? normalized === pattern : normalized.includes(pattern)));
   });
   return index >= 0 ? index : fallback;
 }
@@ -93,7 +95,7 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
     }
 
     onAddDataset({
-      name: datasetName.trim() || `Dataset ${Date.now()}`,
+      name: datasetName.trim(),
       data,
     });
     resetAndClose();
@@ -121,7 +123,7 @@ export default function DatasetUploader({ isOpen, onClose, onAddDataset }: Datas
     }
 
     onAddDataset({
-      name: datasetName.trim() || `Dataset ${Date.now()}`,
+      name: datasetName.trim(),
       data: parseResult.data,
     });
     resetAndClose();

@@ -27,7 +27,7 @@
     "parameterDerated": "Power",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.8,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Burning, melting, or hot spot formation",
     "source": "Table.xlsx"
@@ -38,7 +38,7 @@
     "parameterDerated": "Power",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.75,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Pitted or contaminated contacts",
     "source": "Table.xlsx"
@@ -49,7 +49,7 @@
     "parameterDerated": "Power (D)",
     "applicationCategory": "Space",
     "qualityClass": "Class 1",
-    "deratingFactor": null,
+    "deratingFactor": 0.6,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Not in source",
     "source": "Table.xlsx"
@@ -60,7 +60,7 @@
     "parameterDerated": "Power",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.75,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Junction overstress",
     "source": "Table.xlsx"
@@ -71,7 +71,7 @@
     "parameterDerated": "Voltage",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.85,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Thermal breakdown",
     "source": "Table.xlsx"
@@ -82,7 +82,7 @@
     "parameterDerated": "Voltage",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.75,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Dielectric breakdown",
     "source": "Table.xlsx"
@@ -93,7 +93,7 @@
     "parameterDerated": "Power (VA Load)",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.8,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Insulation breakdown",
     "source": "Table.xlsx"
@@ -104,7 +104,7 @@
     "parameterDerated": "Contact Current",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.5,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Contact welding or pitting",
     "source": "Table.xlsx"
@@ -115,7 +115,7 @@
     "parameterDerated": "Contact Current",
     "applicationCategory": "Defence/Industry",
     "qualityClass": "Class 1 (Verified Pedigree)",
-    "deratingFactor": null,
+    "deratingFactor": 0.5,
     "maxOperatingLimitExpr": "Not in source",
     "typicalFailureMode": "Mechanical wear or open circuit",
     "source": "Table.xlsx"
