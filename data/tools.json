@@ -11,7 +11,7 @@
     "id": "mission-profile-builder",
     "title": "Mission Profile Builder",
     "route": "/tools/MissionProfile",
-    "description": "Build duty cycle and stress distributions by lifecycle phase. Clickable matrix + exports.",
+    "description": "Build duty-cycle and stress distributions by lifecycle phase, with a clickable matrix and exports.",
     "formulaLatex": "\\boxed{\\text{Stress} \\times \\text{Phase Matrix}}",
     "whenToUse": "Early design + DFMEA + validation planning."
   },
@@ -19,7 +19,7 @@
     "id": "halt-hass",
     "title": "HALT/HASS Planning Wizard",
     "route": "/tools/HALTHASSWizard",
-    "description": "Build step-stress profiles for HALT and derive HASS screens. Detection-first or duty-cycle driven.",
+    "description": "Build HALT step-stress profiles and derive HASS production screens.",
     "formulaLatex": "\\boxed{\\text{Step-stress profile builder}}",
     "whenToUse": "When you need to discover design margins fast and translate learnings into production screening."
   },
@@ -27,7 +27,7 @@
     "id": "burnin",
     "title": "Burn-In Test Wizard",
     "route": "/tools/BurnInWizard",
-    "description": "Design physics-based burn-in strategies to screen early-life failures. Recommends stress conditions, duration, and acceleration factors tied to intended life and failure mechanisms.",
+    "description": "Design physics-based burn-in: stress conditions, duration and acceleration factors.",
     "formulaLatex": "AF = e^{\\frac{E_a}{k}\\left(\\frac{1}{T_{\\text{use}}}-\\frac{1}{T_{\\text{stress}}}\\right)}",
     "whenToUse": "When screening early-life failures or accelerating infant mortality detection."
   },
@@ -35,7 +35,7 @@
     "id": "vibration-wizard",
     "title": "Vibration + Thermal Cycling Wizard",
     "route": "/tools/VibrationWizard",
-    "description": "Build a vibration mission profile, generate accelerated PSD test profiles, and derive fixture requirements with reliability demonstration sizing.",
+    "description": "Turn mission vibration profiles into accelerated PSD tests and fixture requirements.",
     "formulaLatex": "S_{test}(f)=k\\cdot S_0(f)",
     "whenToUse": "When translating mission vibration and thermal profiles into accelerated qualification tests."
   },
@@ -43,7 +43,7 @@
     "id": "derating",
     "title": "Derating Navigator",
     "route": "/tools/Derating",
-    "description": "Apply MIL-style derating principles to electronic and mechanical components. Quantify derated margins, factors of safety, and thermal headroom, and generate compliance-ready summaries.",
+    "description": "Apply MIL-style derating to components and quantify margins and thermal headroom.",
     "formulaLatex": "\\boxed{DM = 1 - \\frac{\\text{Applied}}{\\text{Rated}}}",
     "whenToUse": "When preventing overstress failures before hardware is built or tested."
   },
@@ -51,7 +51,7 @@
     "id": "arrhenius",
     "title": "Arrhenius Calculator",
     "route": "/tools/Arrhenius",
-    "description": "Quantify thermal acceleration using the Arrhenius model. Calculate acceleration factors, equivalent life, and test durations for accelerated life testing (ALT) and design margin assessment.",
+    "description": "Calculate thermal acceleration factors, equivalent life and ALT test durations.",
     "formulaLatex": "AF = e^{\\frac{E_a}{k}\\left(\\frac{1}{T_{\\text{use}}}-\\frac{1}{T_{\\text{stress}}}\\right)}",
     "whenToUse": "When temperature-driven aging dominates failure risk."
   },
@@ -59,7 +59,7 @@
     "id": "weibull",
     "title": "Weibull Probability Plot",
     "route": "/tools/Weibull",
-    "description": "Fit 2-parameter Weibull models with FAIL and right-censored SUSP data. Overlay multiple datasets on Weibull probability paper and export beta, eta, B-life, and mission reliability metrics.",
+    "description": "Fit 2-parameter Weibull to failure and suspension data; get beta, eta and B-lives.",
     "formulaLatex": "F(t)=1-e^{-\\left(\\frac{t}{\\eta}\\right)^{\\beta}}",
     "whenToUse": "When estimating life distributions, B10 targets, and mission reliability from life test data."
   },
@@ -67,7 +67,7 @@
     "id": "coffin-manson",
     "title": "Coffin-Manson Calculator",
     "route": "/tools/CoffinManson",
-    "description": "Estimate fatigue life driven by thermal cycling using the Coffin-Manson model. Ideal for solder joints, interconnects, and mechanically constrained assemblies exposed to cyclic strain.",
+    "description": "Estimate thermal-cycling fatigue life for solder joints and interconnects.",
     "formulaLatex": "N_f = A\\,\\Delta\\varepsilon^{-c}",
     "whenToUse": "When cyclic strain drive mechanical or solder fatigue."
   },
@@ -75,7 +75,7 @@
     "id": "electromigration",
     "title": "Electromigration Lifetime Calculator",
     "route": "/tools/Electromigration",
-    "description": "Predict microelectronics lifetime using Black's equation. Evaluate current density, temperature sensitivity, activation energy, and MTTF for design trade-offs and technology comparisons.",
+    "description": "Predict interconnect MTTF with Black's equation from current density and temperature.",
     "formulaLatex": "MTTF = A\\,j^{-n}\\,e^{\\frac{E_a}{kT}}",
     "whenToUse": "When electromigration limits IC or metallization reliability."
   },
@@ -83,7 +83,7 @@
     "id": "Samplesize",
     "title": "Sample Size Calculator",
     "route": "/tools/Samplesize",
-    "description": "Size a test by what it has to prove: binomial demonstration and success run, extended bogey, MTBF test time, tolerance intervals, comparative A/B tests, Weibayes prior credit, HALT unit budgets and HASS screen sampling.",
+    "description": "Size a test by what it must prove: success run, MTBF, Weibayes, A/B and more.",
     "formulaLatex": "1-\\sum_{i=0}^{f}\\binom{n}{i}(1-R)^iR^{n-i}\\ge\\mathrm{CL}",
     "whenToUse": "When planning any reliability test — demonstration, life characterisation, margin, HALT or HASS screening."
   },
@@ -91,7 +91,7 @@
     "id": "Psychrometric",
     "title": "Psychrometric Calculator",
     "route": "/tools/Psychrometrics",
-    "description": "Analyze air-moisture properties including relative humidity, wet-bulb temperature, and enthalpy. Useful for environmental testing, humidity stress analysis, and lab condition validation.",
+    "description": "Compute RH, wet-bulb, dew point and enthalpy for humidity testing and lab conditions.",
     "formulaLatex": "\\boxed{\\text{Psychrometrics}}",
     "whenToUse": "When chamber settings or moisture exposure affect reliability outcomes."
   },
@@ -107,7 +107,7 @@
     "id": "rbd-generator",
     "title": "Reliability Block Diagram (RBD) Generator",
     "route": "/tools/rbd",
-    "description": "Build system-level Reliability Block Diagrams from a simple table, analyze Series/Parallel/Hybrid architectures, compute system reliability, and export diagrams and data for design reviews.",
+    "description": "Build series/parallel Reliability Block Diagrams and compute system reliability.",
     "formulaLatex": "R_{\\text{sys}}=1-\\prod_i(1-R_i)",
     "whenToUse": "When system-level reliability depends on configuration, not parts alone."
   },
@@ -115,7 +115,7 @@
     "id": "bayesian-prediction",
     "title": "Bayesian Reliability Predictor (Software)",
     "route": "/tools/SoftwareBRP",
-    "description": "Estimate and update software reliability using Bayesian methods. Convert test results and failure data into predictive reliability metrics, MTTF, and release readiness insight.",
+    "description": "Estimate and update software reliability, MTTF and release readiness with Bayesian methods.",
     "formulaLatex": "\\boxed{\\text{Bayesian Prediction}}",
     "whenToUse": "When incorporating test or field failures into decision-making."
   },
@@ -123,7 +123,7 @@
     "id": "fit-calculator",
     "title": "FIT Calculator",
     "route": "/tools/FIT",
-    "description": "Convert between FIT, failure rate, reliability, ppm, MTTF and fleet failures, then check whether a test plan actually supports a claimed FIT target at a given confidence.",
+    "description": "Convert FIT, failure rate, ppm and MTTF, and check a test supports a FIT claim.",
     "formulaLatex": "\\lambda_{\\text{upper}}=\\dfrac{\\chi^{2}_{C,\\,2r+2}}{2\\,T_{\\text{equiv}}}",
     "whenToUse": "When a supplier or team cites a FIT number and you need to know what it means over the real mission and whether the test evidence backs it."
   },
@@ -131,7 +131,7 @@
     "id": "nudd-assessment",
     "title": "NUDD Assessment",
     "route": "/tools/NUDD",
-    "description": "Score what is New, Unique, Different, and Difficult for each feature or function, then focus engineering effort where uncertainty and opportunity are highest.",
+    "description": "Score what is New, Unique, Different and Difficult to focus engineering effort.",
     "formulaLatex": "\\boxed{\\text{NUDD Assessment}}",
     "whenToUse": "During concept selection, design reviews, DRBFM/change-point discussions, or DFMEA prep and test-strategy planning."
   }
