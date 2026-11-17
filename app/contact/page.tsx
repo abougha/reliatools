@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { validateContactForm, type ContactFormData } from "@/lib/contact/validation";
 import { trackEvent } from "@/lib/analytics";
+import TurnstileWidget from "@/components/TurnstileWidget";
 
 type FormState = "idle" | "submitting" | "success";
 
@@ -16,6 +17,8 @@ export default function ContactPage() {
   });
   const [state, setState] = useState<FormState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -33,16 +36,25 @@ export default function ContactPage() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError("Please wait for the verification check to finish, then try again.");
+      return;
+    }
+
     setState("submitting");
 
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, turnstileToken }),
       });
 
       const data = await res.json();
+
+      // A token can be verified only once, so always request a fresh one.
+      setTurnstileToken(null);
+      setTurnstileReset((n) => n + 1);
 
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
@@ -56,6 +68,8 @@ export default function ContactPage() {
       trackEvent("contact_form_submit", { form_location: "contact_page" });
       setForm({ name: "", email: "", company: "", message: "", honeypot: "" });
     } catch {
+      setTurnstileToken(null);
+      setTurnstileReset((n) => n + 1);
       setError("Something went wrong. Please try again.");
       setState("idle");
     }
@@ -174,8 +188,10 @@ export default function ContactPage() {
               />
             </div>
 
+            <TurnstileWidget onToken={setTurnstileToken} resetKey={turnstileReset} />
+
             {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>
             )}
 
             <button

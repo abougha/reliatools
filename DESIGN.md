@@ -104,7 +104,7 @@ components:
 
 **Creative North Star: "The Diagnostic Instrument"**
 
-Reliatools reads like the display panel of a piece of lab test equipment: precise, calm, and built to be trusted under scrutiny rather than to impress. Most of the interface is deliberately quiet — white surfaces, restrained slate type, thin hairline borders — so that when the accent color appears, it means something: a value being measured, a state being flagged, an action being offered. Signal Blue (`#2563eb`) is that instrument's single active signal color, echoing an oscilloscope trace or a status LED. The homepage's animated logo (concentric rings, a scanning sweep line, pulsing circuit nodes, all in blue) is this identity's one permitted piece of literal theater; it names the metaphor the rest of the system stays quiet about.
+Reliatools reads like the display panel of a piece of lab test equipment: precise, calm, and built to be trusted under scrutiny rather than to impress. Most of the interface is deliberately quiet — white surfaces, restrained slate type, thin hairline borders — so that when the accent color appears, it means something: a value being measured, a state being flagged, an action being offered. Signal Blue (`#2563eb`) is that instrument's single active signal color, echoing an oscilloscope trace or a status LED. The homepage hero states the metaphor directly: a real Weibull probability plot with its fitted parameters, the kind of readout the tools produce.
 
 The system is not neutral-flat everywhere. Interactive surfaces — cards, nav items, primary actions — are meant to feel physically liftable: a resting `shadow-sm` state that promotes to a deeper, cooler-toned shadow with a real upward translation on hover/focus, closer to a confident SaaS product than a static spec sheet. Inline calculation output, by contrast (results, warnings, errors), stays flat — colored left-border callout strips, not cards — because that content behaves like an instrument readout, not an interactive object.
 
@@ -114,14 +114,14 @@ The system is not neutral-flat everywhere. Interactive surfaces — cards, nav i
 - Flat, left-border callout strips for calculated results/warnings/errors; shadowed, lifting cards for everything the user can click or navigate.
 - Geist Sans throughout; no serif, no display-only webfont.
 - KaTeX-rendered formulas are a first-class visual element on every tool page, not an afterthought.
-- One expressive motion signature (the diagnostic-pulse logo); everywhere else motion is a state-transition utility (hover lift, drawer slide), not a decoration.
+- Motion is a state-transition utility (hover lift, menu open), never decoration. The homepage hero is a static plot, not an animation.
 
 ## Colors
 
 The palette is almost monochrome by design: slate neutrals, a white canvas, one blue accent, and three semantic status colors reserved strictly for calculator feedback.
 
 ### Primary
-- **Signal Blue** (`#2563eb`): the only accent. Links, primary buttons, active nav state, chart trace lines, focus rings, the logo's glow and pulse nodes. Also the fill for result callouts at low opacity (`#eff6ff` background, `#1d4ed8` text).
+- **Signal Blue** (`#2563eb`): the only accent. Links, primary buttons, active nav state, chart trace lines, focus rings, the plotted line and points in the hero's Weibull readout. Also the fill for result callouts at low opacity (`#eff6ff` background, `#1d4ed8` text).
 
 ### Neutral
 - **Ink** (`#0f172a`, slate-900): primary heading and body text.
@@ -130,7 +130,7 @@ The palette is almost monochrome by design: slate neutrals, a white canvas, one 
 - **Slate Muted** (`#64748b`, slate-500): tertiary copy, captions, metadata (dates, byline text).
 - **Slate Line** (`#e2e8f0`, slate-200): borders, dividers, card edges, table rules.
 - **Slate Surface** (`#f8fafc`, slate-50): section backgrounds, formula/reference boxes, alternating page bands.
-- **Paper** (`#ffffff`): the base canvas — cards, header, sidebar.
+- **Paper** (`#ffffff`): the base canvas — cards, header, footer.
 
 ### Semantic (calculator feedback only — not for decoration)
 - **Warning** (surface `#fffbeb`, line `#f59e0b`, ink `#92400e`): non-fatal calculator conditions (e.g. "AF is not accelerating", cross-check mismatches).
@@ -162,7 +162,7 @@ The palette is almost monochrome by design: slate neutrals, a white canvas, one 
 
 Content is constrained to `max-w-3xl` on calculator/article pages (readable single-column working width) and `max-w-7xl` on marketing surfaces (homepage, tools index, resources index) with responsive grid breakdowns (1 column mobile → 2–3 columns `md`/`lg`).
 
-A fixed 200px-wide sidebar (`SIDEBAR_WIDTH`) occupies the left edge on desktop (`md:` and up), always visible, holding the logo, a "Buy Me a Coffee" link, and primary nav; content is offset with `padding-left: 200px` on `body` at `md:` breakpoints. Below `md`, the sidebar collapses into a slide-in drawer (overlay + `translate-x` transition) triggered by a hamburger button. A sticky top header (~40–100px, housing an AdSense unit) sits above the sidebar in z-order.
+A 64px top header (`components/Navbar.tsx`) spans the page: wordmark at left, primary nav (a Tools menu grouped by workflow stage, then Resources, About, Contact), and an "Explore Tools" button at right. It is not sticky, so tool pages keep their own sticky toolbars. Below `md`, the nav collapses into a panel that opens under the header from a Menu button. The header carries no advertising; the single AdSense unit (`components/AdUnit.tsx`) sits in the content flow, between sections on the homepage and above the footer elsewhere, and is never clipped or sticky. A site-wide footer (`components/SiteFooter.tsx`) holds navigation, the privacy link, cookie settings, and the disclaimer.
 
 Section rhythm on marketing pages runs in alternating `paper` / `slate-surface` horizontal bands, each with generous vertical padding (`py-8` to `py-14`) and a consistent `max-w-7xl` inner container. Calculator pages are denser and more form-like: a formula reference box, a responsive input grid (1 column mobile, 2 columns `sm:`), then a result callout stack, then an optional chart, then static educational prose below a horizontal rule.
 
@@ -172,12 +172,11 @@ Depth is used deliberately, not ambiently: **flat elements read as data, shadowe
 
 - **Flat by default**: result/warning/error callouts, formula reference boxes, table rows — anything presenting calculated output stays flat, distinguished by a colored left border and tinted background rather than a shadow.
 - **Tactile for interactive surfaces**: cards, nav items, and buttons rest at a soft `shadow-sm` and promote to a visibly deeper shadow plus a small upward translation (`-translate-y-0.5` to `-translate-y-1`) on hover/focus — closer to a modern SaaS product's "liftable" card than a flat instrument face. This is the resolved standard going forward; some current cards under-commit to only `shadow` → `shadow-md` and should be pulled up to this stronger hover contrast on next touch.
-- **Signature glow**: the homepage logo is the one place elevation gets expressive — `shadow-xl` tinted blue (`shadow-blue-100/60`) plus layered radial glows behind the mark. This tinted-shadow treatment is reserved for that one hero moment; don't reuse it on ordinary cards.
+- **No signature glow**: the tinted blue `shadow-blue-100/60` treatment belonged to the retired animated logo. The hero's Weibull readout uses the same rest and lift shadows as any other interactive card.
 
 ### Shadow Vocabulary
-- **Rest** (`box-shadow: 0 1px 2px rgba(0,0,0,0.05)` / Tailwind `shadow-sm`): default state for cards, header, sidebar.
+- **Rest** (`box-shadow: 0 1px 2px rgba(0,0,0,0.05)` / Tailwind `shadow-sm`): default state for cards.
 - **Hover/Lift** (`box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)` / Tailwind `shadow-lg`, paired with a small upward translate): interactive card and button hover/focus.
-- **Signature** (`box-shadow: 0 20px 25px -5px rgba(37,99,235,0.15)` / Tailwind `shadow-xl shadow-blue-100/60`): reserved for the hero diagnostic-logo treatment only.
 
 ### Named Rules
 **The Readout-Stays-Flat Rule.** Anything the calculator computed (a result, a warning, an error) is presented flat with a colored left border, never inside a shadowed card. Shadows are earned by interactivity, not by importance.
@@ -214,13 +213,13 @@ Corners scale with a component's weight: small interactive chips and status pill
 - **Radio-linked fields** (the "solve for" pattern on calculators): the actively-solved field's wrapping label gets a `border-l-4 border-yellow-400 bg-yellow-50` highlight and disables its input, visually distinguishing "what you're solving for" from "what you're providing."
 
 ### Navigation
-- **Style:** fixed 200px sidebar, `paper` background, `slate-line` right border; nav items are text links with generous click targets (`px-3 py-2`), `rounded-md` corners.
+- **Style:** top header, `paper` background, `slate-line` bottom border; nav items are text links with generous click targets (`px-3 py-2`), `rounded-md` corners. The Tools menu is a full-width panel under the header listing every tool in its four workflow groups (`lib/toolGroups.ts`).
 - **Active state:** `signal-blue-pale` background, `signal-blue-deep` text, thin Signal Blue border (`border-blue-200`) — the same "pale fill + deep text + hairline border" formula the Primary color uses everywhere else it needs to look "selected."
 - **Hover (inactive):** `slate-50`/`gray-100` background wash, no border.
-- **Mobile:** sidebar becomes a left-anchored slide-in drawer (`-translate-x-full` → `translate-x-0`) with a dark overlay scrim (`bg-black/40`), triggered by a hamburger button in the sticky header.
+- **Mobile:** the nav becomes a panel that opens in place under the header from a Menu button, listing the primary links and then every tool by group.
 
-### Diagnostic Pulse Mark (signature component)
-The homepage's animated logo: concentric dashed rings rotating at different speeds (28s/42s, opposing directions), a translucent horizontal "scan sweep" line traveling vertically through the mark on a 4.8s cycle, four pulsing circuit nodes at staggered delays, and a soft breathing glow behind the centered logotype. All motion respects `prefers-reduced-motion: reduce` (rings and pulses freeze; sweep line hides). This is the system's one literal expression of "The Diagnostic Instrument" and should not be diluted by reuse as generic decoration elsewhere — its rarity is what makes the homepage read as the brand's home base.
+### Weibull Readout (signature component)
+The homepage hero's visual (`components/home/WeibullPanel.tsx`): a real Weibull probability plot drawn as SVG on Weibull paper (so the fitted model is a straight line), with a small readout of shape, scale, B10 life, and failure count beside it. It replaced the earlier animated logo (2026-11-16): the hero now shows the product's actual output instead of a decorative mark. The whole panel links to the Weibull tool and lifts on hover like any interactive card. The example parameters are illustrative and labelled "Example data set"; do not present them as a customer result.
 
 ## Do's and Don'ts
 
@@ -229,11 +228,11 @@ The homepage's animated logo: concentric dashed rings rotating at different spee
 - **Do** use the slate neutral scale (`slate-50` … `slate-950`) as canonical going forward, even where existing tool pages still use `gray-*`.
 - **Do** render calculated output (results, warnings, errors) as flat, left-bordered callout strips — never inside a shadowed card.
 - **Do** give interactive cards and buttons a real hover/focus promotion: deeper shadow plus a small upward lift, not just a border-color change.
-- **Do** treat the diagnostic-pulse animated logo as the system's single reserved moment of motion theater; respect `prefers-reduced-motion` on any new motion, following its existing pattern.
+- **Do** respect `prefers-reduced-motion` on any motion (hover lifts use `motion-reduce:transform-none`).
 - **Do** keep KaTeX formula blocks inside `slate-surface` reference boxes alongside their variable-definition lists, on every calculator page.
 
 ### Don't:
 - **Don't** introduce a second brand accent color alongside Signal Blue; new emphasis needs are a weight/size/spacing problem, not a new-hue problem.
 - **Don't** put a card-style shadow on a results/warnings/errors callout — that visually confuses "computed readout" with "clickable object."
-- **Don't** reuse the hero logo's tinted blue glow (`shadow-blue-100/60`) on ordinary UI cards; it's reserved for that one signature moment.
+- **Don't** add tinted or colored shadows to UI cards; shadows stay neutral.
 - **Don't** treat the shadcn/`components/ui` CSS-variable theme (currently only consumed by `components/ui/card.tsx`) as the system's real token source — the actually-operative palette is the Tailwind slate/blue utility values documented above; that CSS-variable layer is legacy scaffolding, not the source of truth.

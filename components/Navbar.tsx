@@ -1,299 +1,192 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import toolsData from "@/data/tools.json";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import BrandMark from "./BrandMark";
+import { TOOL_GROUPS } from "@/lib/toolGroups";
 
-type ToolItem = {
-  id?: string;
-  title?: string;
-  route?: string;
-  description?: string;
-  formulaLatex?: string;
-};
+const PRIMARY_LINKS = [
+  { href: "/resources", label: "Resources" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+];
 
-const SIDEBAR_WIDTH = 200; // px (adjust to make narrower/wider)
-const HEADER_OFFSET = 40; // px (height of sticky AdSense header area)
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const toolsRef = useRef<HTMLDivElement>(null);
 
-  // Mobile drawer
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const closeDrawer = () => setDrawerOpen(false);
-
-
-  // Tools list loaded at build time
-  const calculators = toolsData as ToolItem[];
-
-  // Active path helper
   const isActive = (href: string) =>
-    pathname === href || pathname?.startsWith(href + "/");
+    pathname === href || pathname === `${href}/` || pathname?.startsWith(`${href}/`);
 
-  // Build href for a tool item robustly
-  const toolHref = (t: ToolItem) => t.route ?? (t.id ? `/tools/${t.id}` : "/tools");
-
-  // Prefetch commonly used routes and top tools to reduce first-click latency
+  // Close menus on navigation.
   useEffect(() => {
-    const baseRoutes = ["/", "/tools", "/resources", "/about"];
-    baseRoutes.forEach((route) => router.prefetch(route));
-    calculators.slice(0, 6).forEach((tool) => router.prefetch(toolHref(tool)));
-  }, [router, calculators]);
+    setToolsOpen(false);
+    setMobileOpen(false);
+  }, [pathname]);
 
+  // Close the Tools menu on Escape or a click outside it.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const timer = setTimeout(() => {
-      try {
-        const ads = (window as any).adsbygoogle || [];
-        (window as any).adsbygoogle = ads;
-        ads.push({});
-      } catch {
-        // Ignore if ads script isn't ready yet
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!toolsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setToolsOpen(false);
+    };
+    const onPointer = (e: PointerEvent) => {
+      if (!toolsRef.current?.contains(e.target as Node)) setToolsOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [toolsOpen]);
+
+  const linkClass = (active: boolean) =>
+    [
+      "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+      FOCUS_RING,
+      active ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+    ].join(" ");
 
   return (
-    <>
-      {/* Sticky header with AdSense (unchanged) */}
-      <header className="w-full bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-1">
-          <div
-            className="w-full flex items-center justify-center overflow-hidden border border-gray-300 bg-gray-50 rounded-md"
-            style={{ maxHeight: "60px" }}
-          >
-            <ins
-              className="adsbygoogle"
-              style={{ display: "block", width: "100%", height: "200px" }}
-              data-ad-client="ca-pub-9300099645509490"
-              data-ad-slot="2792740719"
-              data-ad-format="horizontal"
-              data-full-width-responsive="false"
-            ></ins>
-          </div>
-        </div>
+    <header className="relative z-40 border-b border-slate-200 bg-white">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className={`rounded-md ${FOCUS_RING}`} aria-label="Reliatools home">
+          <BrandMark />
+        </Link>
 
-        {/* Right-side actions row: mobile hamburger */}
-        <div className="max-w-7xl mx-auto px-6 pt-3 pb-4 flex items-center justify-end">
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+          <div ref={toolsRef}>
+            <button
+              type="button"
+              onClick={() => setToolsOpen((open) => !open)}
+              aria-expanded={toolsOpen}
+              aria-controls="tools-menu"
+              className={`inline-flex items-center gap-1 ${linkClass(isActive("/tools"))}`}
+            >
+              Tools
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+
+            {toolsOpen && (
+              <div
+                id="tools-menu"
+                className="absolute inset-x-0 top-full border-b border-slate-200 bg-white shadow-lg"
+              >
+                <div className="mx-auto grid max-w-7xl gap-8 px-6 py-8 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+                  {TOOL_GROUPS.map((group) => (
+                    <div key={group.id}>
+                      <p className="text-sm font-semibold text-slate-900">{group.title}</p>
+                      <ul className="mt-3 space-y-1">
+                        {group.tools.map((tool) => (
+                          <li key={tool.href}>
+                            <Link
+                              href={tool.href}
+                              className={`-mx-2 block rounded-md px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-blue-50 hover:text-blue-700 ${FOCUS_RING}`}
+                            >
+                              {tool.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-slate-200 bg-slate-50">
+                  <div className="mx-auto max-w-7xl px-6 py-3 lg:px-8">
+                    <Link
+                      href="/tools"
+                      className={`inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 ${FOCUS_RING}`}
+                    >
+                      View all tools with formulas
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {PRIMARY_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className={linkClass(isActive(link.href))}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            href="/tools"
+            className={`hidden items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:inline-flex ${FOCUS_RING}`}
+          >
+            Explore Tools
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+
           <button
             type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="inline-flex md:hidden items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Open menu"
-            title="Open menu"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
+            className={`inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 md:hidden ${FOCUS_RING}`}
           >
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
+            {mobileOpen ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
             Menu
           </button>
         </div>
-      </header>
-
-      {/* ===== Desktop Sidebar (always visible) =====
-          - Full-height from top; header overlays it (higher z-index).
-          - Spacer makes content start below the sticky header area. */}
-      <aside
-        className="hidden md:flex fixed left-0 top-0 z-40 bg-white shadow-sm border-r border-gray-200 flex-col"
-        style={{ width: SIDEBAR_WIDTH, height: "100vh" }}
-        aria-label="Primary navigation"
-      >
-        {/* Spacer so sidebar content begins under the sticky header */}
-        <div style={{ height: HEADER_OFFSET }} aria-hidden />
-
-       {/* Centered logo + Buy Me a Coffee */}
-<div className="px-4 pb-3 border-b border-gray-200">
-  <div className="flex justify-center">
-    <Link href="/" className="flex items-center justify-center">
-      <div className="relative w-24 h-24">
-        <Image
-          src="/logo.png"
-          alt="Reliability Tools Logo"
-          fill
-          className="object-contain"
-          priority
-        />
       </div>
-      <span className="sr-only">Reliability Tools</span>
-    </Link>
-  </div>
 
-  {/* Buy Me a Coffee button (inline, reliable) */}
-  <div className="mt-3 flex justify-center">
-    <a
-      href="https://www.buymeacoffee.com/Reliatools"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Buy me a coffee"
-      title="Buy me a coffee"
-      className="block"
-    >
-      <img
-        src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=Reliatools&button_colour=40DCA5&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00"
-        alt="Buy me a coffee"
-        className="h-[40px] w-auto"
-        loading="lazy"
-      />
-    </a>
-  </div>
-</div>
+      {mobileOpen && (
+        <nav
+          id="mobile-menu"
+          aria-label="Primary"
+          className="border-t border-slate-200 bg-white px-4 pb-6 pt-2 md:hidden"
+        >
+          <ul className="divide-y divide-slate-100">
+            {[{ href: "/tools", label: "All tools" }, ...PRIMARY_LINKS].map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={`block py-3 text-base font-medium ${
+                    isActive(link.href) ? "text-blue-700" : "text-slate-800"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-        {/* Nav list */}
-        <div className="px-3 py-3 overflow-y-auto">
-          <NavList
-            isActive={isActive}
-            calculators={calculators}
-            onNavigate={() => {}}
-          />
-        </div>
-      </aside>
-
-      {/* ===== Mobile Drawer (overlays content) ===== */}
-      {/* Overlay */}
-      <div
-        className={[
-          "fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden",
-          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
-        ].join(" ")}
-        onClick={closeDrawer}
-        aria-hidden={!drawerOpen}
-      />
-      {/* Drawer panel */}
-      <aside
-        className={[
-          "fixed left-0 top-0 z-50 h-screen bg-white shadow-xl border-r border-gray-200 md:hidden",
-          "transform transition-transform duration-300",
-          drawerOpen ? "translate-x-0" : "-translate-x-full",
-        ].join(" ")}
-        style={{ width: SIDEBAR_WIDTH }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Site navigation"
-      >
-        {/* Start content below sticky header area */}
-        <div className="pt-[132px] px-3 pb-4 overflow-y-auto h-full">
-          {/* Centered logo in drawer */}
-          <div className="px-1 pb-3 border-b border-gray-200 mb-3 flex justify-center">
-            <Link href="/" onClick={closeDrawer} className="flex items-center justify-center">
-              <div className="relative w-20 h-20">
-                <Image
-                  src="/logo.png"
-                  alt="Reliability Tools Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              <span className="sr-only">Reliability Tools</span>
-            </Link>
-          </div>
-
-          {/* Close button */}
-          <div className="mb-3 flex justify-end">
-            <button
-              type="button"
-              onClick={closeDrawer}
-              className="rounded-lg border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Close menu"
-            >
-              Close
-            </button>
-          </div>
-
-          <NavList
-            isActive={isActive}
-            calculators={calculators}
-            onNavigate={closeDrawer}
-          />
-        </div>
-      </aside>
-    </>
-  );
-
-  function NavList({
-    isActive,
-    calculators,
-    onNavigate,
-  }: {
-    isActive: (href: string) => boolean;
-    calculators: ToolItem[];
-    onNavigate: () => void;
-  }) {
-    return (
-      <nav className="text-sm">
-        <ul className="space-y-1">
-          {/* Home */}
-          <li>
-            <LinkItem href="/" label="Home" active={isActive("/")} onNavigate={onNavigate} />
-          </li>
-
-          {/* About */}
-          <li>
-            <LinkItem href="/about" label="About" active={isActive("/about")} onNavigate={onNavigate} />
-          </li>
-
-          {/* Tools (always visible, auto-generated) */}
-          <li>
-            <LinkItem href="/tools" label="Tools" active={isActive("/tools")} onNavigate={onNavigate} />
-
-            {/* Tools sub-links intentionally hidden */}
-          </li>
-
-          {/* Resources (flat link, no children) */}
-          <li>
-            <LinkItem
-              href="/resources"
-              label="Resources"
-              active={isActive("/resources")}
-              onNavigate={onNavigate}
-            />
-          </li>
-
-          {/* Contact */}
-          <li>
-            <LinkItem href="/contact" label="Contact" active={isActive("/contact")} onNavigate={onNavigate} />
-          </li>
-        </ul>
-      </nav>
-    );
-  }
-}
-
-/** Small helper for single-level links */
-function LinkItem({
-  href,
-  label,
-  active,
-  onNavigate,
-}: {
-  href: string;
-  label: string;
-  active: boolean;
-  onNavigate: () => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className={[
-        "block px-3 py-2 rounded-lg transition",
-        active ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-700 hover:bg-gray-100",
-      ].join(" ")}
-    >
-      {label}
-    </Link>
+          {TOOL_GROUPS.map((group) => (
+            <div key={group.id} className="mt-5">
+              <p className="text-sm font-semibold text-slate-900">{group.title}</p>
+              <ul className="mt-1">
+                {group.tools.map((tool) => (
+                  <li key={tool.href}>
+                    <Link href={tool.href} className="block py-2 text-sm text-slate-600">
+                      {tool.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      )}
+    </header>
   );
 }

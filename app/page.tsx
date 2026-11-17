@@ -1,17 +1,24 @@
 import Link from "next/link";
 import {
-  Atom,
-  ClipboardCheck,
-  Workflow,
   ArrowRight,
+  CalendarCheck,
+  ChartColumn,
+  Check,
+  ChevronRight,
+  FlaskConical,
+  Target,
+  type LucideIcon,
 } from "lucide-react";
-import AnimatedReliabilityLogo from "@/components/AnimatedReliabilityLogo";
+import AdUnit from "@/components/AdUnit";
+import WeibullPanel from "@/components/home/WeibullPanel";
+import resourceData from "@/data/resources.json";
 import { ABSOLUTE_TITLES, ogTitle } from "@/lib/seo/titles";
+import { TOOL_COUNT, TOOL_GROUPS, type ToolGroup } from "@/lib/toolGroups";
 
 export const metadata = {
   title: ABSOLUTE_TITLES["/"],
   description:
-    "Physics-based reliability tools for mission profiles, acceleration factors, reliability test sizing, Weibull analysis, and validation planning.",
+    "Free physics-based reliability engineering tools for mission profiles, acceleration factors, reliability test sizing, Weibull analysis, and validation planning. No sign-up required.",
   keywords: [
     "Reliability Engineering",
     "Physics of Failure",
@@ -23,7 +30,7 @@ export const metadata = {
   openGraph: {
     title: ogTitle("/"),
     description:
-      "Build mission profiles, calculate acceleration factors, size reliability tests, analyze Weibull data, and generate defensible validation plans.",
+      "Build mission profiles, calculate acceleration factors, size reliability tests, analyze Weibull data, and generate defensible validation plans. Free, in your browser.",
     url: "https://www.reliatools.com/",
     siteName: "Reliatools",
     type: "website",
@@ -34,263 +41,274 @@ export const metadata = {
   },
 };
 
-const credibilityChips = [
-  "Physics of Failure",
-  "Mission Profiles",
-  "Accelerated Testing",
-  "Validation Planning",
-];
+const GROUP_ICONS: Record<ToolGroup["id"], LucideIcon> = {
+  define: Target,
+  model: FlaskConical,
+  plan: CalendarCheck,
+  analyze: ChartColumn,
+};
 
-const topTools = [
-  {
-    title: "Mission Profile Builder",
-    description:
-      "Translate application use conditions into duty cycles and stress exposure inputs.",
-    href: "/tools/MissionProfile",
-  },
-  {
-    title: "Arrhenius Calculator",
-    description:
-      "Estimate thermal acceleration factors for temperature-driven aging mechanisms.",
-    href: "/tools/Arrhenius",
-  },
-  {
-    title: "Weibull Analysis",
-    description:
-      "Analyze life data and support reliability decisions with Weibull distribution modeling.",
-    href: "/tools/Weibull",
-  },
-];
+const assurances = ["Free to use", "No sign-up required", "Runs in your browser"];
 
-const valueCards = [
+const principles = [
   {
-    title: "Physics-Based",
+    title: "Physics-based models",
     description:
-      "Use established reliability models such as Arrhenius, Weibull, Coffin-Manson, Black's equation, binomial confidence, and reliability block diagrams.",
-    icon: Atom,
+      "Established models such as Arrhenius, Coffin-Manson, Black's equation, and Weibull link real use conditions to reliability.",
   },
   {
-    title: "Workflow-Driven",
+    title: "Transparent assumptions",
     description:
-      "Move from mission profile to failure mechanism, acceleration model, test duration, sample size, and validation plan without disconnected spreadsheets.",
-    icon: Workflow,
+      "Every tool shows its equations, inputs, and limitations, so you can check the result and defend it in a design review.",
   },
   {
-    title: "Practical Outputs",
+    title: "Practical outputs",
     description:
-      "Generate outputs that support design reviews, DVP&R discussions, validation planning, reliability tradeoffs, and engineering decision-making.",
-    icon: ClipboardCheck,
+      "Test plans, acceleration factors, life estimates, and charts you can export to PDF, Excel, or CSV and take into a DVP&R discussion.",
   },
 ];
 
-const resources = [
-  {
-    category: "Knowledge",
-    title: "Reliability by Design: Component Derating",
-    description:
-      "Learn how derating reduces overstress risk and improves long-term reliability in electronics and mechanical systems.",
-    href: "/resources/derating",
-  },
-  {
-    category: "DfR 2.0 / Advanced Validation",
-    title: "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
-    description:
-      "A practical approach for combining designed experiments, prior knowledge, and simulation to improve validation strategy.",
-    href: "/resources/taguchi-bayesian-article",
-  },
-  {
-    category: "Article",
-    title: "Thermal Shock and Coffin-Manson in Microelectronics",
-    description:
-      "Understand how thermal cycling drives fatigue damage and how Coffin-Manson can estimate cycles to failure.",
-    href: "/resources/thermal-shock-article",
-  },
-];
+type Resource = {
+  slug: string;
+  title: string;
+  category: string;
+  description: string;
+  date: string;
+  link?: string;
+};
+
+const latestResources = [...(resourceData as Resource[])]
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  .slice(0, 3);
+
+const formatDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <section className="overflow-hidden bg-gradient-to-b from-white via-slate-50 to-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-10 sm:py-12 lg:grid-cols-[minmax(0,0.7fr)_minmax(280px,0.3fr)] lg:px-8 lg:py-14">
+    <main className="bg-white text-slate-900">
+      {/* Hero */}
+      <section className="bg-gradient-to-b from-slate-50 to-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12 lg:px-8 lg:py-16">
           <div>
-            <h1 className="max-w-5xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Physics-Based Reliability Tools for Faster, Smarter Validation
+            <h1 className="text-balance text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Reliability Engineering, Made Practical.
             </h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-              Build mission profiles, calculate acceleration factors, size
-              reliability tests, analyze Weibull data, and generate defensible
-              validation plans - all in one engineering-focused toolkit.
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+              Free physics-based reliability tools to define mission profiles, model
+              acceleration, plan tests, and predict product life.
             </p>
+
+            <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+              {assurances.map((item) => (
+                <li key={item} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <Check className="h-4 w-4 flex-none text-blue-600" strokeWidth={3} aria-hidden="true" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/tools"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                href="#tools"
+                className={`inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 ${FOCUS_RING}`}
               >
-                Explore Tools
+                Explore {TOOL_COUNT} Tools
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/tools/MissionProfile/"
-                className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-white px-6 py-3 text-base font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                href="/tools/MissionProfile"
+                className={`inline-flex items-center justify-center rounded-md border border-blue-200 bg-white px-6 py-3 text-base font-semibold text-blue-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 ${FOCUS_RING}`}
               >
                 Start with Mission Profile
               </Link>
             </div>
-            <p className="mt-5 max-w-2xl text-sm font-medium text-slate-600">
-              Designed for reliability engineers, validation engineers, product
-              designers, and test teams.
-            </p>
           </div>
 
-          <AnimatedReliabilityLogo />
+          <WeibullPanel />
         </div>
       </section>
 
-      <section className="border-y border-slate-200 bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              Built by reliability engineers for DfR, ALT, validation, and
-              physics-of-failure workflows.
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Reliatools helps engineers move from generic specifications to
-              application-specific reliability decisions.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {credibilityChips.map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-6 py-8 sm:py-10">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-3xl">
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-                Top Reliability Tools
-              </h2>
-              <p className="mt-4 text-lg text-slate-600">
-                Quickly access calculators and wizards for reliability planning,
-                acceleration modeling, and life data analysis.
-              </p>
-            </div>
-            <Link
-              href="/tools"
-              className="inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-            >
-              View all tools <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
-            {topTools.map((tool) => (
-              <Link
-                key={tool.title}
-                href={tool.href}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg focus-visible:-translate-y-1 focus-visible:border-blue-200 focus-visible:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-              >
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {tool.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {tool.description}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50 px-6 py-8 sm:py-10">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-              Why Engineers Use Reliatools
-            </h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Reliatools connects real-world use conditions, failure mechanisms,
-              acceleration models, and validation planning into a practical
-              engineering workflow.
-            </p>
-          </div>
-
-          <div className="mt-7 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm">
-            {valueCards.map(({ title, description, icon: Icon }) => (
-              <div
-                key={title}
-                className="flex flex-col gap-4 p-6 sm:flex-row sm:items-start sm:gap-6"
-              >
-                <div className="flex h-12 w-12 flex-none items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Icon className="h-6 w-6" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white px-6 py-8 sm:py-10">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-              Learn the Engineering Behind the Tools
-            </h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Practical reliability engineering articles that explain the
-              models, assumptions, and workflows behind the calculators and
-              wizards.
-            </p>
-          </div>
-
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
-            {resources.map((resource) => (
-              <article
-                key={resource.href}
-                className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-lg"
-              >
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  {resource.category}
-                </p>
-                <h3 className="mt-4 text-lg font-semibold leading-7 text-slate-900">
-                  {resource.title}
-                </h3>
-                <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">
-                  {resource.description}
-                </p>
+      {/* Workflow strip */}
+      <section aria-label="Reliability workflow" className="border-y border-slate-200 bg-white">
+        <ol className="mx-auto grid max-w-7xl sm:grid-cols-2 lg:grid-cols-4">
+          {TOOL_GROUPS.map((group, index) => {
+            const Icon = GROUP_ICONS[group.id];
+            return (
+              <li key={group.id} className="relative">
                 <Link
-                  href={resource.href}
-                  className="mt-6 inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                  href={`#${group.id}`}
+                  className={`flex h-full items-center gap-4 px-6 py-5 transition-colors hover:bg-blue-50 lg:px-8 ${FOCUS_RING}`}
                 >
-                  Read article <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  <Icon className="h-6 w-6 flex-none text-blue-600" aria-hidden="true" />
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-900">{group.step}</span>
+                    <span className="mt-0.5 block text-sm text-slate-600">{group.stepNote}</span>
+                  </span>
                 </Link>
-              </article>
-            ))}
+                {index < TOOL_GROUPS.length - 1 && (
+                  <ChevronRight
+                    className="pointer-events-none absolute right-0 top-1/2 hidden h-5 w-5 -translate-y-1/2 translate-x-1/2 text-slate-400 lg:block"
+                    aria-hidden="true"
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      {/* Tools by workflow */}
+      <section id="tools" className="scroll-mt-6 px-6 py-12 sm:py-16 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-900">
+              Explore Tools by Workflow
+            </h2>
+            <p className="mt-4 text-lg text-slate-600">
+              A complete set of {TOOL_COUNT} reliability engineering tools, organized by how you
+              work: from defining use conditions to analyzing and predicting reliability.
+            </p>
           </div>
 
-          <div className="mt-7">
-            <Link
-              href="/resources"
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-            >
-              View all resources <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+          <div className="mt-10 grid items-start gap-6 md:grid-cols-2">
+            {TOOL_GROUPS.map((group) => {
+              const Icon = GROUP_ICONS[group.id];
+              return (
+                <section
+                  key={group.id}
+                  id={group.id}
+                  aria-labelledby={`${group.id}-title`}
+                  className="scroll-mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+                >
+                  <div className="flex items-start gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5">
+                    <Icon className="mt-0.5 h-7 w-7 flex-none text-blue-600" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <h3 id={`${group.id}-title`} className="text-xl font-semibold text-slate-900">
+                        {group.title}
+                      </h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{group.blurb}</p>
+                    </div>
+                    <span className="hidden flex-none rounded-full bg-blue-50 sm:inline-block px-3 py-1 text-xs font-semibold text-blue-700">
+                      {group.tools.length} tools
+                    </span>
+                  </div>
+
+                  <ul className="divide-y divide-slate-200">
+                    {group.tools.map((tool) => (
+                      <li key={tool.href}>
+                        <Link
+                          href={tool.href}
+                          className="group flex items-center justify-between gap-4 px-6 py-3.5 transition-colors hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600"
+                        >
+                          <span className="min-w-0">
+                            <span className="font-medium text-slate-900 group-hover:text-blue-700">
+                              {tool.label}
+                            </span>
+                            {tool.note && (
+                              <span className="block text-sm text-slate-500 sm:ml-2 sm:inline">
+                                {tool.note}
+                              </span>
+                            )}
+                          </span>
+                          <ChevronRight
+                            className="h-4 w-4 flex-none text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-600"
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
           </div>
+        </div>
+      </section>
+
+      <AdUnit />
+
+      {/* Principles + latest resources */}
+      <section className="px-6 py-12 sm:py-16 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-900">
+              Built for engineering decisions
+            </h2>
+            <dl className="mt-6">
+              {principles.map((item) => (
+                <div key={item.title} className="border-t border-slate-200 py-5">
+                  <dt className="text-lg font-semibold text-slate-900">{item.title}</dt>
+                  <dd className="mt-1 max-w-prose text-base leading-7 text-slate-600">
+                    {item.description}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div>
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Latest Resources</h2>
+              <Link
+                href="/resources"
+                className={`inline-flex flex-none items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 ${FOCUS_RING}`}
+              >
+                View all articles <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+
+            <ul className="mt-6 space-y-4">
+              {latestResources.map((resource) => (
+                <li key={resource.slug}>
+                  <Link
+                    href={resource.link ?? `/resources/${resource.slug}`}
+                    className={`block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg motion-reduce:transform-none ${FOCUS_RING}`}
+                  >
+                    <h3 className="text-lg font-semibold leading-snug text-slate-900">
+                      {resource.title}
+                    </h3>
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
+                      {resource.description}
+                    </p>
+                    <p className="mt-3 text-xs font-medium text-slate-500">
+                      {resource.category} · {formatDate(resource.date)}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* About band */}
+      <section className="px-6 pb-4 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-xl bg-slate-50 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-10">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+              Built by reliability engineers
+            </h2>
+            <p className="mt-2 text-base leading-7 text-slate-600">
+              Reliatools is created by engineers with decades of industry experience in
+              validation, testing, and product development, for design for reliability,
+              physics-of-failure, and accelerated testing work.
+            </p>
+          </div>
+          <Link
+            href="/about"
+            className={`inline-flex flex-none items-center gap-2 rounded text-base font-semibold text-blue-700 hover:text-blue-800 ${FOCUS_RING}`}
+          >
+            About Reliatools <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </section>
     </main>

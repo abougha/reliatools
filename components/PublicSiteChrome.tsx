@@ -3,10 +3,43 @@
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
+import SiteFooter from "./SiteFooter";
+import AdUnit from "./AdUnit";
+import CookieConsent from "./CookieConsent";
 import {
   toolSlugFromPathname,
   useCalculatorTracking,
 } from "@/lib/useCalculatorTracking";
+
+// Consent Mode v2. Visitors in the EEA, UK and Switzerland start with cookies
+// denied until they choose; a stored choice (components/CookieConsent.tsx,
+// key "rt-consent") overrides the default everywhere. This must run before the
+// Google Analytics and AdSense scripts below.
+const CONSENT_AND_GTAG_INIT = `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    wait_for_update: 500,
+    region: ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']
+  });
+  try {
+    var choice = window.localStorage.getItem('rt-consent');
+    if (choice === 'granted' || choice === 'denied') {
+      gtag('consent', 'update', {
+        ad_storage: choice,
+        ad_user_data: choice,
+        ad_personalization: choice,
+        analytics_storage: choice
+      });
+    }
+  } catch (e) {}
+  gtag('js', new Date());
+  gtag('config', 'G-9TMY964ETQ');
+`;
 
 export default function PublicSiteChrome({
   children,
@@ -26,9 +59,19 @@ export default function PublicSiteChrome({
     return <>{children}</>;
   }
 
+  // The home page places its own ad between sections.
+  const isHome = pathname === "/";
+
   return (
     <>
-      <Navbar />
+      <Script id="gtag-init" strategy="afterInteractive">
+        {CONSENT_AND_GTAG_INIT}
+      </Script>
+      <Script
+        id="gtag-js"
+        src="https://www.googletagmanager.com/gtag/js?id=G-9TMY964ETQ"
+        strategy="afterInteractive"
+      />
       <Script
         id="adsense-script"
         async
@@ -36,23 +79,11 @@ export default function PublicSiteChrome({
         strategy="afterInteractive"
         crossOrigin="anonymous"
       />
-      <Script
-        id="gtag-js"
-        src="https://www.googletagmanager.com/gtag/js?id=G-9TMY964ETQ"
-        strategy="afterInteractive"
-      />
-      <Script id="gtag-init" strategy="afterInteractive">{`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-9TMY964ETQ');
-      `}</Script>
+      <Navbar />
       {children}
-      <footer className="mt-10 border-t border-gray-200 py-6 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} Reliatools. All rights reserved. The tools and content on this site
-        are provided "as is" without warranties of any kind. Reliatools assumes
-        no liability for the accuracy or use of results. Use at your own risk.
-      </footer>
+      {!isHome && <AdUnit key={pathname} className="mt-12" />}
+      <SiteFooter />
+      <CookieConsent />
     </>
   );
 }

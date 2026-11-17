@@ -14,6 +14,8 @@ interface RateLimiter {
 interface Env {
   ASSETS: Fetcher;
   RESEND_API_KEY: string;
+  /** Set with `wrangler secret put TURNSTILE_SECRET_KEY`. */
+  TURNSTILE_SECRET_KEY?: string;
   CONTACT_RATE_LIMITER?: RateLimiter;
 }
 
@@ -49,6 +51,19 @@ async function route(request: Request, env: Env): Promise<Response> {
     }
   }
 
+  // Next's client router prefetches a page's data at
+  // /tools/Weibull/__next.tools.Weibull.__PAGE__.txt, but the static export
+  // writes that file as /tools/Weibull/__next.tools/Weibull/__PAGE__.txt.
+  // Without this the prefetch 404s and every in-site navigation is slower.
+  const segment = url.pathname.match(/^(.*\/__next\.[^/.]+)\.(.+)\.txt$/);
+  if (segment) {
+    const nested = new URL(url.toString());
+    nested.pathname = `${segment[1]}/${segment[2].replace(/\./g, "/")}.txt`;
+    const response = await env.ASSETS.fetch(new Request(nested.toString(), request));
+    // 304 is a hit too: the browser already holds the file.
+    if (response.ok || response.status === 304) return response;
+  }
+
   return env.ASSETS.fetch(request);
 }
 
@@ -82,7 +97,7 @@ async function handleContact(request: Request, env: Env, url: URL): Promise<Resp
     return json({ error: "Request body too large." }, 413);
   }
 
-  let body: ContactFormData & { honeypot?: unknown };
+  let body: ContactFormData & { honeypot?: unknown; turnstileToken?: unknown };
   try {
     const raw = await request.text();
     if (raw.length > MAX_CONTACT_BODY_BYTES) {
@@ -97,6 +112,20 @@ async function handleContact(request: Request, env: Env, url: URL): Promise<Resp
   if (errors.length > 0) return json({ error: errors.join(" ") }, 400);
 
   if (body.honeypot) return json({ ok: true });
+
+  if (env.TURNSTILE_SECRET_KEY) {
+    const human = await verifyTurnstile(
+      env.TURNSTILE_SECRET_KEY,
+      body.turnstileToken,
+      request.headers.get("CF-Connecting-IP")
+    );
+    if (!human) {
+      return json({ error: "Verification failed. Please reload the page and try again." }, 403);
+    }
+  } else {
+    // Fail open so the form keeps working, but make the gap visible in logs.
+    console.warn("TURNSTILE_SECRET_KEY is not set; contact form is not bot-checked.");
+  }
 
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) {
@@ -142,6 +171,29 @@ async function handleContact(request: Request, env: Env, url: URL): Promise<Resp
   } catch (err) {
     console.error("Contact form send failed:", err);
     return json({ error: "Failed to send message. Please try again." }, 500);
+  }
+}
+
+async function verifyTurnstile(
+  secret: string,
+  token: unknown,
+  ip: string | null
+): Promise<boolean> {
+  if (typeof token !== "string" || token.length === 0 || token.length > 2048) return false;
+
+  const form = new URLSearchParams({ secret, response: token });
+  if (ip) form.set("remoteip", ip);
+
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: form,
+    });
+    const result = (await res.json()) as { success?: boolean };
+    return result.success === true;
+  } catch (err) {
+    console.error("Turnstile verification request failed:", err);
+    return false;
   }
 }
 

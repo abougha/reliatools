@@ -31,7 +31,8 @@ export const TITLE_TEMPLATE = `%s | ${SITE_NAME}`;
 export const PAGE_NAMES = {
   "/about/": "About",
   "/contact/": "Contact Reliatools",
-  "/resources/": "Reliability Engineering Resources",
+  "/privacy/": "Privacy Policy",
+  "/resources/":"Reliability Engineering Resources",
   "/resources/arrhenius-article/": "Arrhenius Model in Reliability Engineering — Thermal Acceleration Explained",
   "/resources/derating/": "Component Derating in Electronics — Reliability by Design",
   "/resources/fit-article/": "What Does 1 FIT Really Mean? Automotive Reliability, PMHF & ASIL Explained",
