@@ -7,11 +7,11 @@ import { articleJsonLd } from "@/lib/seo/jsonld";
 export const metadata: Metadata = {
   title: PAGE_NAMES["/resources/halt/"],
   description:
-    "A practical guide to Highly Accelerated Life Testing (HALT). Learn how HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
+    "A practical guide to HALT testing: cold, hot and vibration step-stress, functional and destruct limits, classical vs. rapid HALT, and how HASS follows in production. Plan a profile with the free HALT/HASS builder.",
   openGraph: {
     title: ogTitle("/resources/halt/"),
     description:
-      "How HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
+      "HALT step-stress profiles, functional and destruct limits, and how HASS follows in production.",
     url: "https://www.reliatools.com/resources/halt",
     siteName: "Reliatools",
     type: "article",
@@ -24,9 +24,9 @@ export default function HALTArticlePage() {
     <>
       <JsonLd
         data={articleJsonLd({
-          title: "HALT Testing — Highly Accelerated Life Testing Guide",
+          title: "HALT Testing Guide: Step-Stress Profiles, Limits & HASS",
           description:
-            "A practical guide to Highly Accelerated Life Testing (HALT). Learn how HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
+            "A practical guide to HALT testing: cold, hot and vibration step-stress, functional and destruct limits, classical vs. rapid HALT, and how HASS follows in production. Plan a profile with the free HALT/HASS builder.",
           path: "/resources/halt",
           datePublished: "2025-04-15",
         })}

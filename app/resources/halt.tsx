@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import ContactCTA from "@/components/ContactCTA";
+import RelatedLinks from "@/components/RelatedLinks";
 
 export default function HALTArticle() {
   return (
@@ -102,6 +103,21 @@ export default function HALTArticle() {
         structured stress escalation. Implementing either Classical or Rapid HALT enhances reliability, reduces time-to-market,
         and supports design excellence.
       </p>
+      <p className="mb-4">
+        Ready to plan a test? Build a step-stress profile and a matching production screen with the{" "}
+        <Link href="/tools/HALTHASSWizard/" className="text-blue-600 hover:underline">
+          HALT/HASS Test Plan Builder
+        </Link>
+        . HALT results are not life predictions; to estimate life under thermal stress, use the{" "}
+        <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
+          Arrhenius calculator
+        </Link>{" "}
+        for temperature-driven aging or the{" "}
+        <Link href="/tools/CoffinManson/" className="text-blue-600 hover:underline">
+          Coffin-Manson calculator
+        </Link>{" "}
+        for thermal-cycling fatigue.
+      </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">References</h2>
       <ul className="list-disc pl-6">
@@ -110,6 +126,7 @@ export default function HALTArticle() {
         <li>Fucinari, A. <i>Evolution of HALT and HASS on Aerospace Programs</i></li>
         <li>IEEE, <i>Ten Things You Should Know About HALT & HASS</i>, DOI: 10.1109/RAMS.2012.6175457</li>
       </ul>
+      <RelatedLinks route="/resources/halt/" />
       <ContactCTA variant="article" />
     </main>
   );

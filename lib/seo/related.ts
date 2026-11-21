@@ -65,6 +65,26 @@ const ITEMS: Record<string, RelatedItem> = {
       "How thermal cycling drives solder-joint fatigue, and where the Coffin-Manson model fits.",
   },
 
+  "/tools/HALTHASSWizard/": {
+    href: "/tools/HALTHASSWizard/",
+    label: "HALT/HASS Test Plan Builder",
+    blurb:
+      "Build HALT step-stress profiles and derive HASS production screens.",
+  },
+  "/resources/halt/": {
+    href: "/resources/halt/",
+    label: "HALT Testing Guide",
+    blurb:
+      "Classical vs. rapid HALT, step-stress profiles, and how HASS complements HALT in production.",
+  },
+
+  "/resources/taguchi-bayesian-article/": {
+    href: "/resources/taguchi-bayesian-article/",
+    label: "Hybrid Test Planning: Taguchi + Bayesian + Monte Carlo",
+    blurb:
+      "Combine Taguchi DOE with Bayesian updating and Monte Carlo reasoning for adaptive, confidence-driven validation plans.",
+  },
+
   "/tools/Derating/": {
     href: "/tools/Derating/",
     label: "Derating Navigator",
@@ -85,6 +105,9 @@ const PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["/resources/arrhenius-article/", "/tools/Arrhenius/"],
   ["/resources/thermal-shock-article/", "/tools/CoffinManson/"],
   ["/resources/derating/", "/tools/Derating/"],
+  ["/resources/derating/", "/tools/Arrhenius/"],
+  ["/resources/halt/", "/tools/HALTHASSWizard/"],
+  ["/resources/taguchi-bayesian-article/", "/tools/Arrhenius/"],
 ];
 
 const GRAPH: Record<string, string[]> = {};

@@ -6,11 +6,11 @@ import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 export const metadata: Metadata = {
   title: PAGE_NAMES["/tools/Arrhenius/"],
   description:
-    "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
+    "Free Arrhenius calculator. Compute the acceleration factor from activation energy and use and test temperatures, plus equivalent test duration for accelerated life testing. No signup required.",
   openGraph: {
     title: ogTitle("/tools/Arrhenius/"),
     description:
-      "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
+      "Free Arrhenius calculator. Compute the acceleration factor from activation energy and use and test temperatures, plus equivalent test duration for accelerated life testing. No signup required.",
     url: "https://www.reliatools.com/tools/Arrhenius",
     siteName: "Reliatools",
     type: "website",
@@ -23,7 +23,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <JsonLd
         data={softwareAppJsonLd({
-          name: "Arrhenius Acceleration Factor Calculator",
+          name: "Arrhenius Calculator",
           description:
             "Compute thermal acceleration factors and equivalent test duration for accelerated life testing.",
           path: "/tools/Arrhenius",
