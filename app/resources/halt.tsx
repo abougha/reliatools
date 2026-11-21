@@ -132,11 +132,12 @@ export default function HALTArticle() {
         and supports design excellence.
       </p>
       <p className="mb-4">
-        Ready to plan a test? Build a step-stress profile and a matching production screen with the{" "}
+        Ready to plan a test? Build a HALT step-stress profile with the{" "}
         <Link href="/tools/HALTHASSWizard/" className="text-blue-600 hover:underline">
           HALT/HASS Test Plan Builder
         </Link>
-        . HALT results are not life predictions; to estimate life under thermal stress, use the{" "}
+        ; deriving the HASS screen from your HALT limits is still a separate, product-specific step. HALT results
+        are not life predictions; to estimate life under thermal stress, use the{" "}
         <Link href="/tools/Arrhenius/" className="text-blue-600 hover:underline">
           Arrhenius calculator
         </Link>{" "}

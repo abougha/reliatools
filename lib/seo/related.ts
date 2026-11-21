@@ -69,7 +69,7 @@ const ITEMS: Record<string, RelatedItem> = {
     href: "/tools/HALTHASSWizard/",
     label: "HALT/HASS Test Plan Builder",
     blurb:
-      "Build HALT step-stress profiles and derive HASS production screens.",
+      "Build HALT step-stress profiles for cold, hot, vibration and combined stress.",
   },
   "/resources/halt/": {
     href: "/resources/halt/",
