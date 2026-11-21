@@ -49,7 +49,7 @@ const readouts = [
 export default function WeibullPanel() {
   return (
     <Link
-      href="/tools/Weibull"
+      href="/tools/Weibull/"
       className="group block rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 motion-reduce:transform-none"
     >
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">

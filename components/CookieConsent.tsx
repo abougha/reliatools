@@ -56,7 +56,7 @@ export default function CookieConsent() {
         <p className="max-w-3xl text-sm leading-6 text-slate-600">
           Reliatools uses cookies for Google Analytics and Google AdSense to measure
           traffic and show ads. The calculators work the same either way.{" "}
-          <Link href="/privacy" className="font-medium text-blue-700 underline underline-offset-2">
+          <Link href="/privacy/" className="font-medium text-blue-700 underline underline-offset-2">
             Privacy policy
           </Link>
         </p>

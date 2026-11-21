@@ -12,11 +12,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: ogTitle("/tools/NUDD/"),
     description: DESCRIPTION,
-    url: "https://www.reliatools.com/tools/NUDD",
+    url: "https://www.reliatools.com/tools/NUDD/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/NUDD" },
+  alternates: { canonical: "https://www.reliatools.com/tools/NUDD/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -52,7 +52,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-slate-900">Contact form</h2>
           <p className="mt-3">
-            If you use the <Link href="/contact" className={LINK}>contact form</Link>, the
+            If you use the <Link href="/contact/" className={LINK}>contact form</Link>, the
             name, email address, optional company name, and message you enter are sent to us
             by email through Resend, our email delivery provider. We use them only to reply
             to you. Your IP address is used briefly to limit how many messages can be sent
@@ -117,7 +117,7 @@ export default function PrivacyPage() {
           <p className="mt-3">
             If this policy changes, the date at the top of this page will change with it.
             Questions about privacy can be sent through the{" "}
-            <Link href="/contact" className={LINK}>contact form</Link>.
+            <Link href="/contact/" className={LINK}>contact form</Link>.
           </p>
         </section>
       </div>

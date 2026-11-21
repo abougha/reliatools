@@ -42,3 +42,7 @@ cloudflare-env.d.ts
 next-env.d.ts
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# Generated into out/ by next-sitemap during `npm run build`
+/public/sitemap*.xml
+/public/robots.txt

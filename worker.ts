@@ -1,6 +1,6 @@
 // worker.ts — static assets + contact form handler
 import { validateContactForm, type ContactFormData } from "./lib/contact/validation";
-import { trailingSlashRedirect } from "./lib/routing/trailingSlash";
+import { canonicalRedirect } from "./lib/routing/trailingSlash";
 
 const RECIPIENT = "reliatools2025@gmail.com";
 
@@ -40,14 +40,15 @@ async function route(request: Request, env: Env): Promise<Response> {
     return handleContact(request, env, url);
   }
 
-  // The site is built with `trailingSlash: true`, so /tools is not canonical
-  // — /tools/ is. The assets binding's own auto-trailing-slash handling
-  // answers with a 307, which Google treats as temporary and so keeps
-  // reporting both URL forms in Search Console. Send a 301 first.
+  // Each page has one URL: https://www.reliatools.com/<route>/ in its exact
+  // case. Every other form (http, the bare apex, no trailing slash, wrong
+  // case) gets one 301 straight there. The assets binding's own
+  // auto-trailing-slash handling answers with a 307, which Google treats as
+  // temporary and so keeps reporting both URL forms in Search Console.
   if (request.method === "GET" || request.method === "HEAD") {
-    const slashed = trailingSlashRedirect(url);
-    if (slashed) {
-      return new Response(null, { status: 301, headers: { Location: slashed } });
+    const canonical = canonicalRedirect(url);
+    if (canonical) {
+      return new Response(null, { status: 301, headers: { Location: canonical } });
     }
   }
 

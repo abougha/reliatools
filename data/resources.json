@@ -6,7 +6,7 @@
         "description":  "NUDD is a fast front-end uncertainty scan for automotive teams adopting consumer-electronics technology. Learn how to turn New/Unique/Different/Difficult findings into concrete reliability evidence.",
         "date":  "2026-08-30",
         "content":  "",
-        "link":  "/resources/nudd-engineering-risk"
+        "link":  "/resources/nudd-engineering-risk/"
     },
     {
         "slug":  "fit-article",
@@ -15,7 +15,7 @@
         "description":  "What 1 FIT really means over a real automotive mission: mission ppm, expected fleet failures, PMHF, ASIL A–D targets, diagnostic coverage, and why ultra-low failure-rate claims require billions of device-hours of test evidence.",
         "date":  "2026-07-09",
         "content":  "",
-        "link":  "/resources/fit-article"
+        "link":  "/resources/fit-article/"
     },
     {
         "slug":  "mission-profile-builder",
@@ -24,7 +24,7 @@
         "description":  "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress x phase matrix.",
         "date":  "2026-02-22",
         "content":  "",
-        "link":  "/resources/mission-profile-builder"
+        "link":  "/resources/mission-profile-builder/"
     },
     {
         "slug":  "derating",
@@ -33,7 +33,7 @@
         "description":  "A physics-of-failure-based guide to component derating, covering thermal and electrical stress models, design margin, and why derating is critical for modern high-power systems including AI data centers.",
         "date":  "2026-01-17",
         "content":  "",
-        "link":  "/resources/derating"
+        "link":  "/resources/derating/"
     },
     {
         "slug":  "arrhenius-article",
@@ -42,7 +42,7 @@
         "description":  "A deep dive into thermal aging models and their application in reliability engineering.",
         "date":  "2025-05-27",
         "content":  "",
-        "link":  "/resources/arrhenius-article"
+        "link":  "/resources/arrhenius-article/"
     },
     {
         "slug":  "thermal-shock-article",
@@ -51,7 +51,7 @@
         "description":  "Learn how thermal cycling affects solder joint fatigue using the Coffin-Manson model. Ideal for consumer electronics.",
         "date":  "2025-06-08",
         "content":  "",
-        "link":  "/resources/thermal-shock-article"
+        "link":  "/resources/thermal-shock-article/"
     },
     {
         "slug":  "halt",
@@ -60,7 +60,7 @@
         "description":  "Understanding Highly Accelerated Life Testing (HALT): Principles, History, and Applications",
         "date":  "2025-04-15",
         "content":  "### Case Study Highlights\n\n- Failure rates increased 15% at elevated humidity.\n- Common modes: electromigration, dielectric breakdown.\n- Mitigation strategies include design rule adjustments and protective coatings.\n\n[Download the full case study PDF](/downloads/microelectronics-case-study.pdf)",
-        "link":  "/resources/halt"
+        "link":  "/resources/halt/"
     },
     {
         "slug":  "softwarebrp-article",
@@ -69,7 +69,7 @@
         "description":  "How to estimate software reliability early using Bayesian evidence fusion.",
         "date":  "2025-10-19",
         "content":  "",
-        "link":  "/resources/softwarebrp-article"
+        "link":  "/resources/softwarebrp-article/"
     },
     {
         "slug":  "taguchi-bayesian-article",
@@ -78,6 +78,6 @@
         "description":  "A practical guide to combining Taguchi DOE with in-situ Bayesian updating and Monte Carlo reasoning to create adaptive, confidence-driven validation plans.",
         "date":  "2025-12-24",
         "content":  "",
-        "link":  "/resources/taguchi-bayesian-article"
+        "link":  "/resources/taguchi-bayesian-article/"
     }
 ]

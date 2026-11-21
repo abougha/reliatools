@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/derating/"),
     description:
       "How component stress derating reduces overstress risk and improves long-term reliability in electronics. Covers voltage, temperature, and power derating.",
-    url: "https://www.reliatools.com/resources/derating",
+    url: "https://www.reliatools.com/resources/derating/",
     siteName: "Reliatools",
     type: "article",
   },
-  alternates: { canonical: "https://www.reliatools.com/resources/derating" },
+  alternates: { canonical: "https://www.reliatools.com/resources/derating/" },
 };
 
 export default function DeratingPage() {

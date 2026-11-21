@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/Psychrometrics/"),
     description:
       "Free online psychrometric calculator. Compute humidity, wet bulb temperature, dew point, and enthalpy for environmental test planning. No signup required.",
-    url: "https://www.reliatools.com/tools/Psychrometrics",
+    url: "https://www.reliatools.com/tools/Psychrometrics/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/Psychrometrics" },
+  alternates: { canonical: "https://www.reliatools.com/tools/Psychrometrics/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

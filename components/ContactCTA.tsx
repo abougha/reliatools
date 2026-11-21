@@ -36,7 +36,7 @@ export default function ContactCTA({
   return (
     <div className="mt-8 border-t border-gray-200 pt-4 text-sm text-gray-500">
       <Link
-        href="/contact"
+        href="/contact/"
         className="hover:text-gray-700 hover:underline"
         onClick={() =>
           // Fire-and-forget: never preventDefault, never delay navigation.

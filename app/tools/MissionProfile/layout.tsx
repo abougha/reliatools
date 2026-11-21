@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/MissionProfile/"),
     description:
       "Free online mission profile and duty cycle builder. Map thermal, vibration, and humidity stress exposure across lifecycle phases. No signup required.",
-    url: "https://www.reliatools.com/tools/MissionProfile",
+    url: "https://www.reliatools.com/tools/MissionProfile/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/MissionProfile" },
+  alternates: { canonical: "https://www.reliatools.com/tools/MissionProfile/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

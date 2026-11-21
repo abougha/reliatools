@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/thermal-shock-article/"),
     description:
       "How thermal cycling drives fatigue damage in electronics and how the Coffin-Manson model estimates cycles to failure for accelerated life testing.",
-    url: "https://www.reliatools.com/resources/thermal-shock-article",
+    url: "https://www.reliatools.com/resources/thermal-shock-article/",
     siteName: "Reliatools",
     type: "article",
   },
-  alternates: { canonical: "https://www.reliatools.com/resources/thermal-shock-article" },
+  alternates: { canonical: "https://www.reliatools.com/resources/thermal-shock-article/" },
 };
 
 export default function ThermalShockArticlePage() {

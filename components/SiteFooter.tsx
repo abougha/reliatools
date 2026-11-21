@@ -5,11 +5,11 @@ import BrandMark from "./BrandMark";
 import { CONSENT_OPEN_EVENT } from "./CookieConsent";
 
 const FOOTER_LINKS = [
-  { href: "/tools", label: "Tools" },
-  { href: "/resources", label: "Resources" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-  { href: "/privacy", label: "Privacy" },
+  { href: "/tools/", label: "Tools" },
+  { href: "/resources/", label: "Resources" },
+  { href: "/about/", label: "About" },
+  { href: "/contact/", label: "Contact" },
+  { href: "/privacy/", label: "Privacy" },
 ];
 
 const LINK_CLASS =

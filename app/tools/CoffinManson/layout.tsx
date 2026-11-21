@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/CoffinManson/"),
     description:
       "Free online Coffin-Manson thermal fatigue calculator. Estimate cycles to failure from thermal cycling and CTE mismatch data. No signup required.",
-    url: "https://www.reliatools.com/tools/CoffinManson",
+    url: "https://www.reliatools.com/tools/CoffinManson/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/CoffinManson" },
+  alternates: { canonical: "https://www.reliatools.com/tools/CoffinManson/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

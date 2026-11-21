@@ -29,11 +29,11 @@ export const TOOL_GROUPS: ToolGroup[] = [
     blurb:
       "Capture the use environment, design for reliability, and build system models.",
     tools: [
-      { label: "Mission Profile Builder", href: "/tools/MissionProfile" },
-      { label: "P-Diagram Generator", note: "parameter diagram", href: "/tools/p-diagram" },
-      { label: "NUDD Assessment", note: "new, unique, different, difficult", href: "/tools/NUDD" },
-      { label: "Derating Navigator", href: "/tools/Derating" },
-      { label: "Reliability Block Diagram", note: "RBD", href: "/tools/rbd" },
+      { label: "Mission Profile Builder", href: "/tools/MissionProfile/" },
+      { label: "P-Diagram Generator", note: "parameter diagram", href: "/tools/p-diagram/" },
+      { label: "NUDD Assessment", note: "new, unique, different, difficult", href: "/tools/NUDD/" },
+      { label: "Derating Navigator", href: "/tools/Derating/" },
+      { label: "Reliability Block Diagram", note: "RBD", href: "/tools/rbd/" },
     ],
   },
   {
@@ -43,10 +43,10 @@ export const TOOL_GROUPS: ToolGroup[] = [
     stepNote: "Physics-of-failure and acceleration models",
     blurb: "Quantify how stresses accelerate failure using physics-based models.",
     tools: [
-      { label: "Arrhenius Calculator", note: "thermal aging", href: "/tools/Arrhenius" },
-      { label: "Coffin-Manson Calculator", note: "thermal fatigue", href: "/tools/CoffinManson" },
-      { label: "Electromigration Calculator", note: "Black's equation", href: "/tools/Electromigration" },
-      { label: "Psychrometric Calculator", note: "moisture and humidity", href: "/tools/Psychrometrics" },
+      { label: "Arrhenius Calculator", note: "thermal aging", href: "/tools/Arrhenius/" },
+      { label: "Coffin-Manson Calculator", note: "thermal fatigue", href: "/tools/CoffinManson/" },
+      { label: "Electromigration Calculator", note: "Black's equation", href: "/tools/Electromigration/" },
+      { label: "Psychrometric Calculator", note: "moisture and humidity", href: "/tools/Psychrometrics/" },
     ],
   },
   {
@@ -56,11 +56,11 @@ export const TOOL_GROUPS: ToolGroup[] = [
     stepNote: "Test plans, sample size, and screening",
     blurb: "Turn reliability goals into efficient, defensible test plans.",
     tools: [
-      { label: "Test Plan Generator", href: "/tools/testplangenerator" },
-      { label: "Sample Size Calculator", href: "/tools/Samplesize" },
-      { label: "HALT/HASS Planning Wizard", href: "/tools/HALTHASSWizard" },
-      { label: "Burn-In Test Wizard", href: "/tools/BurnInWizard" },
-      { label: "Vibration + Thermal Cycling Wizard", href: "/tools/VibrationWizard" },
+      { label: "Test Plan Generator", href: "/tools/testplangenerator/" },
+      { label: "Sample Size Calculator", href: "/tools/Samplesize/" },
+      { label: "HALT/HASS Planning Wizard", href: "/tools/HALTHASSWizard/" },
+      { label: "Burn-In Test Wizard", href: "/tools/BurnInWizard/" },
+      { label: "Vibration + Thermal Cycling Wizard", href: "/tools/VibrationWizard/" },
     ],
   },
   {
@@ -70,9 +70,9 @@ export const TOOL_GROUPS: ToolGroup[] = [
     stepNote: "Weibull, FIT, and reliability prediction",
     blurb: "Analyze test data, estimate failure rates, and predict product life.",
     tools: [
-      { label: "Weibull Probability Plot", note: "life data analysis", href: "/tools/Weibull" },
-      { label: "FIT Calculator", note: "failure rate", href: "/tools/FIT" },
-      { label: "Bayesian Reliability Predictor", note: "software", href: "/tools/SoftwareBRP" },
+      { label: "Weibull Probability Plot", note: "life data analysis", href: "/tools/Weibull/" },
+      { label: "FIT Calculator", note: "failure rate", href: "/tools/FIT/" },
+      { label: "Bayesian Reliability Predictor", note: "software", href: "/tools/SoftwareBRP/" },
     ],
   },
 ];

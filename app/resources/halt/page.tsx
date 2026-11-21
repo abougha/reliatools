@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/halt/"),
     description:
       "How HALT uses combined thermal and vibration stresses to expose design weaknesses and improve product robustness before launch.",
-    url: "https://www.reliatools.com/resources/halt",
+    url: "https://www.reliatools.com/resources/halt/",
     siteName: "Reliatools",
     type: "article",
   },
-  alternates: { canonical: "https://www.reliatools.com/resources/halt" },
+  alternates: { canonical: "https://www.reliatools.com/resources/halt/" },
 };
 
 export default function HALTArticlePage() {

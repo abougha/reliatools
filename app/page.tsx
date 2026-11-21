@@ -125,7 +125,7 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/tools/MissionProfile"
+                href="/tools/MissionProfile/"
                 className={`inline-flex items-center justify-center rounded-md border border-blue-200 bg-white px-6 py-3 text-base font-semibold text-blue-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 ${FOCUS_RING}`}
               >
                 Start with Mission Profile
@@ -259,7 +259,7 @@ export default function Home() {
             <div className="flex items-end justify-between gap-4">
               <h2 className="text-3xl font-bold tracking-tight text-slate-900">Latest Resources</h2>
               <Link
-                href="/resources"
+                href="/resources/"
                 className={`inline-flex flex-none items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 ${FOCUS_RING}`}
               >
                 View all articles <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -270,7 +270,7 @@ export default function Home() {
               {latestResources.map((resource) => (
                 <li key={resource.slug}>
                   <Link
-                    href={resource.link ?? `/resources/${resource.slug}`}
+                    href={resource.link ?? `/resources/${resource.slug}/`}
                     className={`block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg motion-reduce:transform-none ${FOCUS_RING}`}
                   >
                     <h3 className="text-lg font-semibold leading-snug text-slate-900">
@@ -304,7 +304,7 @@ export default function Home() {
             </p>
           </div>
           <Link
-            href="/about"
+            href="/about/"
             className={`inline-flex flex-none items-center gap-2 rounded text-base font-semibold text-blue-700 hover:text-blue-800 ${FOCUS_RING}`}
           >
             About Reliatools <ArrowRight className="h-4 w-4" aria-hidden="true" />

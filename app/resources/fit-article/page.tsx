@@ -24,12 +24,12 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/fit-article/"),
     description:
       "Convert a FIT claim into mission ppm, expected fleet failures, and required test evidence, and see how FIT relates to PMHF and ASIL A–D.",
-    url: "https://www.reliatools.com/resources/fit-article",
+    url: "https://www.reliatools.com/resources/fit-article/",
     siteName: "Reliatools",
     type: "article",
   },
   alternates: {
-    canonical: "https://www.reliatools.com/resources/fit-article",
+    canonical: "https://www.reliatools.com/resources/fit-article/",
   },
 };
 

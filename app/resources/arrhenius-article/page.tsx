@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/arrhenius-article/"),
     description:
       "How the Arrhenius model calculates thermal acceleration factors for temperature-driven failure mechanisms, with worked examples and activation energy guidance.",
-    url: "https://www.reliatools.com/resources/arrhenius-article",
+    url: "https://www.reliatools.com/resources/arrhenius-article/",
     siteName: "Reliatools",
     type: "article",
   },
-  alternates: { canonical: "https://www.reliatools.com/resources/arrhenius-article" },
+  alternates: { canonical: "https://www.reliatools.com/resources/arrhenius-article/" },
 };
 
 export default function ArrheniusArticlePage() {
