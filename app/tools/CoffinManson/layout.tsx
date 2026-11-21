@@ -6,11 +6,11 @@ import { softwareAppJsonLd } from "@/lib/seo/jsonld";
 export const metadata: Metadata = {
   title: PAGE_NAMES["/tools/CoffinManson/"],
   description:
-    "Free online Coffin-Manson thermal fatigue calculator. Estimate cycles to failure from thermal cycling and CTE mismatch data. No signup required.",
+    "Free Coffin-Manson calculator. Work out the acceleration factor of a thermal cycling test versus field conditions, or estimate cycles to failure from strain range. No signup required.",
   openGraph: {
     title: ogTitle("/tools/CoffinManson/"),
     description:
-      "Free online Coffin-Manson thermal fatigue calculator. Estimate cycles to failure from thermal cycling and CTE mismatch data. No signup required.",
+      "Free Coffin-Manson calculator. Work out the acceleration factor of a thermal cycling test versus field conditions, or estimate cycles to failure from strain range. No signup required.",
     url: "https://www.reliatools.com/tools/CoffinManson",
     siteName: "Reliatools",
     type: "website",
@@ -23,9 +23,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <JsonLd
         data={softwareAppJsonLd({
-          name: "Coffin-Manson Thermal Fatigue Calculator",
+          name: "Coffin-Manson Calculator",
           description:
-            "Estimate cycles to failure from thermal cycling and CTE mismatch data.",
+            "Work out thermal cycling acceleration factors and estimate cycles to failure.",
           path: "/tools/CoffinManson",
         })}
       />

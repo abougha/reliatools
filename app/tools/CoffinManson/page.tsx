@@ -428,6 +428,10 @@ export default function CoffinMansonCalculator() {
           <Link href="/tools/MissionProfile/" className="text-blue-600 hover:underline">
             Mission Profile tool
           </Link>
+          . To check whether your accelerated test hours support a failure-rate target, use the{" "}
+          <Link href="/tools/FIT/" className="text-blue-600 hover:underline">
+            FIT calculator
+          </Link>
           .
         </p>
       </section>

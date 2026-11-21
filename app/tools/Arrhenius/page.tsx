@@ -379,6 +379,10 @@ export default function ArrheniusCalculator() {
           <Link href="/tools/BurnInWizard/" className="text-blue-600 hover:underline">
             Burn-In Wizard
           </Link>
+          . To check whether your accelerated test hours support a failure-rate target, use the{" "}
+          <Link href="/tools/FIT/" className="text-blue-600 hover:underline">
+            FIT calculator
+          </Link>
           .
         </p>
       </section>
