@@ -24,7 +24,7 @@ export default function HALTArticlePage() {
     <>
       <JsonLd
         data={articleJsonLd({
-          title: "HALT Testing Guide: Step-Stress Profiles, Limits & HASS",
+          title: "HALT Testing Guide: Step-Stress, Limits & HASS",
           description:
             "A practical guide to HALT testing: cold, hot and vibration step-stress, functional and destruct limits, classical vs. rapid HALT, and how HASS follows in production. Plan a profile with the free HALT/HASS builder.",
           path: "/resources/halt",

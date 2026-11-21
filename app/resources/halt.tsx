@@ -73,6 +73,34 @@ export default function HALTArticle() {
         <li>Requires cross-functional collaboration</li>
       </ol>
 
+      <h2 className="text-2xl font-semibold mt-8 mb-4">HALT Limits: Operating Margin and Destruct Margin</h2>
+      <p className="mb-4">
+        Each HALT step-stress sequence looks for two limits per stress. The <strong>operating (functional) limit</strong>{" "}
+        is the level at which the product stops working correctly but recovers when the stress is reduced. The{" "}
+        <strong>destruct limit</strong> is the level at which the failure is permanent. The gap between the product
+        specification and these limits is the design margin. A weakness found below either limit is a candidate for a
+        design or process fix, after which the step stress is repeated to confirm the margin has grown.
+      </p>
+
+      <h2 className="text-2xl font-semibold mt-8 mb-4">From HALT to HASS</h2>
+      <p className="mb-4">
+        Highly Accelerated Stress Screening (HASS) applies what HALT learned to production. HALT is run on a few
+        prototypes to find limits; HASS is run on production units to catch process and workmanship defects before
+        they ship.
+      </p>
+      <ul className="list-disc pl-6 mb-4">
+        <li>HASS stress levels are set from the HALT operating and destruct limits, not from the product specification.</li>
+        <li>The screen must stay below the destruct limits so good units are not damaged or left with too little life.</li>
+        <li>
+          A <strong>proof of screen</strong> confirms the profile is both effective (it catches seeded or known defects)
+          and safe (repeated screening of the same units does not wear them out).
+        </li>
+        <li>
+          Where a full screen on every unit is not justified, Highly Accelerated Stress Audit (HASA) screens a
+          sample of production instead.
+        </li>
+      </ul>
+
       <h2 className="text-2xl font-semibold mt-8 mb-4">Summary of Key Benefits and Limitations</h2>
       <table className="table-auto w-full border-collapse mb-8">
         <thead>
