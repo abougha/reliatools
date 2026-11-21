@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: ogTitle("/contact/"),
     description: "Get in touch with the Reliatools team.",
-    url: "https://www.reliatools.com/contact",
+    url: "https://www.reliatools.com/contact/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/contact" },
+  alternates: { canonical: "https://www.reliatools.com/contact/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

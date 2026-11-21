@@ -2,12 +2,17 @@ const SITE_URL = "https://www.reliatools.com";
 const SITE_NAME = "Reliatools";
 const LOGO_URL = `${SITE_URL}/logo.png`;
 
+/** Page URL in the canonical trailing-slash form (the site runs `trailingSlash: true`). */
+export function pageUrl(path: string): string {
+  return `${SITE_URL}${path.endsWith("/") ? path : `${path}/`}`;
+}
+
 export function organizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
-    url: SITE_URL,
+    url: `${SITE_URL}/`,
     logo: LOGO_URL,
   };
 }
@@ -17,7 +22,7 @@ export function websiteJsonLd() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
-    url: SITE_URL,
+    url: `${SITE_URL}/`,
   };
 }
 
@@ -39,10 +44,10 @@ export function articleJsonLd({
     "@type": "Article",
     headline: title,
     description,
-    url: `${SITE_URL}${path}`,
+    url: pageUrl(path),
     datePublished,
     dateModified: datePublished,
-    author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+    author: { "@type": "Organization", name: SITE_NAME, url: `${SITE_URL}/` },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
@@ -51,7 +56,7 @@ export function articleJsonLd({
     ...(image
       ? { image: [image.startsWith("http") ? image : `${SITE_URL}${image}`] }
       : {}),
-    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${path}` },
+    mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl(path) },
   };
 }
 
@@ -69,7 +74,7 @@ export function softwareAppJsonLd({
     "@type": "WebApplication",
     name,
     description,
-    url: `${SITE_URL}${path}`,
+    url: pageUrl(path),
     applicationCategory: "EngineeringApplication",
     operatingSystem: "Any (Web-based)",
     offers: {
@@ -80,7 +85,7 @@ export function softwareAppJsonLd({
     isPartOf: {
       "@type": "WebSite",
       name: SITE_NAME,
-      url: SITE_URL,
+      url: `${SITE_URL}/`,
     },
   };
 }

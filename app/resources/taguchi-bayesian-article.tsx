@@ -157,7 +157,7 @@ export default function TaguchiBayesianArticle() {
             <div className="mt-1 text-gray-600">Early-life screening</div>
           </Link>
           <Link
-            href="/tools"
+            href="/tools/"
             className="rounded-xl border bg-white p-4 text-sm hover:bg-gray-50"
           >
             <div className="font-semibold">All Tools</div>
@@ -530,7 +530,7 @@ export default function TaguchiBayesianArticle() {
 
       <p className="text-center mt-8">
         Explore more tools on{" "}
-        <Link href="/tools" className="text-blue-600 hover:underline">
+        <Link href="/tools/" className="text-blue-600 hover:underline">
           Reliatools
         </Link>
         .

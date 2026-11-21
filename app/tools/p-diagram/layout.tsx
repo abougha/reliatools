@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/p-diagram/"),
     description:
       "Free online P-Diagram generator for robust design. Map signal, control, and noise factors and error states for DFMEA and design reviews. No signup required.",
-    url: "https://www.reliatools.com/tools/p-diagram",
+    url: "https://www.reliatools.com/tools/p-diagram/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/p-diagram" },
+  alternates: { canonical: "https://www.reliatools.com/tools/p-diagram/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

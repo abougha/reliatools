@@ -23,7 +23,7 @@ export default function ResourceCard({
   image,
   link,
 }: ResourceCardProps) {
-  const href = link ?? `/resources/${slug}`;
+  const href = link ?? `/resources/${slug}/`;
 
   return (
     <Card className="rounded-2xl p-4 transition hover:shadow-lg">

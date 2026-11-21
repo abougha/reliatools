@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/taguchi-bayesian-article/"),
     description:
       "Combine Taguchi DOE, Bayesian inference, and Monte Carlo simulation for smarter reliability validation planning and test strategy optimization.",
-    url: "https://www.reliatools.com/resources/taguchi-bayesian-article",
+    url: "https://www.reliatools.com/resources/taguchi-bayesian-article/",
     siteName: "Reliatools",
     type: "article",
   },
-  alternates: { canonical: "https://www.reliatools.com/resources/taguchi-bayesian-article" },
+  alternates: { canonical: "https://www.reliatools.com/resources/taguchi-bayesian-article/" },
 };
 
 export default function TaguchiBayesianArticlePage() {

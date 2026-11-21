@@ -24,12 +24,12 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/nudd-engineering-risk/"),
     description:
       "A fast front-end uncertainty scan for automotive teams adopting consumer-electronics technology, and how to turn NUDD findings into concrete reliability evidence.",
-    url: "https://www.reliatools.com/resources/nudd-engineering-risk",
+    url: "https://www.reliatools.com/resources/nudd-engineering-risk/",
     siteName: "Reliatools",
     type: "article",
   },
   alternates: {
-    canonical: "https://www.reliatools.com/resources/nudd-engineering-risk",
+    canonical: "https://www.reliatools.com/resources/nudd-engineering-risk/",
   },
 };
 

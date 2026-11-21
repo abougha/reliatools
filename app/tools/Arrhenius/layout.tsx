@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/Arrhenius/"),
     description:
       "Free online Arrhenius acceleration factor calculator. Compute thermal AF and equivalent test duration for accelerated life testing. No signup required.",
-    url: "https://www.reliatools.com/tools/Arrhenius",
+    url: "https://www.reliatools.com/tools/Arrhenius/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/Arrhenius" },
+  alternates: { canonical: "https://www.reliatools.com/tools/Arrhenius/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/HALTHASSWizard/"),
     description:
       "Free online HALT/HASS test plan builder. Define step-stress profiles, operating and destruct limits for accelerated stress screening. No signup required.",
-    url: "https://www.reliatools.com/tools/HALTHASSWizard",
+    url: "https://www.reliatools.com/tools/HALTHASSWizard/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/HALTHASSWizard" },
+  alternates: { canonical: "https://www.reliatools.com/tools/HALTHASSWizard/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

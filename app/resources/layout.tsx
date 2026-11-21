@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/"),
     description:
       "Articles, guides, and case studies on reliability engineering: Arrhenius, HALT, thermal shock, derating, mission profiles, and validation planning.",
-    url: "https://www.reliatools.com/resources",
+    url: "https://www.reliatools.com/resources/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/resources" },
+  alternates: { canonical: "https://www.reliatools.com/resources/" },
 };
 
 export default function ResourcesLayout({ children }: { children: React.ReactNode }) {

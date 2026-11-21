@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     title: ogTitle("/resources/mission-profile-builder/"),
     description:
       "Build a defensible duty cycle and quantify lifetime exposure using an interactive stress × phase matrix.",
-    url: "https://www.reliatools.com/resources/mission-profile-builder",
+    url: "https://www.reliatools.com/resources/mission-profile-builder/",
     siteName: "Reliatools",
     type: "article",
     images: ["/resources/dutycycle.png"],
   },
-  alternates: { canonical: "https://www.reliatools.com/resources/mission-profile-builder" },
+  alternates: { canonical: "https://www.reliatools.com/resources/mission-profile-builder/" },
 };
 
 export default function MissionProfileBuilderArticlePage() {

@@ -8,9 +8,9 @@ import BrandMark from "./BrandMark";
 import { TOOL_GROUPS } from "@/lib/toolGroups";
 
 const PRIMARY_LINKS = [
-  { href: "/resources", label: "Resources" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  { href: "/resources/", label: "Resources" },
+  { href: "/about/", label: "About" },
+  { href: "/contact/", label: "Contact" },
 ];
 
 const FOCUS_RING =
@@ -22,8 +22,11 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement>(null);
 
-  const isActive = (href: string) =>
-    pathname === href || pathname === `${href}/` || pathname?.startsWith(`${href}/`);
+  const isActive = (href: string) => {
+    const base = href.replace(/\/+$/, "");
+    const path = (pathname ?? "").replace(/\/+$/, "");
+    return path === base || path.startsWith(`${base}/`);
+  };
 
   // Close menus on navigation.
   useEffect(() => {
@@ -105,7 +108,7 @@ export default function Navbar() {
                 <div className="border-t border-slate-200 bg-slate-50">
                   <div className="mx-auto max-w-7xl px-6 py-3 lg:px-8">
                     <Link
-                      href="/tools"
+                      href="/tools/"
                       className={`inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:text-blue-800 ${FOCUS_RING}`}
                     >
                       View all tools with formulas
@@ -126,7 +129,7 @@ export default function Navbar() {
 
         <div className="ml-auto flex items-center gap-3">
           <Link
-            href="/tools"
+            href="/tools/"
             className={`hidden items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:inline-flex ${FOCUS_RING}`}
           >
             Explore Tools
@@ -157,7 +160,7 @@ export default function Navbar() {
           className="border-t border-slate-200 bg-white px-4 pb-6 pt-2 md:hidden"
         >
           <ul className="divide-y divide-slate-100">
-            {[{ href: "/tools", label: "All tools" }, ...PRIMARY_LINKS].map((link) => (
+            {[{ href: "/tools/", label: "All tools" }, ...PRIMARY_LINKS].map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}

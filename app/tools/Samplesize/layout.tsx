@@ -18,11 +18,11 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: "https://www.reliatools.com/tools/Samplesize",
+    url: "https://www.reliatools.com/tools/Samplesize/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/Samplesize" },
+  alternates: { canonical: "https://www.reliatools.com/tools/Samplesize/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/about/"),
     description:
       "Free, physics-based reliability engineering tools built for validation engineers, test engineers, and reliability professionals.",
-    url: "https://www.reliatools.com/about",
+    url: "https://www.reliatools.com/about/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/about" },
+  alternates: { canonical: "https://www.reliatools.com/about/" },
 };
 
 export default function AboutPage() {
@@ -64,7 +64,7 @@ export default function AboutPage() {
       {/* Call to Action */}
       <section className="mt-16 text-center">
         <Link
-          href="/tools"
+          href="/tools/"
           className="inline-block px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow hover:bg-blue-700 transition"
         >
           Explore Tools

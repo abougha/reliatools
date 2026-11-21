@@ -30,11 +30,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/Weibull/"),
     description:
       "Free online Weibull analysis calculator. Fit failure data to estimate beta, eta, B10 life, and reliability at any mission time. No signup required.",
-    url: "https://www.reliatools.com/tools/Weibull",
+    url: "https://www.reliatools.com/tools/Weibull/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/Weibull" },
+  alternates: { canonical: "https://www.reliatools.com/tools/Weibull/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

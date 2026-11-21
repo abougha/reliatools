@@ -11,11 +11,11 @@ export const metadata: Metadata = {
     title: ogTitle("/tools/Derating/"),
     description:
       "Free online component derating calculator and navigator. Check voltage, current, power, and temperature margins against MIL-style guidelines. No signup required.",
-    url: "https://www.reliatools.com/tools/Derating",
+    url: "https://www.reliatools.com/tools/Derating/",
     siteName: "Reliatools",
     type: "website",
   },
-  alternates: { canonical: "https://www.reliatools.com/tools/Derating" },
+  alternates: { canonical: "https://www.reliatools.com/tools/Derating/" },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
